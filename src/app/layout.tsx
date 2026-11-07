@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppShell } from "@/components/navigation/dashboard-shell";
 
 export const metadata: Metadata = {
-  title: "STAR PLUS — Astronaut Health Monitoring",
-  description: "Mobile-first dashboard for astronaut health monitoring, WATCH signals, and mission control telemetry.",
+  title: "STAR PLUS — Astronaut Self-Check",
+  description: "Offline-first astronaut health self-check: status per measure with cited sources.",
 };
 
 export default function RootLayout({
@@ -11,14 +12,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <head>
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"
-        />
-      </head>
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased">
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }

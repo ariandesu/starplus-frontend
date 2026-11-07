@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useEffect } from "react";
-import { Menu, X, Home, HeartPulse, ShieldAlert, Users, Gauge } from "lucide-react";
+import Link from "next/link";
+import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
@@ -18,11 +19,11 @@ interface NavItem {
 
 // The dashboard is a single page, so nav items jump to its sections.
 const NAV_ITEMS: NavItem[] = [
-  { label: "Overview", href: "#overview", icon: Home },
-  { label: "Environment", href: "#environment", icon: Gauge },
-  { label: "WATCH Signals", href: "#watch", icon: ShieldAlert },
-  { label: "Vitals", href: "#vitals", icon: HeartPulse },
-  { label: "Roles", href: "#roles", icon: Users },
+  { label: "Home", href: "/", icon: Home },
+  { label: "Self-check", href: "/check", icon: HeartPulse },
+  { label: "Emergency", href: "/emergency", icon: Siren },
+  { label: "Reports", href: "/reports", icon: FileText },
+  { label: "Login", href: "/login", icon: LogIn },
 ];
 
 function Logo() {
@@ -101,23 +102,37 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
   );
 }
 
-export function TopBar({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
+export function TopBar({
+  isOpen,
+  onToggle,
+  trailing,
+  context,
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  trailing?: React.ReactNode;
+  context?: string;
+}) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
       <div className="flex items-center justify-between gap-3 px-4 py-2 max-w-6xl mx-auto">
-        <a href="#overview" className="focus-ring rounded-lg">
+        <Link href="/" className="focus-ring rounded-lg">
           <Logo />
-        </a>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
-          aria-controls="site-nav"
-          className="inline-flex items-center justify-center rounded-lg text-foreground hover:bg-surface focus-ring"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        </Link>
+        <div className="flex items-center gap-2">
+          {context && <span className="hidden sm:inline text-xs text-muted">{context}</span>}
+          {trailing}
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
+            aria-controls="site-nav"
+            className="inline-flex items-center justify-center rounded-lg text-foreground hover:bg-surface focus-ring"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </header>
   );

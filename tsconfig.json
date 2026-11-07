@@ -21,7 +21,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@starplus/core": ["./core/src/index.ts"]
+      "@starplus/core": ["./core/src/index.ts"],
+      "@starplus/core/*": ["./core/*"]
     }
   },
   "include": [

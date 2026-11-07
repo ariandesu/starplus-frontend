@@ -1,12 +1,12 @@
 import * as React from "react";
-import { AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 
 interface EmptyStateProps {
   title: string;
   description: string;
-  tone?: "normal" | "watch" | "critical";
+  tone?: "normal" | "watch" | "critical" | "insufficient";
   action?: React.ReactNode;
   className?: string;
 }
@@ -15,6 +15,7 @@ const TONES = {
   normal: { icon: CheckCircle2, wrap: "bg-accent/10 text-accent" },
   watch: { icon: AlertCircle, wrap: "bg-amber-100 text-amber-700" },
   critical: { icon: AlertTriangle, wrap: "bg-red-100 text-red-700" },
+  insufficient: { icon: HelpCircle, wrap: "bg-muted text-muted-foreground" },
 } as const;
 
 export function EmptyState({ title, description, tone = "normal", action, className }: EmptyStateProps) {

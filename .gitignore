@@ -20,6 +20,9 @@
 # production
 /build
 
+# generated service worker (Serwist writes it on build)
+/public/sw.js
+
 # misc
 .DS_Store
 *.pem

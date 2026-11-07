@@ -1,6 +1,31 @@
 @import "tailwindcss";
 
-/* Satoshi is loaded from Fontshare via <link> in app/layout.tsx (it is not on Google Fonts). */
+/* Satoshi is self-hosted in public/fonts (Fontshare free licence) and served
+   by Next.js; no remote font request is needed, so it works offline. */
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
 
 /* Design System Tokens — STAR PLUS Mobile Dashboard */
 /* Per DESIGN.md: Satoshi typography, no Inter, no pure black, no neon, max 1 accent */
