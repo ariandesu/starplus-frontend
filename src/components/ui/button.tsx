@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
-import { ArrowRight, ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 
 interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {

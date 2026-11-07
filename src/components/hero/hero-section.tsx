@@ -1,108 +1,72 @@
-"use client";
-
 import * as React from "react";
-import { useRef, useEffect, useState } from "react";
+import { HeartPulse, Droplets, Thermometer, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { HeartPulse, Wifi, Activity, Clock } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DemoBadge } from "@/components/dashboard/demo-badge";
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
+export interface HeroVital {
+  label: string;
+  value: string;
+  unit: string;
+  status: "normal" | "watch" | "critical";
+  icon: "heart" | "spo2" | "temp" | "bp";
 }
 
+const ICONS = {
+  heart: HeartPulse,
+  spo2: Droplets,
+  temp: Thermometer,
+  bp: Activity,
+} as const;
+
 interface HeroSectionProps {
+  vitals: HeroVital[];
+  subject: string;
+  updated?: string;
+  isDemo?: boolean;
   className?: string;
 }
 
-const VITALS = [
-  { label: "Heart Rate", value: "72", unit: "bpm", status: "normal", icon: HeartPulse },
-  { label: "SpO2", value: "98", unit: "%", status: "normal", icon: Wifi },
-  { label: "ECG", value: "60", unit: "bpm", status: "watch", icon: Activity },
-  { label: "Mission Time", value: "14:32:11", unit: "", status: "active", icon: Clock },
-];
-
-export function HeroSection({ className }: HeroSectionProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsLoaded(true);
-    gsap.from(containerRef.current, {
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top bottom-=100",
-        toggleActions: "play none none reverse",
-      },
-      opacity: 0,
-      y: 30,
-      duration: 0.8,
-      ease: "power2.out",
-    });
-  }, []);
-
+export function HeroSection({ vitals, subject, updated, isDemo, className }: HeroSectionProps) {
   return (
-    <section
-      ref={containerRef}
-      className={cn("px-4 py-8 sm:px-6 lg:px-8 max-w-6xl mx-auto", className)}
-    >
-      <div className="mb-10">
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-foreground mb-4">
+    <section id="overview" className={cn("px-4 pt-8 pb-4 sm:px-6 max-w-6xl mx-auto w-full", className)}>
+      <div className="mb-8">
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight text-foreground mb-3">
           STAR PLUS
         </h1>
-        <p className="text-lg sm:text-xl text-muted max-w-2xl leading-relaxed">
-          Real-time astronaut health monitoring, WATCH signal detection, and mission-critical telemetry for deep-space operations.
+        <p className="text-base sm:text-lg text-muted max-w-2xl leading-relaxed">
+          Astronaut health monitoring, WATCH signal detection and crew telemetry for long-duration missions.
         </p>
       </div>
 
-      {/* Cinematic Center Hero Grid - mobile first single column */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
-        {VITALS.map((vital) => {
-          const Icon = vital.icon;
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
+        <h2 className="text-lg font-semibold text-foreground">Latest vitals · {subject}</h2>
+        {isDemo ? <DemoBadge /> : updated && <span className="text-sm text-muted">Updated {updated}</span>}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {vitals.map((vital) => {
+          const Icon = ICONS[vital.icon];
           return (
-            <Card key={vital.label} className="card-hover p-4 sm:p-6">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted">{vital.label}</p>
-                    <p className="text-xl font-semibold text-foreground">{vital.value}</p>
-                    {vital.unit && <span className="text-xs text-muted ml-1">{vital.unit}</span>}
-                  </div>
-                  <div className="p-2 rounded-lg bg-accent/10 text-accent">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                </div>
-                <Badge variant={vital.status === "normal" ? "default" : "outline"}>
-                  {vital.status === "normal" ? "Nominal" : "WATCH"}
-                </Badge>
-              </CardHeader>
+            <Card key={vital.label} className="p-4 sm:p-5 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-muted">{vital.label}</p>
+                <Icon className="w-4 h-4 text-accent shrink-0" aria-hidden />
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                {vital.value}
+                {vital.unit && <span className="ml-1 text-sm font-normal text-muted">{vital.unit}</span>}
+              </p>
+              <Badge
+                className="self-start"
+                variant={vital.status === "normal" ? "secondary" : vital.status === "watch" ? "outline" : "destructive"}
+              >
+                {vital.status === "normal" ? "Nominal" : vital.status === "watch" ? "WATCH" : "CRITICAL"}
+              </Badge>
             </Card>
           );
         })}
-      </div>
-
-      {/* GSAP Card Stacking - scroll pinning */}
-      <div className="relative card-stack">
-        <div className="flex flex-col sm:flex-row gap-4 overflow-hidden">
-          {[1, 2, 3].map((i) => (
-            <Card
-              key={i}
-              className="card-hover h-64 sm:h-80 relative overflow-hidden"
-              style={{ zIndex: 4 - i, transform: `translateX(${i * 4}%)` }}
-            >
-              <CardHeader className="absolute top-4 left-4 right-4">
-                <CardTitle className="text-lg sm:text-xl">Crew Status #{i}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <div className="flex flex-col justify-center h-full">
-                  <p className="text-muted text-center">Telemetry data streaming from module {i}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
     </section>
   );

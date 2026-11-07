@@ -1,9 +1,5 @@
-/** @type {import("next").NextConfig} */
-const nextConfig = {
-  webpack: (config: any, { isServer }: any) => {
-    return config;
-  },
-  turbopack: {},
-};
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

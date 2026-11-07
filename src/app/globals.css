@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@import url("https://fonts.googleapis.com/css2?family=Satoshi:wght@400;500;600;700&display=swap");
+/* Satoshi is loaded from Fontshare via <link> in app/layout.tsx (it is not on Google Fonts). */
 
 /* Design System Tokens — STAR PLUS Mobile Dashboard */
 /* Per DESIGN.md: Satoshi typography, no Inter, no pure black, no neon, max 1 accent */
@@ -9,7 +9,8 @@
   --background: #F9FAFB;
   --foreground: #18181B;
   --muted: #71717A;
-  --border: rgba(226, 232, 240, 0.5);
+  --surface: #F1F5F9;
+  --border: #E4E4E7;
   --accent: #0EA5E9;
   --accent-foreground: #FFFFFF;
   --radius: 1rem;
@@ -21,7 +22,11 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted);
+  --color-surface: var(--surface);
   --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--accent);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --radius: var(--radius);
@@ -38,9 +43,12 @@ body {
 }
 
 /* Mobile-first: touch targets minimum 44px */
-button, a[role="button"], [role="tab"] {
-  min-height: 44px;
-  min-width: 44px;
+/* In the base layer so component utilities can still override it. */
+@layer base {
+  button, a[role="button"], [role="tab"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* No circular spinners — skeletal shimmers only */
@@ -94,22 +102,18 @@ button, a[role="button"], [role="tab"] {
   outline-offset: 2px;
 }
 
-/* Utility: clamp typography */
-h1 {
-  font-size: clamp(3rem, 5vw, 5.5rem);
-  line-height: 1.1;
+/* Heading sizes come from Tailwind utilities on each element. Global h1/h2/h3
+   font-size rules here would sit outside Tailwind's layers and override them. */
+h1, h2 {
   letter-spacing: -0.02em;
 }
 
-h2 {
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+html {
+  scroll-behavior: smooth;
 }
 
-h3 {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  line-height: 1.3;
+section[id] {
+  scroll-margin-top: 4.5rem;
 }
 
 /* Mobile-first base: single column is default */

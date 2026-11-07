@@ -1,30 +1,34 @@
-"use client";
-
 import * as React from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 interface EmptyStateProps {
   title: string;
   description: string;
+  tone?: "normal" | "watch" | "critical";
   action?: React.ReactNode;
   className?: string;
 }
 
-export function EmptyState({ title, description, action, className }: EmptyStateProps) {
+const TONES = {
+  normal: { icon: CheckCircle2, wrap: "bg-accent/10 text-accent" },
+  watch: { icon: AlertCircle, wrap: "bg-amber-100 text-amber-700" },
+  critical: { icon: AlertTriangle, wrap: "bg-red-100 text-red-700" },
+} as const;
+
+export function EmptyState({ title, description, tone = "normal", action, className }: EmptyStateProps) {
+  const { icon: Icon, wrap } = TONES[tone];
   return (
-    <Card className={cn("text-center p-12", className)}>
-      <CardHeader className="pb-4">
-        <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-8 h-8 text-accent" />
-        </div>
-        <CardTitle className="text-xl">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted">{description}</p>
-        {action && <div className="mt-6">{action}</div>}
-      </CardContent>
+    <Card role="status" className={cn("flex items-start gap-4 p-5 sm:p-6", className)}>
+      <div className={cn("shrink-0 w-11 h-11 rounded-full flex items-center justify-center", wrap)}>
+        <Icon className="w-5 h-5" aria-hidden />
+      </div>
+      <div>
+        <p className="font-semibold text-foreground">{title}</p>
+        <p className="text-sm text-muted mt-0.5">{description}</p>
+        {action && <div className="mt-4">{action}</div>}
+      </div>
     </Card>
   );
 }
