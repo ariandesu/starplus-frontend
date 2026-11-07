@@ -14,6 +14,6 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["fake-indexeddb/auto"],
-    include: ["test/**/*.test.ts", "src/**/*.test.{ts,tsx}"],
+    include: ["test/**/*.test.ts", "core/test/**/*.test.ts", "src/**/*.test.{ts,tsx}"],
   },
 });
