@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+import { NavigationRoute, NetworkFirst, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -18,5 +18,7 @@ const serwist = new Serwist({
   navigationPreload: true,
   runtimeCaching: defaultCache,
 });
+
+serwist.registerRoute(new NavigationRoute(new NetworkFirst({ cacheName: "documents" })));
 
 serwist.addEventListeners();
