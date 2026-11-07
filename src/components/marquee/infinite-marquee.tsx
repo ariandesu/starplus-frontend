@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRef, useEffect } from "react";
-import { gsap } from "gsap";
 import { cn } from "@/lib/utils";
 
 interface InfiniteMarqueeProps {
@@ -13,26 +11,6 @@ interface InfiniteMarqueeProps {
 }
 
 export function InfiniteMarquee({ items, className, speed = 40 }: InfiniteMarqueeProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    // The list is rendered twice by React; moving by exactly half the track
-    // width lands the second copy where the first started, so the loop is seamless.
-    const tween = gsap.to(track, {
-      xPercent: -50,
-      duration: speed,
-      repeat: -1,
-      ease: "none",
-    });
-    return () => {
-      tween.kill();
-    };
-  }, [speed]);
-
   const row = (copy: number) =>
     items.map((item, i) => (
       <span
@@ -46,10 +24,14 @@ export function InfiniteMarquee({ items, className, speed = 40 }: InfiniteMarque
 
   return (
     <section className={cn("overflow-hidden bg-accent py-5 mt-8", className)}>
-      <div ref={trackRef} className="flex w-max whitespace-nowrap">
+      <div
+        className="flex w-max whitespace-nowrap motion-safe:animate-[marquee_var(--marquee-duration,40s)_linear_infinite] motion-reduce:animate-none"
+        style={{ ["--marquee-duration" as string]: `${speed}s` }}
+      >
         {row(0)}
         {row(1)}
       </div>
+      <style>{`@keyframes marquee { to { transform: translateX(-50%); } }`}</style>
     </section>
   );
 }
