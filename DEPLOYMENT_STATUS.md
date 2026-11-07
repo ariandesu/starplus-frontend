@@ -5,10 +5,11 @@
 ### Frontend (Next.js 16 + Tailwind)
 - **Repo:** https://github.com/ariandesu/starplus-frontend
 - **Live:** https://starplus-frontend.vercel.app
-- **Deployment ID:** dpl_AHz22Dmw94WPLUMXgPn9NF9i9Lvq (state: READY)
+- **Deployment ID:** dpl_3YKw7MKoB9o7jTheHgexgzVGpCY6 (state: READY)
 - **Build:** Next.js 16.4.5 with Turbopack on Vercel
 - **Connected to:** Live backend API at starplus-backend.shareflow.workers.dev
 - **Data flow:** Frontend fetches watch-signals + vitals from backend; falls back to mock data if API is unreachable
+- **Client-side crash fixed:** `InfiniteMarquee` (`"use client"` + `import { gsap }`) and `HeroSection` (`gsap.registerPlugin(ScrollTrigger)` wrapped in `typeof window !== "undefined"`) — rebuilt and redeployed to Vercel.
 
 ### Backend (Cloudflare Workers + D1)
 - **Repo:** https://github.com/ariandesu/starplus-backend
