@@ -19,6 +19,14 @@ import {
 
 type Status = "normal" | "watch" | "critical";
 
+const SIGNAL_LABELS: Record<string, string> = {
+  heart_rate: "Heart rate",
+  oxygen_saturation: "SpO2",
+  temperature_c: "Temperature",
+  blood_pressure_systolic: "Systolic BP",
+  blood_pressure_diastolic: "Diastolic BP",
+};
+
 // Simple reference ranges for flagging a single reading. Not clinical guidance.
 const statusFor = {
   heart: (v: number): Status => (v < 40 || v > 120 ? "critical" : v < 50 || v > 100 ? "watch" : "normal"),
@@ -74,14 +82,14 @@ function latestHeroVitals(vitals: VitalReading[]): HeroVital[] {
   const bpRow = vitals.find((v) => v.blood_pressure_systolic != null && v.blood_pressure_diastolic != null);
 
   return [
-    { label: "Heart Rate", value: hr != null ? String(hr) : "-", unit: "bpm", status: hr != null ? statusFor.heart(hr) : "normal", icon: "heart" },
-    { label: "SpO2", value: spo2 != null ? String(spo2) : "-", unit: "%", status: spo2 != null ? statusFor.spo2(spo2) : "normal", icon: "spo2" },
-    { label: "Temperature", value: temp != null ? temp.toFixed(1) : "-", unit: "°C", status: temp != null ? statusFor.temp(temp) : "normal", icon: "temp" },
+    { label: "Heart Rate", value: hr != null ? String(hr) : "-", unit: "bpm", status: hr != null ? statusFor.heart(hr) : "none", icon: "heart" },
+    { label: "SpO2", value: spo2 != null ? String(spo2) : "-", unit: "%", status: spo2 != null ? statusFor.spo2(spo2) : "none", icon: "spo2" },
+    { label: "Temperature", value: temp != null ? temp.toFixed(1) : "-", unit: "°C", status: temp != null ? statusFor.temp(temp) : "none", icon: "temp" },
     {
       label: "Blood Pressure",
       value: bpRow ? `${bpRow.blood_pressure_systolic}/${bpRow.blood_pressure_diastolic}` : "-",
       unit: "mmHg",
-      status: bpRow ? statusFor.bp(bpRow.blood_pressure_systolic!) : "normal",
+      status: bpRow ? statusFor.bp(bpRow.blood_pressure_systolic!) : "none",
       icon: "bp",
     },
   ];
@@ -114,7 +122,8 @@ export default async function DashboardPage() {
   const watchItems: AccordionItem[] = watchDemo
     ? SAMPLE_WATCH
     : watchSignals.map((s) => ({
-        title: astronauts?.find((a) => a.id === s.astronaut_id)?.name ?? `Crew Member ${s.astronaut_id}`,
+        // One signal per crew member per metric, so name the metric too.
+        title: `${astronauts?.find((a) => a.id === s.astronaut_id)?.name ?? s.astronaut_id} · ${SIGNAL_LABELS[s.signal_type] ?? s.signal_type}`,
         content: describeWindow(s),
         status: s.status === "nominal" ? "normal" : s.status,
         updated: formatRelative(s.updated_at),

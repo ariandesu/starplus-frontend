@@ -9,7 +9,8 @@ export interface HeroVital {
   label: string;
   value: string;
   unit: string;
-  status: "normal" | "watch" | "critical";
+  /** "none" when there is no reading yet. */
+  status: "normal" | "watch" | "critical" | "none";
   icon: "heart" | "spo2" | "temp" | "bp";
 }
 
@@ -58,12 +59,16 @@ export function HeroSection({ vitals, subject, updated, isDemo, className }: Her
                 {vital.value}
                 {vital.unit && <span className="ml-1 text-sm font-normal text-muted">{vital.unit}</span>}
               </p>
-              <Badge
-                className="self-start"
-                variant={vital.status === "normal" ? "secondary" : vital.status === "watch" ? "outline" : "destructive"}
-              >
-                {vital.status === "normal" ? "Nominal" : vital.status === "watch" ? "WATCH" : "CRITICAL"}
-              </Badge>
+              {vital.status === "none" ? (
+                <span className="self-start text-xs text-muted">No data</span>
+              ) : (
+                <Badge
+                  className="self-start"
+                  variant={vital.status === "normal" ? "secondary" : vital.status === "watch" ? "outline" : "destructive"}
+                >
+                  {vital.status === "normal" ? "Nominal" : vital.status === "watch" ? "WATCH" : "CRITICAL"}
+                </Badge>
+              )}
             </Card>
           );
         })}
