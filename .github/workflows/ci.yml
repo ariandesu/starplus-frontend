@@ -15,3 +15,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - run: npm run build
+      - name: core matches backend main
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/ariandesu/starplus-backend/main/core/core.sha256 -o /tmp/backend-core.sha256
+          diff core/core.sha256 /tmp/backend-core.sha256
