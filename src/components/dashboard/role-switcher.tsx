@@ -64,7 +64,7 @@ export function RoleSwitcher({ onRoleChange, className }: RoleSwitcherProps) {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
                 isActive
-                  ? `border-${role.color.replace('#', '')} bg-${role.color.replace('#', '')}/10 text-${role.color.replace('#', '')}`
+                  ? `border-[#${role.color.slice(1)}] bg-[#${role.color.slice(1)}]/10 text-[#${role.color.slice(1)}]`
                   : "border-border bg-background text-muted hover:bg-accent/5 hover:text-accent"
               )}
             >

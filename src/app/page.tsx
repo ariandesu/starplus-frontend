@@ -5,6 +5,7 @@ import { HorizontalAccordion } from "@/components/accordion/horizontal-accordion
 import { VitalChart } from "@/components/dashboard/vital-chart";
 import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { DashboardShell } from "@/components/navigation/dashboard-shell";
 
 const API_BASE = "https://starplus-backend.shareflow.workers.dev";
 
@@ -104,7 +105,7 @@ export default async function DashboardPage() {
   );
 
   return (
-    <main className="flex-1 overflow-x-hidden">
+    <DashboardShell>
       <HeroSection />
       <BentoGrid />
       <HorizontalAccordion items={accordionItems} />
@@ -136,6 +137,6 @@ export default async function DashboardPage() {
           "Mobile-First Dashboard",
         ]}
       />
-    </main>
+    </DashboardShell>
   );
 }

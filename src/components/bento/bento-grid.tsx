@@ -63,8 +63,8 @@ export function BentoGrid({ className }: { className?: string }) {
                 <div className="flex items-center gap-1 text-sm text-muted">
                   <span>Trend: </span>
                   <span className={`font-medium ${item.trend === "up" ? "text-amber-600" : item.trend === "down" ? "text-emerald-600" : "text-muted"}`}>
-                    {item.trend === "up" ? "▲ Rising" : item.trend === "down" ? "▼ Falling" : "→ Stable"}
-                  </span>
+                    {item.trend === "up" ? "Rising" : item.trend === "down" ? "Falling" : "Stable"}
+                </span>
                 </div>
               </CardContent>
             </Card>
