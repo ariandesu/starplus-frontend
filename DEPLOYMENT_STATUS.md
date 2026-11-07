@@ -5,11 +5,15 @@
 ### Frontend (Next.js 16 + Tailwind)
 - **Repo:** https://github.com/ariandesu/starplus-frontend
 - **Live:** https://starplus-frontend.vercel.app
-- **Deployment ID:** dpl_3YKw7MKoB9o7jTheHgexgzVGpCY6 (state: READY)
+- **Deployment ID:** dpl_J19b5vDbSxbpCSh5yvCxwo1XpqNz (state: READY)
 - **Build:** Next.js 16.4.5 with Turbopack on Vercel
 - **Connected to:** Live backend API at starplus-backend.shareflow.workers.dev
 - **Data flow:** Frontend fetches watch-signals + vitals from backend; falls back to mock data if API is unreachable
 - **Client-side crash fixed:** `InfiniteMarquee` (`"use client"` + `import { gsap }`) and `HeroSection` (`gsap.registerPlugin(ScrollTrigger)` wrapped in `typeof window !== "undefined"`) — rebuilt and redeployed to Vercel.
+- **Design fixes (this deployment):**
+  - `RoleSwitcher`: Fixed invalid dynamic Tailwind classes (`border-0EA5E9` → `border-[#0EA5E9]`, `bg-0EA5E9/10`, `text-[#0EA5E9]`). Hex colors now use bracket notation so active role styling renders correctly.
+  - `BentoGrid`: Removed emoji-style trend arrows (▲/▼). Trends now show as text only ("Rising", "Falling", "Stable").
+  - Added `DashboardShell` client component wrapping `TopBar` + `MobileNav` for proper mobile-first navigation header with sticky top bar and slide-out mobile menu.
 
 ### Backend (Cloudflare Workers + D1)
 - **Repo:** https://github.com/ariandesu/starplus-backend
