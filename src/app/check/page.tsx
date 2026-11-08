@@ -251,6 +251,16 @@ function CheckForm() {
               Speak a reading
             </Link>
           </li>
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/check/camera?crew=${encodeURIComponent(crewId)}` : "/check/camera"}>
+              Read a device display
+            </Link>
+          </li>
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/check/camera-hr?crew=${encodeURIComponent(crewId)}` : "/check/camera-hr"}>
+              Measure heart rate with the camera
+            </Link>
+          </li>
         </ul>
       </div>
     </div>

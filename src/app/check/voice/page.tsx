@@ -4,13 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { lookupMeasure, type Measurement, type Phase } from "@starplus/core";
-import {
-  previewReady,
-  transcriptToPreview,
-  type EditableReading,
-} from "@/lib/adapters/voice";
+import { transcriptToPreview, type EditableReading } from "@/lib/adapters/voice";
 import { validateRecord } from "@/lib/adapters/validate";
 import { assessAndQueue } from "@/lib/assess-and-queue";
+import { ReadingPreview } from "@/components/reading-preview";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -40,17 +37,6 @@ declare global {
     webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
   }
 }
-
-const METRIC_OPTIONS = [
-  "heart_rate",
-  "blood_pressure_systolic",
-  "blood_pressure_diastolic",
-  "oxygen_saturation",
-  "temperature_c",
-  "blood_glucose",
-  "body_mass",
-  "respiratory_rate",
-];
 
 const UNSUPPORTED_REASON = "This browser has no speech recognition";
 
@@ -199,58 +185,14 @@ function VoiceForm() {
       )}
       {transcript ? <p className="mt-3 text-sm text-foreground">Heard: “{transcript}”</p> : null}
       {readings.length > 0 ? (
-        <form
-          onSubmit={(event) => {
+        <ReadingPreview
+          readings={readings}
+          onChange={updateReading}
+          onSave={(event) => {
             void save(event);
           }}
-          className="mt-4 space-y-3"
-        >
-          <h2 className="text-base font-semibold text-foreground">Preview</h2>
-          {readings.map((reading, index) => (
-            <div key={index} className="grid grid-cols-3 gap-2">
-              <select
-                aria-label="Metric"
-                value={reading.metric}
-                onChange={(event) => {
-                  const metric = event.target.value;
-                  updateReading(index, {
-                    metric,
-                    unit: metric ? (lookupMeasure(metric)?.unit ?? reading.unit) : reading.unit,
-                  });
-                }}
-                className="rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
-              >
-                <option value="">Choose a measure</option>
-                {METRIC_OPTIONS.map((metric) => (
-                  <option key={metric} value={metric}>
-                    {metric}
-                  </option>
-                ))}
-              </select>
-              <input
-                aria-label="Value"
-                inputMode="decimal"
-                value={reading.value}
-                onChange={(event) => updateReading(index, { value: event.target.value })}
-                className="rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
-              />
-              <input
-                aria-label="Unit"
-                value={reading.unit}
-                onChange={(event) => updateReading(index, { unit: event.target.value })}
-                className="rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
-              />
-            </div>
-          ))}
-          <button
-            type="submit"
-            data-testid="save"
-            disabled={busy || !previewReady(readings)}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            Save result
-          </button>
-        </form>
+          busy={busy}
+        />
       ) : null}
       {notice ? <p className="mt-3 text-sm text-red-700">{notice}</p> : null}
     </div>

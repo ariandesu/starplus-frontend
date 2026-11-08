@@ -157,4 +157,37 @@ describe("outbox flush", () => {
     expect(seen).toEqual(["Bearer tok-later"]);
     expect(await pendingEmergencyCount()).toBe(0);
   });
+
+  it("uploads report photos before sending the report", async () => {
+    await seedSession("photo-crew", "tok-photo");
+    const photoReport = {
+      ...report("e-photo", "emergency", "nobody"),
+      payload_json: JSON.stringify({
+        scenario: "bleeding",
+        steps: [],
+        attachments: [{ id: "photo-1", content_type: "image/jpeg", size: 4, data_base64: "aGk=" }],
+      }),
+    };
+    await enqueue({ client_id: "e-photo", crew_id: "nobody", kind: "report", payload: photoReport as never });
+    const posted: Array<{ url: string; body: unknown }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        const body = init.body ? JSON.parse(init.body as string) : null;
+        posted.push({ url, body });
+        if (url.endsWith("/api/attachments")) return new Response(JSON.stringify({ id: "photo-1", size: 4 }), { status: 201 });
+        return new Response(JSON.stringify({ report: {}, duplicate: false }), { status: 201 });
+      })
+    );
+    const outcome = await flush();
+    expect(outcome.sent).toBe(1);
+    expect(posted).toHaveLength(2);
+    expect(posted[0].url).toMatch(/\/api\/attachments$/);
+    expect(posted[0].body).toMatchObject({ id: "photo-1", report_client_id: "e-photo", data_base64: "aGk=" });
+    expect(posted[1].url).toMatch(/\/api\/reports$/);
+    const sent = (posted[1].body as { payload_json: string }).payload_json;
+    expect(JSON.parse(sent).attachments).toEqual([{ id: "photo-1", content_type: "image/jpeg", size: 4 }]);
+    const db = await deviceDb();
+    expect(await db.getAll("outbox")).toHaveLength(0);
+  });
 });

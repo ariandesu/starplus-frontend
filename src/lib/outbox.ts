@@ -1,4 +1,5 @@
 import type { Measurement, Report, Result } from "@starplus/core";
+import { uploadAttachment, type PendingAttachment } from "./adapters/attachment";
 import { deviceDb, profileDb, type OutboxItem } from "./db";
 import { getSession, listProfiles } from "./session";
 
@@ -126,6 +127,32 @@ export interface FlushOutcome {
   nextRetryAt: number | null;
 }
 
+export async function uploadReportAttachments(token: string, report: Report): Promise<Report> {
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(report.payload_json) as Record<string, unknown>;
+  } catch {
+    return report;
+  }
+  const attachments = payload.attachments;
+  if (!Array.isArray(attachments) || attachments.length === 0) return report;
+  const uploaded: PendingAttachment[] = [];
+  for (const attachment of attachments as PendingAttachment[]) {
+    if (!attachment.data_base64) {
+      uploaded.push({ id: attachment.id, content_type: attachment.content_type, size: attachment.size });
+      continue;
+    }
+    const done = await uploadAttachment(token, {
+      id: attachment.id,
+      reportClientId: report.client_id,
+      contentType: attachment.content_type,
+      dataBase64: attachment.data_base64,
+    });
+    uploaded.push({ id: done.id, content_type: attachment.content_type, size: done.size });
+  }
+  return { ...report, payload_json: JSON.stringify({ ...payload, attachments: uploaded }) };
+}
+
 export async function flush(now = Date.now(), options?: { force?: boolean }): Promise<FlushOutcome> {
   const outcome: FlushOutcome = { sent: 0, failed: 0, nextRetryAt: null };
   const db = await deviceDb();
@@ -219,14 +246,15 @@ export async function flush(now = Date.now(), options?: { force?: boolean }): Pr
 
     for (const report of reports) {
       try {
+        const sendable = await uploadReportAttachments(session.token, report);
         const res = await fetch(`${API_BASE}/api/reports`, {
           method: "POST",
           headers: { Authorization: `Bearer ${session.token}`, "Content-Type": "application/json" },
-          body: JSON.stringify(report),
+          body: JSON.stringify(sendable),
         });
         if (!res.ok) throw new Error(`report ${res.status}`);
         await db.delete("outbox", report.client_id);
-        await markReportDelivered(session.crew_id, report);
+        await markReportDelivered(session.crew_id, sendable);
         outcome.sent += 1;
       } catch (error) {
         failures += 1;
@@ -282,14 +310,15 @@ async function flushOrphanEmergencies(outcome: FlushOutcome): Promise<void> {
     if (session) continue;
     const report = { ...(item.payload as Report), submitted_by: sender.crew_id };
     try {
+      const sendable = await uploadReportAttachments(sender.token, report);
       const res = await fetch(`${API_BASE}/api/reports`, {
         method: "POST",
         headers: { Authorization: `Bearer ${sender.token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(report),
+        body: JSON.stringify(sendable),
       });
       if (!res.ok) throw new Error(`report ${res.status}`);
       await db.delete("outbox", item.client_id);
-      await markReportDelivered(sender.crew_id, { ...report, submitted_by: sender.crew_id });
+      await markReportDelivered(sender.crew_id, sendable);
       outcome.sent += 1;
     } catch (error) {
       await db.put("outbox", {

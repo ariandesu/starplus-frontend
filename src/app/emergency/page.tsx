@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getKbEntry, citeLabel } from "@/lib/kb";
+import { attachmentId, base64Bytes, blobToBase64, compressImage, type PendingAttachment } from "@/lib/adapters/attachment";
 import { deviceDb } from "@/lib/db";
 import { enqueueReport, pendingEmergencyCount } from "@/lib/outbox";
 import { onSynced } from "@/lib/outbox-sync";
@@ -33,6 +34,9 @@ export default function EmergencyPage() {
   const [review, setReview] = useState(false);
   const [subject, setSubject] = useState("unknown crewmate");
   const [summary, setSummary] = useState("");
+  const [photo, setPhoto] = useState<PendingAttachment | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [queued, setQueued] = useState(false);
   const [waiting, setWaiting] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -101,6 +105,7 @@ export default function EmergencyPage() {
   }
 
   async function queueReport() {
+    const attachments = photo ? [photo] : [];
     const report: Report = {
       client_id: crypto.randomUUID(),
       device_id: "device",
@@ -110,7 +115,7 @@ export default function EmergencyPage() {
       kind: "emergency",
       created_at: new Date().toISOString(),
       received_at: "",
-      payload_json: JSON.stringify({ scenario: scenarioId, steps: taken }),
+      payload_json: JSON.stringify({ scenario: scenarioId, steps: taken, attachments }),
       summary_text: summary || null,
       summary_edited: summary ? 1 : 0,
       status: "delivered",
@@ -120,6 +125,25 @@ export default function EmergencyPage() {
     await enqueueReport(null, report);
     setWaiting(true);
     setQueued(true);
+  }
+
+  async function attachPhoto(file: File) {
+    setPhotoError(null);
+    setPhotoBusy(true);
+    try {
+      const compressed = await compressImage(file);
+      const dataBase64 = await blobToBase64(compressed);
+      const size = base64Bytes(dataBase64);
+      if (size > 2 * 1024 * 1024) {
+        setPhotoError("The photo is too large even after compression.");
+        return;
+      }
+      setPhoto({ id: attachmentId(), content_type: "image/jpeg", size, data_base64: dataBase64 });
+    } catch {
+      setPhotoError("Could not read that photo. Try another one.");
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   if (discarded) {
@@ -209,6 +233,29 @@ export default function EmergencyPage() {
           rows={3}
           className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
         />
+        <label htmlFor="photo" className="mt-3 block text-sm font-semibold text-foreground">
+          Photo (optional)
+        </label>
+        <input
+          id="photo"
+          data-testid="photo"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          disabled={photoBusy}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void attachPhoto(file);
+          }}
+          className="mt-1 block w-full text-sm text-foreground"
+        />
+        {photoBusy ? <p className="mt-1 text-xs text-muted-foreground">Compressing the photo…</p> : null}
+        {photo ? (
+          <p className="mt-1 text-xs text-muted-foreground" data-testid="photo-ready">
+            Photo attached ({Math.round(photo.size / 1024)} KB). It uploads when the report sends.
+          </p>
+        ) : null}
+        {photoError ? <p className="mt-1 text-sm text-red-700">{photoError}</p> : null}
         <div className="mt-4 flex gap-3">
           <button
             type="button"

@@ -29,6 +29,8 @@ const ROUTES: Array<{ path: string; shows: RegExp }> = [
   { path: "/check/reaction", shows: /Go to login/ },
   { path: "/check/bluetooth", shows: /Go to login/ },
   { path: "/check/voice", shows: /Go to login/ },
+  { path: "/check/camera", shows: /Go to login/ },
+  { path: "/check/camera-hr", shows: /Go to login/ },
   { path: "/progress", shows: /crew link/ },
   { path: "/medicines", shows: /Medicines/ },
   { path: "/import", shows: /Go to login/ },

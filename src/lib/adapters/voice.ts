@@ -109,12 +109,16 @@ export interface EditableReading {
   unit: string;
 }
 
-export function transcriptToPreview(transcript: string): EditableReading[] {
-  return extractReadings(transcript).map((reading) => ({
+export function previewFromReadings(items: SpokenReading[]): EditableReading[] {
+  return items.map((reading) => ({
     metric: reading.metric ?? "",
     value: String(reading.value),
     unit: reading.unit,
   }));
+}
+
+export function transcriptToPreview(transcript: string): EditableReading[] {
+  return previewFromReadings(extractReadings(transcript));
 }
 
 export function previewReady(readings: EditableReading[]): boolean {
