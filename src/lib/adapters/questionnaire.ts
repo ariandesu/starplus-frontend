@@ -1,4 +1,5 @@
 import { lookupMeasure, type Measurement, type Phase, type Provenance, type Setting } from "@starplus/core";
+import { validateRecord } from "./validate";
 
 export interface QuestionnaireAnswer {
   code: string;
@@ -7,12 +8,12 @@ export interface QuestionnaireAnswer {
 
 export interface QuestionnaireContext {
   crewId: string;
+  provenance: Provenance;
   deviceId?: string;
   measuredAt?: string;
   setting?: Setting;
   phase?: Phase;
   phaseDay?: number | null;
-  provenance?: Provenance;
 }
 
 export interface QuestionnaireResult {
@@ -51,7 +52,7 @@ export function answerQuestionnaire(answers: QuestionnaireAnswer[], context: Que
       rejected.push({ code: answer.code, reason: "unknown metric" });
       continue;
     }
-    records.push({
+    const record: Measurement = {
       client_id: crypto.randomUUID(),
       crew_id: context.crewId,
       metric: answer.code,
@@ -65,7 +66,7 @@ export function answerQuestionnaire(answers: QuestionnaireAnswer[], context: Que
       capture_id: captureId,
       is_estimate: 0,
       confirmed_by_user: 0,
-      provenance: context.provenance ?? "real",
+      provenance: context.provenance,
       setting: context.setting ?? "iss",
       phase: context.phase ?? "inflight",
       phase_day: context.phaseDay ?? null,
@@ -73,7 +74,13 @@ export function answerQuestionnaire(answers: QuestionnaireAnswer[], context: Que
       voided: 0,
       catalog_version: "1",
       schema_version: 1,
-    });
+    };
+    const checked = validateRecord(record);
+    if (!checked.ok) {
+      rejected.push({ code: answer.code, reason: checked.reason });
+      continue;
+    }
+    records.push(record);
   }
   return { records, rejected };
 }

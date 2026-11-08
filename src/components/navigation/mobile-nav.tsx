@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn, ChartLine, Stethoscope, Settings, FlaskConical } from "lucide-react";
+import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn, ChartLine, Stethoscope, Settings, FlaskConical, PersonStanding } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
@@ -22,6 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Self-check", href: "/check", icon: HeartPulse },
   { label: "History", href: "/history", icon: ChartLine },
+  { label: "Body", href: "/body", icon: PersonStanding },
   { label: "Emergency", href: "/emergency", icon: Siren },
   { label: "Reports", href: "/reports", icon: FileText },
   { label: "Surgeon", href: "/surgeon", icon: Stethoscope },

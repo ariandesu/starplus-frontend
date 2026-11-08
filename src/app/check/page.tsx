@@ -223,6 +223,26 @@ function CheckForm() {
         </p>
       )}
       {busy && <p className="mt-3 text-sm text-muted-foreground">Scoring…</p>}
+      <div className="mt-8 border-t border-border pt-4">
+        <h2 className="text-base font-semibold text-foreground">Other ways</h2>
+        <ul className="mt-2 space-y-1 text-sm">
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/check/questionnaire?crew=${encodeURIComponent(crewId)}` : "/check/questionnaire"}>
+              Answer a short questionnaire
+            </Link>
+          </li>
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/check/reaction?crew=${encodeURIComponent(crewId)}` : "/check/reaction"}>
+              Take the reaction test
+            </Link>
+          </li>
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/import?crew=${encodeURIComponent(crewId)}` : "/import"}>
+              Import a CSV or FHIR file
+            </Link>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }

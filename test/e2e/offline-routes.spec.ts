@@ -24,6 +24,10 @@ const ROUTES: Array<{ path: string; shows: RegExp }> = [
   { path: `/surgeon?crew=probe-${RUN}`, shows: /Flight surgeon/ },
   { path: "/settings", shows: /Settings/ },
   { path: "/demo", shows: /Demo mode/ },
+  { path: "/body", shows: /Go to login/ },
+  { path: "/check/questionnaire", shows: /Go to login/ },
+  { path: "/check/reaction", shows: /Go to login/ },
+  { path: "/import", shows: /Go to login/ },
 ];
 
 async function waitForPrecachedResult(page: import("@playwright/test").Page): Promise<void> {

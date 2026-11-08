@@ -1,13 +1,14 @@
 import type { Measurement, Phase, Provenance, Setting } from "@starplus/core";
+import { validateRecord } from "./validate";
 
 export interface ReactionContext {
   crewId: string;
+  provenance: Provenance;
   deviceId?: string;
   measuredAt?: string;
   setting?: Setting;
   phase?: Phase;
   phaseDay?: number | null;
-  provenance?: Provenance;
 }
 
 export function medianExcludingFirst(tapsMs: number[]): number {
@@ -26,29 +27,30 @@ export function reactionToRecord(
     return { error: "need at least two positive tap times in milliseconds" };
   }
   const medianMs = medianExcludingFirst(tapsMs);
-  return {
-    record: {
-      client_id: crypto.randomUUID(),
-      crew_id: context.crewId,
-      metric: "reaction_time",
-      value_num: Math.round(medianMs * 10) / 10,
-      value_text: null,
-      unit: "ms",
-      measured_at: context.measuredAt ?? new Date().toISOString(),
-      received_at: "",
-      source: "test",
-      device_id: context.deviceId ?? "reaction-test",
-      capture_id: null,
-      is_estimate: 0,
-      confirmed_by_user: 0,
-      provenance: context.provenance ?? "real",
-      setting: context.setting ?? "iss",
-      phase: context.phase ?? "inflight",
-      phase_day: context.phaseDay ?? null,
-      supersedes_client_id: null,
-      voided: 0,
-      catalog_version: "1",
-      schema_version: 1,
-    },
+  const record: Measurement = {
+    client_id: crypto.randomUUID(),
+    crew_id: context.crewId,
+    metric: "reaction_time",
+    value_num: Math.round(medianMs * 10) / 10,
+    value_text: null,
+    unit: "ms",
+    measured_at: context.measuredAt ?? new Date().toISOString(),
+    received_at: "",
+    source: "test",
+    device_id: context.deviceId ?? "reaction-test",
+    capture_id: crypto.randomUUID(),
+    is_estimate: 0,
+    confirmed_by_user: 0,
+    provenance: context.provenance,
+    setting: context.setting ?? "iss",
+    phase: context.phase ?? "inflight",
+    phase_day: context.phaseDay ?? null,
+    supersedes_client_id: null,
+    voided: 0,
+    catalog_version: "1",
+    schema_version: 1,
   };
+  const checked = validateRecord(record);
+  if (!checked.ok) return { error: checked.reason };
+  return { record };
 }
