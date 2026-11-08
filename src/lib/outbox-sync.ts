@@ -2,6 +2,7 @@ import { flush, onQueued, outboxStatus, type FlushOutcome } from "./outbox";
 import { getSession, listProfiles } from "./session";
 
 let inFlight: Promise<FlushOutcome> | null = null;
+let dirty = false;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function cancelScheduledSync(): void {
@@ -23,14 +24,24 @@ export async function rescheduleSync(now = Date.now()): Promise<void> {
   }
 }
 
-export function requestOutboxSync(): Promise<FlushOutcome> {
-  if (inFlight) return inFlight;
+export function requestOutboxSync(options?: { force?: boolean }): Promise<FlushOutcome> {
+  if (!options?.force && typeof navigator !== "undefined" && navigator.onLine === false) {
+    return Promise.resolve({ sent: 0, failed: 0, nextRetryAt: null });
+  }
+  if (inFlight) {
+    dirty = true;
+    return inFlight;
+  }
   inFlight = (async () => {
     try {
-      return await flush();
+      return await flush(Date.now(), options);
     } finally {
       inFlight = null;
       await rescheduleSync();
+      if (dirty) {
+        dirty = false;
+        void requestOutboxSync().catch(() => undefined);
+      }
     }
   })();
   return inFlight;
@@ -47,7 +58,7 @@ export function startOutboxSync(): () => void {
   void syncIfSession().catch(() => undefined);
   void rescheduleSync().catch(() => undefined);
   const onOnline = () => {
-    void requestOutboxSync().catch(() => undefined);
+    void requestOutboxSync({ force: true }).catch(() => undefined);
   };
   window.addEventListener("online", onOnline);
   const offQueued = onQueued(() => {

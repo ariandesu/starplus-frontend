@@ -53,7 +53,9 @@ test("offline recorded reading syncs on reconnect without opening Reports", asyn
   await expect(page.getByRole("heading", { name: /your result/i })).toBeVisible();
   expect(await queuedOutboxCount(page)).toBeGreaterThan(0);
 
+  const batchRequest = page.waitForRequest(/\/api\/measurements\/batch/, { timeout: 3_000 });
   await context.setOffline(false);
+  await batchRequest;
   await expect
     .poll(() => queuedOutboxCount(page), { timeout: 30_000 })
     .toBe(0);

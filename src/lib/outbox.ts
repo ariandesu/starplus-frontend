@@ -41,6 +41,17 @@ async function setNextRetryAt(when: number | null): Promise<void> {
   }
 }
 
+async function failureCount(): Promise<number> {
+  const db = await deviceDb();
+  const stored = await db.get("settings", "outbox_failures");
+  return stored ? Number.parseInt(stored.value, 10) || 0 : 0;
+}
+
+async function setFailureCount(count: number): Promise<void> {
+  const db = await deviceDb();
+  await db.put("settings", { key: "outbox_failures", value: String(count) });
+}
+
 type QueuedListener = () => void;
 
 const queuedListeners = new Set<QueuedListener>();
@@ -115,14 +126,19 @@ export interface FlushOutcome {
   nextRetryAt: number | null;
 }
 
-export async function flush(now = Date.now()): Promise<FlushOutcome> {
+export async function flush(now = Date.now(), options?: { force?: boolean }): Promise<FlushOutcome> {
   const outcome: FlushOutcome = { sent: 0, failed: 0, nextRetryAt: null };
   const db = await deviceDb();
   if ((await db.get("settings", "demo_mode"))?.value === "true") return outcome;
-  const retryAt = await nextRetryAt();
-  if (retryAt !== null && now < retryAt) {
-    outcome.nextRetryAt = retryAt;
-    return outcome;
+  if (options?.force) {
+    await setNextRetryAt(null);
+    await setFailureCount(0);
+  } else {
+    const retryAt = await nextRetryAt();
+    if (retryAt !== null && now < retryAt) {
+      outcome.nextRetryAt = retryAt;
+      return outcome;
+    }
   }
   const queued = (await db.getAll("outbox")).filter((item) => item.state === "queued");
   if (queued.length === 0) {
@@ -227,15 +243,19 @@ export async function flush(now = Date.now()): Promise<FlushOutcome> {
     }
   }
 
-  if (failures > 0 && outcome.nextRetryAt === null) {
-    const delay = computeBackoffMs(failures);
-    outcome.nextRetryAt = now + delay;
-    await setNextRetryAt(outcome.nextRetryAt);
-  } else if (failures === 0 && outcome.failed === 0) {
-    await setNextRetryAt(null);
-  }
-
   await flushOrphanEmergencies(outcome);
+
+  if (failures > 0) {
+    const count = await failureCount();
+    await setFailureCount(count + 1);
+    if (outcome.nextRetryAt === null) {
+      outcome.nextRetryAt = now + computeBackoffMs(count);
+      await setNextRetryAt(outcome.nextRetryAt);
+    }
+  } else {
+    if (outcome.sent > 0) await setFailureCount(0);
+    if (outcome.failed === 0) await setNextRetryAt(null);
+  }
   return outcome;
 }
 

@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deviceDb } from "../src/lib/db";
-import { enqueue, flush } from "../src/lib/outbox";
+import { enqueue, flush, outboxStatus } from "../src/lib/outbox";
 import {
   cancelScheduledSync,
   requestOutboxSync,
   rescheduleSync,
   startOutboxSync,
-  syncIfSession,
 } from "../src/lib/outbox-sync";
-
-const flushHeaders = () => ({ Authorization: "Bearer tok", "Content-Type": "application/json" });
 
 function okBatch(accepted: string[]) {
   return new Response(JSON.stringify({ accepted, duplicates: [], rejected: [], max_items: 100 }), {
@@ -147,6 +144,110 @@ describe("outbox auto-sync", () => {
     } finally {
       stop();
     }
+  });
+
+  it("forced send ignores and clears the backoff", async () => {
+    await seedSession();
+    await seedQueued();
+    const db = await deviceDb();
+    await db.put("settings", { key: "outbox_failures", value: "3" });
+    await db.put("settings", { key: "outbox_next_retry_at", value: String(Date.now() + 600_000) });
+    const fetchMock = vi.fn(async () => okBatch(["m-sync"]));
+    vi.stubGlobal("fetch", fetchMock);
+    const outcome = await requestOutboxSync({ force: true });
+    expect(outcome.sent).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(await db.get("settings", "outbox_next_retry_at")).toBeUndefined();
+    expect((await db.get("settings", "outbox_failures"))?.value).toBe("0");
+  });
+
+  it("automatic triggers skip while offline and record no failure", async () => {
+    await seedSession();
+    await seedQueued();
+    const fetchMock = vi.fn(async () => okBatch(["m-sync"]));
+    vi.stubGlobal("fetch", fetchMock);
+    const online = window.navigator.onLine;
+    Object.defineProperty(window.navigator, "onLine", { value: false, configurable: true });
+    try {
+      const outcome = await requestOutboxSync();
+      expect(outcome.sent).toBe(0);
+      expect(fetchMock).not.toHaveBeenCalled();
+      const db = await deviceDb();
+      expect(await db.get("settings", "outbox_failures")).toBeUndefined();
+      expect(await db.get("settings", "outbox_next_retry_at")).toBeUndefined();
+    } finally {
+      Object.defineProperty(window.navigator, "onLine", { value: online, configurable: true });
+    }
+  });
+
+  it("consecutive failures double the backoff and any success resets it", async () => {
+    await seedSession();
+    const db = await deviceDb();
+    const failFetch = vi.fn(async () => {
+      throw new TypeError("offline");
+    });
+    vi.stubGlobal("fetch", failFetch);
+    await seedQueued("m-f1");
+    const first = await requestOutboxSync().catch(() => ({ sent: 0, failed: 0, nextRetryAt: null }));
+    void first;
+    const failuresAfterOne = (await db.get("settings", "outbox_failures"))?.value;
+    expect(failuresAfterOne).toBe("1");
+    const retryAfterOne = Number((await db.get("settings", "outbox_next_retry_at"))?.value ?? "0");
+    const firstDelay = retryAfterOne - Date.now();
+    expect(firstDelay).toBeGreaterThanOrEqual(4000);
+    expect(firstDelay).toBeLessThanOrEqual(6000);
+
+    await db.put("outbox", {
+      client_id: "m-f2",
+      crew_id: "sync-crew",
+      kind: "measurement",
+      payload: { client_id: "m-f2" } as never,
+      state: "queued",
+      attempts: 0,
+      error: null,
+      created_at: new Date().toISOString(),
+    });
+    await db.delete("settings", "outbox_next_retry_at");
+    await requestOutboxSync().catch(() => undefined);
+    expect((await db.get("settings", "outbox_failures"))?.value).toBe("2");
+    const retryAfterTwo = Number((await db.get("settings", "outbox_next_retry_at"))?.value ?? "0");
+    const secondDelay = retryAfterTwo - Date.now();
+    expect(secondDelay).toBeGreaterThanOrEqual(8000);
+    expect(secondDelay).toBeLessThanOrEqual(12000);
+
+    vi.stubGlobal("fetch", vi.fn(async () => okBatch(["m-f2"])));
+    await db.delete("settings", "outbox_next_retry_at");
+    const outcome = await requestOutboxSync({ force: true });
+    expect(outcome.sent).toBe(1);
+    expect((await db.get("settings", "outbox_failures"))?.value).toBe("0");
+    expect(await db.get("settings", "outbox_next_retry_at")).toBeUndefined();
+  });
+
+  it("queues during a send run one more send afterwards", async () => {
+    await seedSession();
+    await seedQueued("m-d1");
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let calls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        calls += 1;
+        await gate;
+        return okBatch([`m-d${calls}`]);
+      })
+    );
+    const first = requestOutboxSync();
+    await vi.waitFor(() => expect(calls).toBe(1));
+    await seedQueued("m-d2");
+    const second = requestOutboxSync();
+    release();
+    await first;
+    await second;
+    await vi.waitFor(() => expect(calls).toBeGreaterThanOrEqual(2), { timeout: 2000 });
+    expect(await outboxStatus()).toMatchObject({ waiting: 0 });
   });
 
   it("never sends two batches at once", async () => {

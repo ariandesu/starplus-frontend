@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
 import type { Report } from "@starplus/core";
-import { flush } from "@/lib/outbox";
+import { requestOutboxSync } from "@/lib/outbox-sync";
 
 async function loadView(crewId: string) {
   const db = await deviceDb();
@@ -57,7 +57,7 @@ function ReportsView() {
   async function sendNow() {
     setBusy(true);
     try {
-      await flush();
+      await requestOutboxSync({ force: true });
     } finally {
       setBusy(false);
       await refresh();
