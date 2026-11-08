@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deviceDb, profileDb } from "../src/lib/db";
-import { checkPin, getSession, isSharedDevice, login, loginDemo, logout, pullHistory, setPin, setSharedDevice } from "../src/lib/session";
+import { checkPin, DemoBusyError, getSession, isSharedDevice, login, loginDemo, logout, pullHistory, setPin, setSharedDevice } from "../src/lib/session";
 
 afterEach(async () => {
   vi.unstubAllGlobals();
@@ -111,6 +111,24 @@ describe("session", () => {
     const session = await loginDemo("astronaut");
     expect(session).toMatchObject({ crew_id: "demo-astronaut", demo: true });
     expect(await getSession("demo-astronaut")).toMatchObject({ token: "tok-demo", demo: true });
+  });
+
+  it("turns a demo 429 into a retryable busy error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 429, headers: { "Retry-After": "2" } }))
+    );
+    const busy = await loginDemo("astronaut").catch((error: unknown) => error);
+    expect(busy).toBeInstanceOf(DemoBusyError);
+    expect((busy as DemoBusyError).retryAfterMs).toBe(2000);
+    expect((busy as Error).message).toContain("Retrying");
+  });
+
+  it("defaults the demo retry wait to 5 s without a Retry-After header", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 429 })));
+    const busy = await loginDemo("astronaut").catch((error: unknown) => error);
+    expect(busy).toBeInstanceOf(DemoBusyError);
+    expect((busy as DemoBusyError).retryAfterMs).toBe(5000);
   });
 
   it("pulls history pages with per-table cursors", async () => {

@@ -86,6 +86,15 @@ export async function login(accessCode: string): Promise<SessionInfo> {
   }
 }
 
+export class DemoBusyError extends Error {
+  readonly retryAfterMs: number;
+  constructor(retryAfterMs: number) {
+    super("Lots of people are trying the demo right now. Retrying…");
+    this.name = "DemoBusyError";
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
 export async function loginDemo(role: "astronaut" | "flight_medical_officer"): Promise<SessionInfo> {
   const id = await deviceId();
   let res: Response;
@@ -99,6 +108,10 @@ export async function loginDemo(role: "astronaut" | "flight_medical_officer"): P
     throw new Error("Can't reach the server. Check the connection and try the demo again.");
   }
   if (res.status === 404) throw new Error("Demo login is switched off on this server.");
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers.get("Retry-After"));
+    throw new DemoBusyError(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 5000);
+  }
   if (!res.ok) throw new Error("Something went wrong. Try again.");
   const session = (await res.json()) as SessionInfo;
   const db = await deviceDb();

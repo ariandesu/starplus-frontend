@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { checkPin, isSharedDevice, listProfiles, login, loginDemo, pullHistory, setSharedDevice } from "@/lib/session";
+import { checkPin, DemoBusyError, getSession, isSharedDevice, listProfiles, login, loginDemo, pullHistory, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
 import type { ProfileRecord } from "@/lib/db";
 
@@ -18,6 +18,8 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [demoState, setDemoState] = useState<string | null>(null);
+  const [demoRole, setDemoRole] = useState<"astronaut" | "flight_medical_officer">("astronaut");
+  const [showRetry, setShowRetry] = useState(false);
   const inFlight = useRef(false);
 
   useEffect(() => {
@@ -25,13 +27,26 @@ function LoginForm() {
     isSharedDevice().then(setShared).catch(() => undefined);
   }, []);
 
-  async function enterDemo(role: "astronaut" | "flight_medical_officer") {
-    if (inFlight.current) return;
-    inFlight.current = true;
+  async function enterDemo(role: "astronaut" | "flight_medical_officer", attempt = 0): Promise<void> {
+    if (attempt === 0) {
+      if (inFlight.current) return;
+      inFlight.current = true;
+    }
     setBusy(true);
     setError(null);
-    setDemoState(role === "astronaut" ? "Opening the demo…" : "Opening the surgeon demo…");
+    setShowRetry(false);
+    setDemoRole(role);
     try {
+      if (attempt === 0) {
+        const knownCrew = role === "astronaut" ? "demo-astronaut" : "demo-surgeon";
+        const existing = await getSession(knownCrew);
+        if (existing?.demo && existing.token && existing.role === role) {
+          setDone(true);
+          router.push(`/?crew=${encodeURIComponent(knownCrew)}`);
+          return;
+        }
+        setDemoState(role === "astronaut" ? "Opening the demo…" : "Opening the surgeon demo…");
+      }
       const session = await loginDemo(role);
       setDemoState("Loading demo history…");
       try {
@@ -42,8 +57,19 @@ function LoginForm() {
       setDone(true);
       router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
+      if (error instanceof DemoBusyError && attempt < 3) {
+        setDemoState(error.message);
+        await new Promise((resolve) => setTimeout(resolve, error.retryAfterMs));
+        await enterDemo(role, attempt + 1);
+        return;
+      }
       setDemoState(null);
+      if (error instanceof DemoBusyError) {
+        setError("The demo is still busy. Please try again in a minute.");
+        setShowRetry(true);
+      } else {
+        setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
+      }
     } finally {
       setBusy(false);
       inFlight.current = false;
@@ -124,6 +150,17 @@ function LoginForm() {
           </button>
         </div>
         {demoState && <p className="mt-2 text-sm text-muted-foreground">{demoState}</p>}
+        {showRetry && (
+          <button
+            type="button"
+            data-testid="demo-retry"
+            onClick={() => void enterDemo(demoRole)}
+            disabled={busy}
+            className="mt-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
+          >
+            Try again
+          </button>
+        )}
       </section>
       <p className="mt-4 text-sm text-muted-foreground">
         Enter the 8-character access code from the flight surgeon. Emergency help needs no login.
