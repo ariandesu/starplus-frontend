@@ -1,21 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { WaitingBanner } from "@/components/waiting-banner";
 import { profileDb } from "@/lib/db";
-import { getSession, hasActiveSession } from "@/lib/session";
+import { hasActiveSession } from "@/lib/session";
 import { onSynced } from "@/lib/outbox-sync";
 import { pendingEmergencyCount } from "@/lib/outbox";
 import type { Result } from "@starplus/core";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 function HomeView() {
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [ready, setReady] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [latest, setLatest] = useState<Result | null>(null);
@@ -45,12 +43,12 @@ function HomeView() {
   }, []);
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId) {
         setReady(true);
         return;
       }
-      setLoggedIn(!!(await getSession(crewId)));
       try {
         const db = await profileDb(crewId);
         const results = await db.getAllFromIndex("results", "by-assessed");
@@ -61,11 +59,11 @@ function HomeView() {
         setReady(true);
       }
     })().catch(() => setReady(true));
-  }, [crewId]);
+  }, [crewId, crewReady]);
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
 
-  if (!crewId || !loggedIn) {
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground">STAR PLUS self-check</h1>

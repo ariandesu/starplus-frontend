@@ -80,6 +80,7 @@ export async function login(accessCode: string): Promise<SessionInfo> {
       demo: false,
     };
     await db.put("profiles", record);
+    await setActiveCrew(session.crew_id);
     return { ...session, demo: false };
   } catch {
     throw new Error("Logged in, but this device could not save the session. Ask for a new code if it keeps happening.");
@@ -129,6 +130,7 @@ export async function loginDemo(role: "astronaut" | "flight_medical_officer"): P
     demo: true,
   };
   await db.put("profiles", record);
+  await setActiveCrew(session.crew_id);
   return { ...session, demo: true };
 }
 
@@ -161,8 +163,38 @@ function parseSyncResult(row: Record<string, unknown>): Result {
 export async function logout(crewId: string): Promise<void> {
   const db = await deviceDb();
   const profile = await db.get("profiles", crewId);
-  if (!profile) return;
-  await db.put("profiles", { ...profile, token: null, role: null, expires_at: null });
+  if (profile) {
+    await db.put("profiles", { ...profile, token: null, role: null, expires_at: null });
+  }
+  const active = await db.get("settings", "active_crew");
+  if (active && active.value === crewId) {
+    await db.put("settings", { key: "active_crew", value: "" });
+  }
+}
+
+export async function setActiveCrew(crewId: string): Promise<void> {
+  const db = await deviceDb();
+  await db.put("settings", { key: "active_crew", value: crewId });
+}
+
+/**
+ * The single source of truth for the active crew member: the `?crew=` URL
+ * value when it has a valid session on this device, otherwise the stored
+ * active crew (set on login and cleared on logout or expiry).
+ */
+export async function getActiveCrewId(urlCrew: string | null): Promise<string | null> {
+  if (urlCrew) {
+    const session = await getSession(urlCrew);
+    if (session) return urlCrew;
+  }
+  const db = await deviceDb();
+  const stored = await db.get("settings", "active_crew");
+  const crewId = typeof stored?.value === "string" && stored.value ? stored.value : null;
+  if (!crewId) return null;
+  const session = await getSession(crewId);
+  if (session) return crewId;
+  await db.put("settings", { key: "active_crew", value: "" });
+  return null;
 }
 
 export async function hasActiveSession(): Promise<boolean> {

@@ -101,6 +101,82 @@ describe("session", () => {
     expect(await checkPin("salt-crew", "0000")).toBe(false);
   });
 
+  it("prefers the URL crew when its session is valid", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "url-crew",
+      display_name: "url-crew",
+      token: "tok-url",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    await db.put("settings", { key: "active_crew", value: "other-crew" });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId("url-crew")).toBe("url-crew");
+  });
+
+  it("falls back to the stored crew when the URL crew has no session", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "stored-crew",
+      display_name: "stored-crew",
+      token: "tok-stored",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    await db.put("settings", { key: "active_crew", value: "stored-crew" });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId("unknown-crew")).toBe("stored-crew");
+    expect(await getActiveCrewId(null)).toBe("stored-crew");
+  });
+
+  it("clears an expired stored crew and returns none", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "old-crew",
+      display_name: "old-crew",
+      token: "tok-old",
+      role: "astronaut",
+      expires_at: "2020-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    await db.put("settings", { key: "active_crew", value: "old-crew" });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBeNull();
+    expect((await db.get("settings", "active_crew"))?.value).toBe("");
+  });
+
+  it("clears the active crew on logout", async () => {
+    const { logout } = await import("../src/lib/session");
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "bye-crew",
+      display_name: "bye-crew",
+      token: "tok-bye",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    await db.put("settings", { key: "active_crew", value: "bye-crew" });
+    await logout("bye-crew");
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBeNull();
+  });
+
   it("logs in to the demo crew and marks the session", async () => {
     vi.stubGlobal(
       "fetch",

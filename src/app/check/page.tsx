@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   CATALOG,
@@ -19,6 +19,7 @@ import {
 } from "@starplus/core";
 import { MeasureForm } from "@/components/measure-form";
 import { deviceDb, profileDb } from "@/lib/db";
+import { useActiveCrew } from "@/lib/use-active-crew";
 import { getModelDefinition, getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueMeasurement, enqueueResult } from "@/lib/outbox";
 import { getSession } from "@/lib/session";
@@ -31,10 +32,8 @@ async function getSetting(key: string, fallback: string): Promise<string> {
 
 function CheckForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [ready, setReady] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
   const [setting, setSetting] = useState<Setting>("iss");
   const [phase, setPhase] = useState<Phase>("inflight");
   const [code, setCode] = useState(CATALOG.measures[0].code);
@@ -47,18 +46,17 @@ function CheckForm() {
   const needsPair = code === "blood_pressure_systolic";
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId) {
         setReady(true);
         return;
       }
-      const session = await getSession(crewId);
-      setLoggedIn(!!session);
       setSetting((await getSetting("setting", "iss")) as Setting);
       setPhase((await getSetting("phase", "inflight")) as Phase);
       setReady(true);
     })().catch(() => setReady(true));
-  }, [crewId]);
+  }, [crewId, crewReady]);
 
   async function submit(draft: {
     metric: string;
@@ -69,7 +67,7 @@ function CheckForm() {
     howto: string;
     why: string;
   }) {
-    if (!crewId || !loggedIn) return;
+    if (!crewId) return;
     setBusy(true);
     setNotice(null);
     try {
@@ -159,16 +157,21 @@ function CheckForm() {
   }
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !loggedIn) {
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground">Self-check</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Log in first — your readings belong to your profile.
         </p>
-        <Link href="/login" className="mt-4 inline-block rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
-          Go to login
-        </Link>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/login" className="inline-block rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+            Go to login
+          </Link>
+          <Link href="/login?demo=astronaut" className="inline-block rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground">
+            Try the demo
+          </Link>
+        </div>
       </div>
     );
   }

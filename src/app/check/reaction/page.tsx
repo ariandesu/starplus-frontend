@@ -1,22 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { Phase } from "@starplus/core";
 import { assessAndQueue } from "@/lib/assess-and-queue";
 import { reactionToRecord } from "@/lib/adapters/reaction-test";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 type Stage = "idle" | "waiting" | "tap" | "done";
 
 function ReactionTest() {
   const router = useRouter();
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [stage, setStage] = useState<Stage>("idle");
   const [taps, setTaps] = useState<number[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
@@ -25,18 +23,10 @@ function ReactionTest() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    (async () => {
-      if (!crewId) {
-        setReady(true);
-        return;
-      }
-      setLoggedIn(!!(await getSession(crewId)));
-      setReady(true);
-    })().catch(() => setReady(true));
     return () => {
       if (timerRef.current !== null) clearTimeout(timerRef.current);
     };
-  }, [crewId]);
+  }, []);
 
   const begin = useCallback(() => {
     setNotice(null);
@@ -97,12 +87,13 @@ function ReactionTest() {
     }
   }
 
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !loggedIn) {
+  if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to take the reaction test. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to take the reaction test. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );

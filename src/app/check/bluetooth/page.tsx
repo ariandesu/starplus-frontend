@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import type { Measurement, Phase } from "@starplus/core";
 import { BLE_PROFILES, requestBleMeasurement } from "@/lib/adapters/ble-profiles";
@@ -26,6 +26,7 @@ import { validateRecord } from "@/lib/adapters/validate";
 import { assessAndQueue } from "@/lib/assess-and-queue";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 interface PreviewReading {
   metric: string;
@@ -100,10 +101,7 @@ function simulateProfile(profileId: string, at: string): DataView {
 
 function BluetoothForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [supported] = useState(() => typeof navigator !== "undefined" && "bluetooth" in navigator);
   const [profileId, setProfileId] = useState("blood-pressure");
   const [readings, setReadings] = useState<PreviewReading[]>([]);
@@ -114,25 +112,18 @@ function BluetoothForm() {
   const stopRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    (async () => {
-      if (!crewId) {
-        setReady(true);
-        return;
-      }
-      setLoggedIn(!!(await getSession(crewId)));
-      setReady(true);
-    })().catch(() => setReady(true));
     return () => {
       stopRef.current?.();
     };
-  }, [crewId]);
+  }, []);
 
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !loggedIn) {
+  if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to connect a Bluetooth device. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to connect a Bluetooth device. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );
@@ -182,10 +173,12 @@ function BluetoothForm() {
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
+    const id = crewId;
+    if (!id) return;
     setNotice(null);
     setBusy(true);
     try {
-      const session = await getSession(crewId);
+      const session = await getSession(id);
       if (!session) {
         setNotice("Log in first, then save the reading.");
         return;
@@ -205,7 +198,7 @@ function BluetoothForm() {
       for (const reading of readings) {
         const record: Measurement = {
           client_id: crypto.randomUUID(),
-          crew_id: crewId,
+          crew_id: id,
           metric: reading.metric,
           value_num: reading.value,
           value_text: null,
@@ -233,8 +226,8 @@ function BluetoothForm() {
         }
         records.push(record);
       }
-      const resultId = await assessAndQueue(crewId, "inflight", records);
-      router.push(`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(resultId)}`);
+      const resultId = await assessAndQueue(id, "inflight", records);
+      router.push(`/result?crew=${encodeURIComponent(id)}&result=${encodeURIComponent(resultId)}`);
     } finally {
       setBusy(false);
     }

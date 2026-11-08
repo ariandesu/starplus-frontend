@@ -1,20 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type { Measurement } from "@starplus/core";
 import { BodyMap, BodySystemList, BODY_SYSTEMS } from "@/components/body-map";
 import { profileDb } from "@/lib/db";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 function BodyView() {
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [records, setRecords] = useState<Measurement[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId) {
         setReady(true);
@@ -29,7 +29,7 @@ function BodyView() {
         setReady(true);
       }
     })().catch(() => setReady(true));
-  }, [crewId]);
+  }, [crewId, crewReady]);
 
   const latestByCode = useMemo(() => {
     const latest = new Map<string, Measurement>();
@@ -57,7 +57,8 @@ function BodyView() {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to see the body map. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to see the body map. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );

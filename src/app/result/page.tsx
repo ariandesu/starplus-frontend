@@ -10,6 +10,7 @@ import { profileDb } from "@/lib/db";
 import { enqueueResult } from "@/lib/outbox";
 import { getExplanation, getKbEntry, citeLabel } from "@/lib/kb";
 import type { KbEntry } from "@starplus/core";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 function ExplainMore({ entry, metric }: { entry: KbEntry; metric: string }) {
   const [open, setOpen] = useState(false);
@@ -51,7 +52,7 @@ function ExplainMore({ entry, metric }: { entry: KbEntry; metric: string }) {
 function ResultView() {
   const router = useRouter();
   const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const resultId = params.get("result") ?? "";
   const [result, setResult] = useState<Result | null>(null);
   const [records, setRecords] = useState<Measurement[]>([]);
@@ -75,6 +76,7 @@ function ResultView() {
   }
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId || !resultId) return;
       const db = await profileDb(crewId);
@@ -86,8 +88,19 @@ function ResultView() {
       );
       setRecords(measures.filter((m): m is Measurement => !!m));
     })().catch(() => undefined);
-  }, [crewId, resultId]);
+  }, [crewId, crewReady, resultId]);
 
+  if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewId) {
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 py-8">
+        <p className="text-sm text-muted-foreground">
+          Log in to see a result. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
+        </p>
+      </div>
+    );
+  }
   if (!result) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">

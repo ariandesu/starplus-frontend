@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import type { Measurement, Phase } from "@starplus/core";
 import {
@@ -14,15 +14,13 @@ import { validateRecord } from "@/lib/adapters/validate";
 import { assessAndQueue } from "@/lib/assess-and-queue";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 const UNSUPPORTED_REASON = "This browser has no camera support";
 
 function CameraHrForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [supported] = useState(
     () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
   );
@@ -36,25 +34,18 @@ function CameraHrForm() {
   const readerRef = useRef<CameraReader | null>(null);
 
   useEffect(() => {
-    (async () => {
-      if (!crewId) {
-        setReady(true);
-        return;
-      }
-      setLoggedIn(!!(await getSession(crewId)));
-      setReady(true);
-    })().catch(() => setReady(true));
     return () => {
       readerRef.current?.stop();
     };
-  }, [crewId]);
+  }, []);
 
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !loggedIn) {
+  if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to measure your heart rate. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to measure your heart rate. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );
@@ -103,10 +94,12 @@ function CameraHrForm() {
   }
 
   async function save() {
+    const id = crewId;
+    if (!id) return;
     setNotice(null);
     setBusy(true);
     try {
-      const session = await getSession(crewId);
+      const session = await getSession(id);
       if (!session) {
         setNotice("Log in first, then save the reading.");
         return;
@@ -120,7 +113,7 @@ function CameraHrForm() {
       const deviceId = typeof device?.value === "string" && device.value ? device.value : "camera-hr";
       const record: Measurement = {
         client_id: crypto.randomUUID(),
-        crew_id: crewId,
+        crew_id: id,
         metric: "heart_rate",
         value_num: bpm,
         value_text: null,
@@ -146,8 +139,8 @@ function CameraHrForm() {
         setNotice(`heart_rate: ${checked.reason}`);
         return;
       }
-      const resultId = await assessAndQueue(crewId, "inflight", [record]);
-      router.push(`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(resultId)}`);
+      const resultId = await assessAndQueue(id, "inflight", [record]);
+      router.push(`/result?crew=${encodeURIComponent(id)}&result=${encodeURIComponent(resultId)}`);
     } finally {
       setBusy(false);
     }

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { checkPin, DemoBusyError, getSession, isSharedDevice, listProfiles, login, loginDemo, pullHistory, setSharedDevice } from "@/lib/session";
+import { checkPin, DemoBusyError, getSession, isSharedDevice, listProfiles, login, loginDemo, pullHistory, setActiveCrew, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
 import type { ProfileRecord } from "@/lib/db";
 
@@ -112,6 +112,7 @@ function LoginForm() {
     setError(null);
     try {
       if (pinCrew && (await checkPin(pinCrew, pin))) {
+        await setActiveCrew(pinCrew);
         router.push(`/?crew=${encodeURIComponent(pinCrew)}`);
       } else {
         setError("Wrong PIN.");
@@ -125,7 +126,7 @@ function LoginForm() {
     <div className="mx-auto w-full max-w-md px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Log in</h1>
       <section aria-label="Trying the demo" className="mt-4 rounded-xl border border-border p-4">
-        <h2 className="text-sm font-semibold text-foreground">Trying the demo?</h2>
+        <h2 className="text-sm font-semibold text-foreground">Try the demo</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           One tap, no code. A pre-filled month of synthetic data, ready to explore.
         </p>

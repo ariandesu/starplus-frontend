@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import {
   patchesForStreak,
@@ -15,10 +14,10 @@ import { profileDb } from "@/lib/db";
 import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-settings";
 import { getSession } from "@/lib/session";
 import { ReadinessRing } from "@/components/readiness-ring";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 function ProgressView() {
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [ready, setReady] = useState(false);
   const [enabled, setEnabled] = useState(() => gamificationEnabled());
   const [today, setToday] = useState<DayScore | null>(null);
@@ -29,6 +28,7 @@ function ProgressView() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId) {
         setReady(true);
@@ -60,7 +60,7 @@ function ProgressView() {
         setReady(true);
       }
     })().catch(() => setReady(true));
-  }, [crewId]);
+  }, [crewId, crewReady]);
 
   function toggle(next: boolean) {
     setEnabled(next);
@@ -68,7 +68,21 @@ function ProgressView() {
   }
 
   if (!ready) return <main className="p-6">Loading progress…</main>;
-  if (!crewId) return <main className="p-6">Open this page from the app with your crew link.</main>;
+  if (!crewId) {
+    return (
+      <main className="p-6">
+        <p>Open this page from the app with your crew link.</p>
+        <p className="mt-2">
+          <a className="underline" href="/login">
+            Go to login
+          </a>{" "}
+          <a className="underline" href="/login?demo=astronaut">
+            Try the demo
+          </a>
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-6">

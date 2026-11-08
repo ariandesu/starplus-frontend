@@ -1,41 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import type { Phase } from "@starplus/core";
 import { assessAndQueue } from "@/lib/assess-and-queue";
 import { answerQuestionnaire, questionnaireQuestions } from "@/lib/adapters/questionnaire";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 function QuestionnaireForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      if (!crewId) {
-        setReady(true);
-        return;
-      }
-      setLoggedIn(!!(await getSession(crewId)));
-      setReady(true);
-    })().catch(() => setReady(true));
-  }, [crewId]);
-
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !loggedIn) {
+  if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to answer the questionnaire. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to answer the questionnaire. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );
@@ -43,6 +31,7 @@ function QuestionnaireForm() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!crewId) return;
     setNotice(null);
     setBusy(true);
     try {

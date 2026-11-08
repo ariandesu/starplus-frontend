@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { CATALOG, type Measurement, type Provenance } from "@starplus/core";
 import { importCsv, importJsonRecords, parseCsvRows, suggestColumnMapping } from "@/lib/adapters/import-csv";
@@ -9,6 +8,7 @@ import { importFhir } from "@/lib/adapters/import-fhir";
 import { enqueueMeasurement } from "@/lib/outbox";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 type ParsedFile =
   | { kind: "csv"; headers: string[]; text: string }
@@ -44,9 +44,8 @@ function parseFile(name: string, text: string): ParsedFile | { kind: "error"; re
 }
 
 function ImportForm() {
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { crewId: activeCrewId, ready: crewReady } = useActiveCrew();
+  const crewId = activeCrewId ?? "";
   const [ready, setReady] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileText, setFileText] = useState<string | null>(null);
@@ -58,19 +57,19 @@ function ImportForm() {
   const [provenance, setProvenance] = useState<Provenance>("real");
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId) {
         setReady(true);
         return;
       }
       const session = await getSession(crewId);
-      setLoggedIn(!!session);
       if (session && (session.provenance === "real" || session.provenance === "synthetic" || session.provenance === "simulated_device")) {
         setProvenance(session.provenance);
       }
       setReady(true);
     })().catch(() => setReady(true));
-  }, [crewId]);
+  }, [crewId, crewReady]);
 
   const parsed = useMemo(() => (fileText === null ? null : parseFile(fileName, fileText)), [fileName, fileText]);
   const headers = parsed && parsed.kind === "csv" ? parsed.headers : null;
@@ -150,11 +149,12 @@ function ImportForm() {
   }
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !loggedIn) {
+  if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-xl px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to import data. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to import data. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );

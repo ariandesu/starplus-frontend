@@ -1,12 +1,13 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
 import type { Report } from "@starplus/core";
 import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
 import { hasActiveSession } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 async function loadView(crewId: string) {
   const db = await deviceDb();
@@ -29,21 +30,22 @@ async function loadView(crewId: string) {
 }
 
 function ReportsView() {
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId } = useActiveCrew();
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
   const [hasSession, setHasSession] = useState(false);
+  const [checked, setChecked] = useState(false);
   const [demoPaused, setDemoPaused] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
-    const view = await loadView(crewId);
+    const view = await loadView(crewId ?? "");
     setPending(view.mine);
     setDelivered(view.delivered);
     setEmergencyWaiting(view.emergencyWaiting);
     setHasSession(await hasActiveSession());
+    setChecked(true);
   }, [crewId]);
 
   useEffect(() => {
@@ -82,6 +84,12 @@ function ReportsView() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Reports</h1>
+      {checked && !hasSession && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Log in to send reports. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
+        </p>
+      )}
       {emergencyWaiting > 0 && (
         <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {hasSession

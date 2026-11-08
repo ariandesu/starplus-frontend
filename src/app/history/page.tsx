@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { CATALOG, lookupMeasure, sdFloorFor, type Measurement } from "@starplus/core";
 import { VitalChart } from "@/components/dashboard/vital-chart";
 import { profileDb } from "@/lib/db";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 interface SeriesPoint {
   name: string;
@@ -69,13 +69,13 @@ function buildSeries(records: Measurement[], code: string, now: number): MetricS
 }
 
 function HistoryView() {
-  const params = useSearchParams();
-  const crewId = params.get("crew") ?? "";
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [series, setSeries] = useState<MetricSeries[]>([]);
   const [ready, setReady] = useState(false);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
+    if (!crewReady) return;
     (async () => {
       if (!crewId) {
         setReady(true);
@@ -98,14 +98,15 @@ function HistoryView() {
         setReady(true);
       }
     })().catch(() => setReady(true));
-  }, [crewId]);
+  }, [crewId, crewReady]);
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
   if (!crewId) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          Log in to see history. <Link href="/login" className="text-accent underline">Go to login</Link>
+          Log in to see history. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
+          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       </div>
     );
