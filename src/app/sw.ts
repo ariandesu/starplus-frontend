@@ -1,7 +1,6 @@
 /// <reference lib="webworker" />
-import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Route, Serwist } from "serwist";
+import { Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -11,37 +10,51 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+async function matchPrecache(pathname: string): Promise<Response | undefined> {
+  for (const name of await caches.keys()) {
+    if (!name.includes("precache")) continue;
+    const hit = await (await caches.open(name)).match(pathname, { ignoreSearch: true });
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
-  runtimeCaching: defaultCache,
+  navigationPreload: false,
 });
 
-// Documents are matched by path, ignoring the query string: /check?crew=x and
-// /result?crew=x&result=y serve the same cached document as /check and /result.
-const documentsByPath = new Route(
-  ({ request }: { request: Request }) => request.mode === "navigate",
-  async ({ request, url }: { request: Request; url: URL }) => {
-    const cache = await caches.open("documents");
-    const key = url.origin + url.pathname;
-    const cached = await cache.match(key, { ignoreSearch: true });
-    if (cached) return cached;
-    try {
-      const response = await fetch(request);
-      if (response && response.ok) await cache.put(key, response.clone());
-      return response;
-    } catch {
-      const fallback = await cache.match(key, { ignoreSearch: true });
-      if (fallback) return fallback;
-      const home = await cache.match(`${url.origin}/`, { ignoreSearch: true });
-      if (home) return home;
-      return Response.error();
-    }
-  }
-);
-
-serwist.registerRoute(documentsByPath);
+// Registered before Serwist's own fetch listener, so navigations are matched
+// by path first: /check?crew=x and /result?crew=x&result=y serve the same
+// cached document as /check and /result. Non-navigation requests fall through
+// to Serwist untouched.
+self.addEventListener("fetch", (event) => {
+  const request = (event as FetchEvent).request;
+  if (request.method !== "GET" || request.mode !== "navigate") return;
+  const url = new URL(request.url);
+  const path = `${url.origin}${url.pathname}`;
+  (event as FetchEvent).respondWith(
+    (async () => {
+      const precached = await matchPrecache(path);
+      if (precached) return precached;
+      try {
+        const response = await fetch(request);
+        if (response && response.ok) {
+          const copy = await caches.open("documents");
+          await copy.put(path, response.clone());
+        }
+        return response;
+      } catch {
+        const fallback = await caches.open("documents").then((cache) => cache.match(path, { ignoreSearch: true }));
+        if (fallback) return fallback;
+        const home = await matchPrecache(`${url.origin}/`);
+        if (home) return home;
+        return Response.error();
+      }
+    })()
+  );
+});
 
 serwist.addEventListeners();
