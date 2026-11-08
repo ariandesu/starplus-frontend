@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
 import { DemoBanner } from "../dashboard/demo-badge";
+import { OutboxSync } from "../outbox-sync";
 import { deviceDb } from "@/lib/db";
 
 function useSetting(key: string, fallback: string): string {
@@ -43,6 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-full">
+      <OutboxSync />
       <TopBar
         isOpen={isOpen}
         onToggle={() => setIsOpen((prev) => !prev)}

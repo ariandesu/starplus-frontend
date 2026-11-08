@@ -8,7 +8,7 @@
  * Needs one single-use staging code in STARPLUS_STAGING_CODE_ASTRO (skips the
  * staging flow without it; CUJ 1 and CUJ 8 always run).
  *
- * Run: NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev npm run build && \
+ * Run: npm run build:staging && \
  * NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev \
  * STARPLUS_STAGING_CODE_ASTRO=<code> \
  * npx playwright test test/e2e/cuj.spec.ts --project=chromium
@@ -124,8 +124,7 @@ test("CUJ 2 self-check in under 60 seconds, CUJ 3 grey first measure, CUJ 4 esti
 
   await page.goto(`${BASE_URL}/reports?crew=${CREW}`);
   await expect(page.getByText(/emergency/i).first()).toBeVisible();
-  await page.getByRole("button", { name: /send now/i }).click();
-  await expect(page.getByRole("heading", { name: /^delivered$/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^delivered$/i })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByLabel("Delivered reports").getByText(/emergency/i)).toBeVisible({ timeout: 30_000 });
 });
 

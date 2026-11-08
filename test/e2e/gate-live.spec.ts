@@ -3,7 +3,8 @@
  * STARPLUS_STAGING_CODE_ASTRO and STARPLUS_STAGING_CODE_FMO.
  * Skips entirely when they are absent. Each code works once; re-issue for reruns.
  *
- * Run: NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev \
+ * Run: npm run build:staging && NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev \
+ *   STARPLUS_STAGING_CODE_ASTRO=<code> STARPLUS_STAGING_CODE_FMO=<code2> \
  *   npx playwright test test/e2e/gate-live.spec.ts --project=chromium
  */
 import { expect, test, type APIRequestContext } from "@playwright/test";

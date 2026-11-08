@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { checkPin, isSharedDevice, listProfiles, login, setSharedDevice } from "@/lib/session";
+import { requestOutboxSync } from "@/lib/outbox-sync";
 import type { ProfileRecord } from "@/lib/db";
 import { useEffect } from "react";
 
@@ -27,6 +28,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const session = await login(code.trim());
+      void requestOutboxSync().catch(() => undefined);
       router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Something went wrong. Try again.");

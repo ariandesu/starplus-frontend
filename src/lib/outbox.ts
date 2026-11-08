@@ -41,6 +41,17 @@ async function setNextRetryAt(when: number | null): Promise<void> {
   }
 }
 
+type QueuedListener = () => void;
+
+const queuedListeners = new Set<QueuedListener>();
+
+export function onQueued(listener: QueuedListener): () => void {
+  queuedListeners.add(listener);
+  return () => {
+    queuedListeners.delete(listener);
+  };
+}
+
 export async function enqueue(item: Omit<OutboxItem, "state" | "attempts" | "error" | "created_at">): Promise<void> {
   const db = await deviceDb();
   await db.put("outbox", {
@@ -50,6 +61,19 @@ export async function enqueue(item: Omit<OutboxItem, "state" | "attempts" | "err
     error: null,
     created_at: new Date().toISOString(),
   });
+  for (const listener of queuedListeners) {
+    try {
+      listener();
+    } catch {
+      // Listener failures must never break enqueueing.
+    }
+  }
+}
+
+export async function outboxStatus(): Promise<{ waiting: number; nextRetryAt: number | null }> {
+  const db = await deviceDb();
+  const waiting = (await db.getAll("outbox")).filter((item) => item.state === "queued").length;
+  return { waiting, nextRetryAt: await nextRetryAt() };
 }
 
 export async function enqueueMeasurement(crewId: string, record: Measurement): Promise<void> {

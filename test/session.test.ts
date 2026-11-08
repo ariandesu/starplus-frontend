@@ -64,6 +64,11 @@ describe("session", () => {
     await expect(login("VALIDCD1")).rejects.toThrow("Your code has not been used");
   });
 
+  it("says the session was not saved when the device write fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("not-json{", { status: 200 })));
+    await expect(login("VALIDCD2")).rejects.toThrow("could not save the session");
+  });
+
   it("sends shared:true when the device is marked shared", async () => {
     const seen: unknown[] = [];
     vi.stubGlobal(

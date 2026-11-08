@@ -61,22 +61,26 @@ export async function login(accessCode: string): Promise<SessionInfo> {
   if (res.status === 401) throw new Error("That code did not work. Check it and try again.");
   if (res.status === 429) throw new Error("Too many tries. Wait a minute and try again.");
   if (!res.ok) throw new Error("Something went wrong. Try again.");
-  const session = (await res.json()) as SessionInfo;
-  const db = await deviceDb();
-  const previous = await db.get("profiles", session.crew_id);
-  const record: ProfileRecord = {
-    crew_id: session.crew_id,
-    display_name: previous?.display_name ?? session.crew_id,
-    token: session.token,
-    role: session.role,
-    expires_at: session.expires_at,
-    provenance: session.provenance ?? previous?.provenance ?? null,
-    device_id: id,
-    pin_hash: previous?.pin_hash ?? null,
-    shared_device: previous?.shared_device ?? false,
-  };
-  await db.put("profiles", record);
-  return session;
+  try {
+    const session = (await res.json()) as SessionInfo;
+    const db = await deviceDb();
+    const previous = await db.get("profiles", session.crew_id);
+    const record: ProfileRecord = {
+      crew_id: session.crew_id,
+      display_name: previous?.display_name ?? session.crew_id,
+      token: session.token,
+      role: session.role,
+      expires_at: session.expires_at,
+      provenance: session.provenance ?? previous?.provenance ?? null,
+      device_id: id,
+      pin_hash: previous?.pin_hash ?? null,
+      shared_device: previous?.shared_device ?? false,
+    };
+    await db.put("profiles", record);
+    return session;
+  } catch {
+    throw new Error("Logged in, but this device could not save the session. Ask for a new code if it keeps happening.");
+  }
 }
 
 export async function logout(crewId: string): Promise<void> {
