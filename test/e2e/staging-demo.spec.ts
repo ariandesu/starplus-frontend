@@ -13,26 +13,29 @@ async function demoAvailable(page: import("@playwright/test").Page): Promise<boo
   return (await page.getByTestId("demo-astronaut").count()) > 0;
 }
 
-async function latestResultId(page: import("@playwright/test").Page, crewId: string): Promise<string> {
-  return page.evaluate(([id]) => {
-    return new Promise<string>((resolve, reject) => {
-      const open = indexedDB.open(`starplus-${id}`);
-      open.onsuccess = () => {
-        const tx = open.result.transaction("results", "readonly");
-        const got = tx.objectStore("results").getAll();
-        got.onsuccess = () => {
-          const rows = (got.result as Array<{ client_id: string; assessed_at: string }>).sort((a, b) =>
-            a.assessed_at < b.assessed_at ? 1 : -1
-          );
-          open.result.close();
-          if (rows.length === 0) reject(new Error("no results stored"));
-          else resolve(rows[0].client_id);
+async function resultIdAtOffset(page: import("@playwright/test").Page, crewId: string, offsetFromLatest: number): Promise<string> {
+  return page.evaluate(
+    ([id, offset]) => {
+      return new Promise<string>((resolve, reject) => {
+        const open = indexedDB.open(`starplus-${id}`);
+        open.onsuccess = () => {
+          const tx = open.result.transaction("results", "readonly");
+          const got = tx.objectStore("results").getAll();
+          got.onsuccess = () => {
+            const rows = (got.result as Array<{ client_id: string; assessed_at: string }>).sort((a, b) =>
+              a.assessed_at < b.assessed_at ? 1 : -1
+            );
+            open.result.close();
+            if (rows.length <= offset) reject(new Error("not enough results stored"));
+            else resolve(rows[offset].client_id);
+          };
+          got.onerror = () => reject(got.error);
         };
-        got.onerror = () => reject(got.error);
-      };
-      open.onerror = () => reject(open.error);
-    });
-  }, [crewId]);
+        open.onerror = () => reject(open.error);
+      });
+    },
+    [crewId, offsetFromLatest] as const
+  );
 }
 
 test("demo astronaut sees pre-filled history and opens the latest result", async ({ page }) => {
@@ -49,13 +52,19 @@ test("demo astronaut sees pre-filled history and opens the latest result", async
   await expect(page.locator("svg").first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/baseline band/i).first()).toBeVisible();
 
-  const resultId = await latestResultId(page, "demo-astronaut");
+  const resultId = await resultIdAtOffset(page, "demo-astronaut", 0);
   await page.goto(`${BASE_URL}/result?crew=demo-astronaut&result=${encodeURIComponent(resultId)}`);
+  await expect(page.getByRole("heading", { name: /your result/i })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("watch", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/at or beyond a watch limit/i).first()).toBeVisible();
+  await expect(page.getByText(/source:/i).first()).toBeVisible();
+  await expect(page.getByText(/explain more simply/i).first()).toBeVisible();
+
+  const criticalId = await resultIdAtOffset(page, "demo-astronaut", 2);
+  await page.goto(`${BASE_URL}/result?crew=demo-astronaut&result=${encodeURIComponent(criticalId)}`);
   await expect(page.getByRole("heading", { name: /your result/i })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("critical", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/at or beyond a critical limit/i).first()).toBeVisible();
-  await expect(page.getByText(/source:/i).first()).toBeVisible();
-  await expect(page.getByText(/explain more simply/i).first()).toBeVisible();
 });
 
 test("demo flight surgeon sees reports with a loaded photo", async ({ page }) => {
