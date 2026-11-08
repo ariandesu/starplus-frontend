@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { WaitingBanner } from "@/components/waiting-banner";
 import { profileDb } from "@/lib/db";
-import { getSession } from "@/lib/session";
+import { getSession, hasActiveSession } from "@/lib/session";
+import { onSynced } from "@/lib/outbox-sync";
+import { pendingEmergencyCount } from "@/lib/outbox";
 import type { Result } from "@starplus/core";
 
 function HomeView() {
@@ -13,7 +16,33 @@ function HomeView() {
   const crewId = params.get("crew") ?? "";
   const [ready, setReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
   const [latest, setLatest] = useState<Result | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshWaiting = async () => {
+      const [count, session] = await Promise.all([pendingEmergencyCount(), hasActiveSession()]);
+      if (!cancelled) {
+        setWaiting(count > 0);
+        setHasSession(session);
+      }
+    };
+    void refreshWaiting().catch(() => undefined);
+    const offSynced = onSynced(() => {
+      void refreshWaiting().catch(() => undefined);
+    });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshWaiting().catch(() => undefined);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      offSynced();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -65,6 +94,7 @@ function HomeView() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Today</h1>
+      <WaitingBanner waiting={waiting} hasSession={hasSession} />
       <p className="mt-1 text-sm text-muted-foreground">
         Reminder: take today&apos;s check-in — two measures, under a minute.
       </p>

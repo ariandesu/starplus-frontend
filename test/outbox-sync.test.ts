@@ -136,10 +136,12 @@ describe("outbox auto-sync", () => {
     );
     const stop = startOutboxSync();
     try {
-      await vi.waitFor(() => expect(calls).toBeGreaterThanOrEqual(1));
       const db = await deviceDb();
-      await db.put("settings", { key: "outbox_next_retry_at", value: String(Date.now() + 50) });
+      await vi.waitFor(async () => {
+        expect((await db.get("settings", "outbox_failures"))?.value).toBe("1");
+      });
       const before = calls;
+      await db.put("settings", { key: "outbox_next_retry_at", value: String(Date.now() + 50) });
       await rescheduleSync();
       await vi.waitFor(() => expect(calls).toBeGreaterThan(before), { timeout: 2000 });
     } finally {

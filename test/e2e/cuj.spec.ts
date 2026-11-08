@@ -100,7 +100,9 @@ test("CUJ 2 self-check in under 60 seconds, CUJ 3 grey first measure, CUJ 4 esti
   await page.getByLabel(/estimated, no device/i).check();
   await page.getByRole("button", { name: /^record$/i }).click();
   await expect(page.getByText(/confirm it stands/i).first()).toBeVisible();
+  const beforeUrl = page.url();
   await page.getByRole("button", { name: /confirm reading stands/i }).click();
+  await page.waitForURL((url) => url.href !== beforeUrl && url.searchParams.has("result"));
   await expect(page.getByRole("heading", { name: /your result/i })).toBeVisible();
   await expect(page.getByText("watch", { exact: true }).first()).toBeVisible();
 
