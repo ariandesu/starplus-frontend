@@ -15,20 +15,20 @@ export interface BloodPressureReading {
 export interface TemperatureReading {
   metric: "temperature_c";
   value: number;
-  unit: "degC";
+  unit: "°C";
 }
 
 export interface GlucoseReading {
   metric: "blood_glucose";
   value: number;
-  unit: "mmol/L";
+  unit: "mg/dL";
   sequenceNumber: number;
   measuredAt: string;
 }
 
 export interface PulseOximeterReading {
   spo2: { metric: "oxygen_saturation"; value: number; unit: "%" };
-  pulseRate: { metric: "heart_rate"; value: number; unit: "bpm" };
+  pulseRate: { metric: "heart_rate"; value: number; unit: "bpm" } | null;
   measuredAt: string | null;
 }
 
@@ -39,12 +39,28 @@ export interface WeightReading {
   measuredAt: string | null;
 }
 
-export function decodeSfloat(view: DataView, offset: number): number {
+const RESERVED_SFLOAT = new Set([0x07ff, 0x0800, 0x07fe, 0x0802, 0x0801]);
+const RESERVED_FLOAT = new Set([0x007fffff, 0x00800000, 0x007ffffe, 0x00800002, 0x00800001]);
+
+export const MGDL_PER_MOLL = 18_015.59;
+
+export function decodeSfloat(view: DataView, offset: number): number | null {
   const raw = view.getUint16(offset, true);
+  if (RESERVED_SFLOAT.has(raw)) return null;
   let mantissa = raw & 0x0fff;
   if (mantissa & 0x0800) mantissa -= 0x1000;
   let exponent = (raw >> 12) & 0x000f;
   if (exponent & 0x08) exponent -= 0x10;
+  return mantissa * 10 ** exponent;
+}
+
+export function decodeFloatBits(raw: number): number | null {
+  if (RESERVED_FLOAT.has(raw)) return null;
+  const bytes = new DataView(new Uint8Array(4).buffer);
+  bytes.setUint32(0, raw, true);
+  let mantissa = bytes.getUint8(0) | (bytes.getUint8(1) << 8) | (bytes.getUint8(2) << 16);
+  if (mantissa & 0x800000) mantissa -= 0x1000000;
+  const exponent = bytes.getInt8(3);
   return mantissa * 10 ** exponent;
 }
 
@@ -102,7 +118,6 @@ export function parseHeartRate(view: DataView): HeartRateReading | null {
   if ((flags & 0x08) !== 0) {
     if (view.byteLength < offset + 2) return null;
     energyExpendedKj = view.getUint16(offset, true);
-    offset += 2;
   }
   return { metric: "heart_rate", value, unit: "bpm", energyExpendedKj };
 }
@@ -113,7 +128,7 @@ export function parseBloodPressure(view: DataView): BloodPressureReading | null 
   const kpa = (flags & 0x01) !== 0;
   const systolic = decodeSfloat(view, 1);
   const diastolic = decodeSfloat(view, 3);
-  decodeSfloat(view, 5);
+  if (systolic === null || diastolic === null) return null;
   let offset = 7;
   let measuredAt: string | null = null;
   if ((flags & 0x02) !== 0) {
@@ -139,37 +154,37 @@ export function parseTemperature(view: DataView): TemperatureReading | null {
   if (view.byteLength < 5) return null;
   const flags = view.getUint8(0);
   const fahrenheit = (flags & 0x01) !== 0;
-  const raw = view.getUint32(1, true);
-  const bytes = new DataView(new ArrayBuffer(4));
-  bytes.setUint32(0, raw, true);
-  let mantissa = bytes.getUint8(0) | (bytes.getUint8(1) << 8) | (bytes.getUint8(2) << 16);
-  if (mantissa & 0x800000) mantissa -= 0x1000000;
-  const exponent = bytes.getInt8(3);
-  const celsius = fahrenheit ? ((mantissa * 10 ** exponent - 32) * 5) / 9 : mantissa * 10 ** exponent;
-  return { metric: "temperature_c", value: Math.round(celsius * 100) / 100, unit: "degC" };
+  const raw = decodeFloatBits(view.getUint32(1, true));
+  if (raw === null) return null;
+  const celsius = fahrenheit ? ((raw - 32) * 5) / 9 : raw;
+  return { metric: "temperature_c", value: Math.round(celsius * 100) / 100, unit: "°C" };
 }
 
 export function parseGlucose(view: DataView): GlucoseReading | null {
   if (view.byteLength < 10) return null;
   const flags = view.getUint8(0);
   const sequenceNumber = view.getUint16(1, true);
-  const measuredAt = decodeTimestamp(view, 3);
+  const baseTime = decodeTimestamp(view, 3);
   let offset = 10;
+  let timeOffsetMinutes = 0;
   if ((flags & 0x01) !== 0) {
     if (view.byteLength < offset + 2) return null;
+    timeOffsetMinutes = view.getInt16(offset, true);
     offset += 2;
   }
   if ((flags & 0x02) === 0) return null;
   if (view.byteLength < offset + 3) return null;
   const concentration = decodeSfloat(view, offset);
+  if (concentration === null) return null;
   const molPerLitre = (flags & 0x04) !== 0;
-  const value = molPerLitre ? concentration * 1000 : concentration * 100_000;
+  const mgPerDl = molPerLitre ? concentration * MGDL_PER_MOLL : concentration * 100_000;
+  const measuredAt = new Date(Date.parse(baseTime) + timeOffsetMinutes * 60_000).toISOString();
   return {
     metric: "blood_glucose",
-    value: Math.round(value * 100) / 100,
-    unit: "mmol/L",
+    value: Math.round(mgPerDl * 100) / 100,
+    unit: "mg/dL",
     sequenceNumber,
-    measuredAt,
+    measuredAt: measuredAt.replace(/\.\d{3}Z$/, "Z"),
   };
 }
 
@@ -177,7 +192,8 @@ export function parsePulseOximeter(view: DataView): PulseOximeterReading | null 
   if (view.byteLength < 5) return null;
   const flags = view.getUint8(0);
   const spo2 = decodeSfloat(view, 1);
-  const pulseRate = decodeSfloat(view, 3);
+  if (spo2 === null) return null;
+  const pulse = decodeSfloat(view, 3);
   const offset = 5;
   let measuredAt: string | null = null;
   if ((flags & 0x01) !== 0) {
@@ -186,7 +202,7 @@ export function parsePulseOximeter(view: DataView): PulseOximeterReading | null 
   }
   return {
     spo2: { metric: "oxygen_saturation", value: Math.round(spo2 * 100) / 100, unit: "%" },
-    pulseRate: { metric: "heart_rate", value: Math.round(pulseRate), unit: "bpm" },
+    pulseRate: pulse === null ? null : { metric: "heart_rate", value: Math.round(pulse), unit: "bpm" },
     measuredAt,
   };
 }
@@ -196,6 +212,7 @@ export function parseWeight(view: DataView): WeightReading | null {
   const flags = view.getUint8(0);
   const imperial = (flags & 0x01) !== 0;
   const raw = view.getUint16(1, true);
+  if (raw === 0xffff) return null;
   const kg = imperial ? raw * 0.01 * 0.453_592_37 : raw * 0.005;
   const offset = 3;
   let measuredAt: string | null = null;
@@ -204,6 +221,18 @@ export function parseWeight(view: DataView): WeightReading | null {
     measuredAt = decodeTimestamp(view, offset);
   }
   return { metric: "body_mass", value: Math.round(kg * 100) / 100, unit: "kg", measuredAt };
+}
+
+export function downsamplePerMinute<T extends { at: string }>(readings: T[]): T[] {
+  const seen = new Set<string>();
+  const kept: T[] = [];
+  for (const reading of [...readings].sort((a, b) => (a.at < b.at ? -1 : 1))) {
+    const minute = reading.at.slice(0, 16);
+    if (seen.has(minute)) continue;
+    seen.add(minute);
+    kept.push(reading);
+  }
+  return kept;
 }
 
 function round1(value: number): number {

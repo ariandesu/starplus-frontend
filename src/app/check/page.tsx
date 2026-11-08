@@ -241,6 +241,16 @@ function CheckForm() {
               Import a CSV or FHIR file
             </Link>
           </li>
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/check/bluetooth?crew=${encodeURIComponent(crewId)}` : "/check/bluetooth"}>
+              Connect a Bluetooth device
+            </Link>
+          </li>
+          <li>
+            <Link className="text-accent underline" href={crewId ? `/check/voice?crew=${encodeURIComponent(crewId)}` : "/check/voice"}>
+              Speak a reading
+            </Link>
+          </li>
         </ul>
       </div>
     </div>

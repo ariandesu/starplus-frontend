@@ -11,11 +11,7 @@ const TENS: Record<string, number> = {
 const SCALES: Record<string, number> = { hundred: 100, thousand: 1000 };
 
 export function parseSpokenNumber(text: string): number | null {
-  const words = text
-    .toLowerCase()
-    .replace(/[,.]/g, " ")
-    .split(/\s+/)
-    .filter((word) => word.length > 0 && word !== "and");
+  const words = normalize(text).split(/\s+/).filter((word) => word.length > 0 && word !== "and");
   if (words.length === 0) return null;
 
   let negative = false;
@@ -69,41 +65,112 @@ function parseWhole(words: string[]): number | null {
   return total + current;
 }
 
-export interface SpokenReading {
-  value: number;
-  unit: string | null;
+const SECOND_WORDS: Record<string, number> = { ...TENS };
+for (const [word, value] of Object.entries(ONES)) {
+  if (value >= 10) SECOND_WORDS[word] = value;
 }
 
-const UNIT_WORDS: Record<string, string> = {
-  bpm: "bpm",
-  "beats per minute": "bpm",
-  "beats a minute": "bpm",
-  mmhg: "mmHg",
-  percent: "%",
-  percentage: "%",
-  degrees: "degC",
-  celsius: "degC",
-  fahrenheit: "degF",
-  kilograms: "kg",
-  kilos: "kg",
-  pounds: "lb",
-};
+function parseBloodPressureNumber(words: string[]): number | null {
+  const compact = words.filter((word) => word !== "and");
+  if (compact.length === 2 && compact[0] in ONES && ONES[compact[0]] < 10 && compact[1] in SECOND_WORDS) {
+    return ONES[compact[0]] * 100 + SECOND_WORDS[compact[1]];
+  }
+  return parseWhole(compact);
+}
+
+export interface SpokenReading {
+  value: number;
+  unit: string;
+  metric: string | null;
+}
+
+interface MetricKeyword {
+  metric: string;
+  unit: string;
+  patterns: RegExp[];
+}
+
+const METRICS: MetricKeyword[] = [
+  { metric: "blood_pressure_systolic", unit: "mmHg", patterns: [/blood pressure/] },
+  { metric: "heart_rate", unit: "bpm", patterns: [/heart rate/, /heart\b/, /\bpulse\b/] },
+  { metric: "oxygen_saturation", unit: "%", patterns: [/oxygen/, /saturation/, /spo2/, /\bo2\b/] },
+  { metric: "temperature_c", unit: "°C", patterns: [/temperature/, /\btemp\b/, /fever/] },
+  { metric: "blood_glucose", unit: "mg/dL", patterns: [/blood sugar/, /glucose/, /sugar/] },
+  { metric: "body_mass", unit: "kg", patterns: [/weight/, /\bweigh\b/] },
+  { metric: "respiratory_rate", unit: "/min", patterns: [/breathing rate/, /breathing/, /\bbreath\b/, /respiratory/] },
+];
+
+const UNIT_FALLBACK: Array<{ metric: string | null; unit: string; patterns: RegExp[] }> = [
+  { metric: "heart_rate", unit: "bpm", patterns: [/beats per minute/, /beats a minute/, /\bbpm\b/] },
+  { metric: null, unit: "mmHg", patterns: [/\bmmhg\b/] },
+  { metric: "oxygen_saturation", unit: "%", patterns: [/percent/, /percentage/] },
+  { metric: "temperature_c", unit: "°C", patterns: [/degrees/, /celsius/] },
+  { metric: "temperature_c", unit: "°C", patterns: [/fahrenheit/] },
+  { metric: "body_mass", unit: "kg", patterns: [/kilograms?/, /\bkilos?\b/] },
+  { metric: "body_mass", unit: "kg", patterns: [/pounds?/, /\blbs?\b/] },
+];
+
+function normalize(text: string): string {
+  return text.toLowerCase().replace(/[,.]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function longestNumber(words: string[]): number | null {
+  for (let start = 0; start < words.length; start++) {
+    for (let end = words.length; end > start; end--) {
+      const value = parseSpokenNumber(words.slice(start, end).join(" "));
+      if (value !== null) return value;
+    }
+  }
+  return null;
+}
 
 export function extractReadings(text: string): SpokenReading[] {
-  const lowered = text.toLowerCase().replace(/[,.]/g, " ");
-  const unitPattern = Object.keys(UNIT_WORDS)
-    .sort((a, b) => b.length - a.length)
-    .join("|");
-  const pattern = new RegExp(`([a-z\\s]+?)\\s*(${unitPattern})\\b`, "g");
-  const readings: SpokenReading[] = [];
-  for (const match of lowered.matchAll(pattern)) {
-    const value = parseSpokenNumber(match[1]);
-    if (value === null) continue;
-    readings.push({ value, unit: UNIT_WORDS[match[2]] ?? null });
+  const lowered = normalize(text);
+
+  const overAt = lowered.search(/\bover\b/);
+  if (overAt !== -1) {
+    const left = longestBpNumber(lowered.slice(0, overAt));
+    const right = longestBpNumber(lowered.slice(overAt + 4));
+    if (left !== null && right !== null) {
+      return [
+        { value: left, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: right, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ];
+    }
   }
-  if (readings.length === 0) {
-    const fallback = parseSpokenNumber(lowered);
-    if (fallback !== null) readings.push({ value: fallback, unit: null });
+
+  for (const entry of METRICS) {
+    for (const pattern of entry.patterns) {
+      const match = pattern.exec(lowered);
+      if (!match || match.index === undefined) continue;
+      const after = lowered.slice(match.index + match[0].length).split(/\s+/).filter((w) => w.length > 0);
+      const value = longestNumber(after);
+      if (value !== null) return [{ value, unit: entry.unit, metric: entry.metric }];
+    }
   }
-  return readings;
+
+  for (const entry of UNIT_FALLBACK) {
+    for (const pattern of entry.patterns) {
+      const match = pattern.exec(lowered);
+      if (!match || match.index === undefined) continue;
+      const before = lowered.slice(0, match.index).split(/\s+/).filter((w) => w.length > 0);
+      const value = longestNumber(before);
+      if (value !== null) return [{ value, unit: entry.unit, metric: entry.metric }];
+    }
+  }
+
+  const bare = parseSpokenNumber(lowered);
+  if (bare !== null) return [{ value: bare, unit: "", metric: null }];
+  return [];
+}
+
+function longestBpNumber(fragment: string): number | null {
+  const words = fragment.split(/\s+/).filter((w) => w.length > 0);
+  for (let start = 0; start < words.length; start++) {
+    for (let end = words.length; end > start; end--) {
+      const value = parseBloodPressureNumber(words.slice(start, end));
+      if (value !== null) return value;
+    }
+  }
+  return null;
 }

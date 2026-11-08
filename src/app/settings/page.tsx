@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { deviceDb } from "@/lib/db";
 import { commsSummary } from "@/lib/comms-link";
+import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-settings";
 import { API_BASE } from "@/lib/api";
 
 const SETTINGS = [
@@ -33,6 +34,7 @@ export default function SettingsPage() {
   const [phase, setPhase] = useState("inflight");
   const [missionStart, setMissionStart] = useState("");
   const [blackout, setBlackout] = useState(false);
+  const [gamification, setGamification] = useState(true);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export default function SettingsPage() {
       setPhase(await getSetting("phase", "inflight"));
       setMissionStart(await getSetting("mission_start", ""));
       setBlackout((await getSetting("comms_blackout", "false")) === "true");
+      setGamification(gamificationEnabled());
       setReady(true);
     })().catch(() => setReady(true));
   }, []);
@@ -106,6 +109,20 @@ export default function SettingsPage() {
               }}
             />
             Simulate a blackout
+          </label>
+        </div>
+        <div className="rounded-xl border border-border p-4">
+          <p className="text-sm font-semibold text-foreground">Gamification</p>
+          <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={gamification}
+              onChange={(e) => {
+                setGamification(e.target.checked);
+                setGamificationEnabled(e.target.checked);
+              }}
+            />
+            Show points, streaks and patches on the Progress page
           </label>
         </div>
         <div className="rounded-xl border border-border p-4">

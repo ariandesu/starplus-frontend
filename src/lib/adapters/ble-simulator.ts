@@ -1,4 +1,4 @@
-import { encodeFloat32, encodeSfloat, encodeTimestamp } from "./ble-parse.ts";
+import { MGDL_PER_MOLL, encodeFloat32, encodeSfloat, encodeTimestamp } from "./ble-parse.ts";
 
 function bytes(...values: number[]): DataView {
   return new DataView(new Uint8Array(values).buffer);
@@ -47,15 +47,28 @@ export function simulateTemperature(celsius: number, fahrenheit = false): DataVi
   return bytes(fahrenheit ? 0x01 : 0x00, ...floatBytes(value, -2));
 }
 
-export function simulateGlucose(mmolPerL: number, sequenceNumber: number, measuredAt: string): DataView {
-  return bytes(
-    0x06,
+export function simulateGlucose(
+  mgPerDl: number,
+  sequenceNumber: number,
+  measuredAt: string,
+  options: { unit?: "mol/L" | "kg/L"; timeOffsetMinutes?: number } = {}
+): DataView {
+  const unit = options.unit ?? "mol/L";
+  const concentration = unit === "mol/L" ? mgPerDl / MGDL_PER_MOLL : mgPerDl / 100_000;
+  const exponent = unit === "mol/L" ? -5 : -6;
+  const flags = 0x02 | (unit === "mol/L" ? 0x04 : 0x00) | (options.timeOffsetMinutes !== undefined ? 0x01 : 0x00);
+  const out: number[] = [
+    flags,
     sequenceNumber & 0xff,
     (sequenceNumber >> 8) & 0xff,
     ...encodeTimestamp(measuredAt),
-    ...sfloatBytes(mmolPerL / 1000, -5),
-    0x00
-  );
+  ];
+  if (options.timeOffsetMinutes !== undefined) {
+    const offset = options.timeOffsetMinutes;
+    out.push(offset & 0xff, (offset >> 8) & 0xff);
+  }
+  out.push(...sfloatBytes(concentration, exponent), 0x00);
+  return bytes(...out);
 }
 
 export function simulatePulseOximeter(spo2Pct: number, pulseRate: number, measuredAt?: string): DataView {

@@ -12,22 +12,15 @@ import {
 } from "@starplus/core";
 import { getCrewProgress } from "@/lib/api";
 import { profileDb } from "@/lib/db";
+import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-settings";
 import { getSession } from "@/lib/session";
 import { ReadinessRing } from "@/components/readiness-ring";
-
-const STORAGE_KEY = "starplus-gamification-enabled";
 
 function ProgressView() {
   const params = useSearchParams();
   const crewId = params.get("crew") ?? "";
   const [ready, setReady] = useState(false);
-  const [enabled, setEnabled] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) !== "off";
-    } catch {
-      return true;
-    }
-  });
+  const [enabled, setEnabled] = useState(() => gamificationEnabled());
   const [today, setToday] = useState<DayScore | null>(null);
   const [streak, setStreak] = useState(0);
   const [patches, setPatches] = useState<MissionPatch[]>([]);
@@ -68,11 +61,7 @@ function ProgressView() {
 
   function toggle(next: boolean) {
     setEnabled(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next ? "on" : "off");
-    } catch {
-      /* storage unavailable */
-    }
+    setGamificationEnabled(next);
   }
 
   if (!ready) return <main className="p-6">Loading progress…</main>;

@@ -27,16 +27,38 @@ describe("parseSpokenNumber", () => {
 });
 
 describe("extractReadings", () => {
-  it("extracts a value with its unit", () => {
-    expect(extractReadings("seventy two beats per minute")).toEqual([{ value: 72, unit: "bpm" }]);
-  });
-
-  it("extracts a decimal temperature", () => {
-    expect(extractReadings("thirty seven point five degrees")).toEqual([{ value: 37.5, unit: "degC" }]);
-  });
-
-  it("falls back to a bare number without a unit", () => {
-    expect(extractReadings("ninety eight point four")).toEqual([{ value: 98.4, unit: null }]);
+  it.each([
+    ["seventy two beats per minute", [{ value: 72, unit: "bpm", metric: "heart_rate" }]],
+    ["my heart rate is seventy two", [{ value: 72, unit: "bpm", metric: "heart_rate" }]],
+    [
+      "one twenty over eighty",
+      [
+        { value: 120, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 80, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    [
+      "one hundred twenty over eighty",
+      [
+        { value: 120, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 80, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    ["oxygen ninety eight percent", [{ value: 98, unit: "%", metric: "oxygen_saturation" }]],
+    ["temperature thirty seven point two", [{ value: 37.2, unit: "°C", metric: "temperature_c" }]],
+    [
+      "blood pressure one ten over seventy",
+      [
+        { value: 110, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 70, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    ["my glucose is ninety five", [{ value: 95, unit: "mg/dL", metric: "blood_glucose" }]],
+    ["i weigh seventy eight kilos", [{ value: 78, unit: "kg", metric: "body_mass" }]],
+    ["breathing rate fourteen", [{ value: 14, unit: "/min", metric: "respiratory_rate" }]],
+    ["pulse sixty six", [{ value: 66, unit: "bpm", metric: "heart_rate" }]],
+  ])("extracts readings from %s", (text, expected) => {
+    expect(extractReadings(text)).toEqual(expected);
   });
 
   it("returns nothing for prose without numbers", () => {
