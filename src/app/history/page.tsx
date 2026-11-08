@@ -24,6 +24,19 @@ interface MetricSeries {
 
 const DAY_MS = 86_400_000;
 
+interface MeasureFilter {
+  id: string;
+  label: string;
+  codes: ReadonlySet<string> | null;
+}
+
+const MEASURE_FILTERS: MeasureFilter[] = [
+  { id: "all", label: "All", codes: null },
+  { id: "radiation", label: "Radiation", codes: new Set(["radiation_dose"]) },
+  { id: "nutrition", label: "Nutrition", codes: new Set(["calories", "water_intake"]) },
+  { id: "exercise", label: "Exercise", codes: new Set(["physical_activity"]) },
+];
+
 function buildSeries(records: Measurement[], code: string, now: number): MetricSeries | null {
   const measure = lookupMeasure(code);
   if (!measure) return null;
@@ -60,6 +73,7 @@ function HistoryView() {
   const crewId = params.get("crew") ?? "";
   const [series, setSeries] = useState<MetricSeries[]>([]);
   const [ready, setReady] = useState(false);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     (async () => {
@@ -101,20 +115,38 @@ function HistoryView() {
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">History</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Each chart shows the baseline band beside the recent readings. Typical ranges from the
+        Each chart shows the baseline band beside recent readings. Typical ranges from the
         catalog appear in the self-check form.
       </p>
-      <div className="mt-4 space-y-4">
-        {series.length === 0 && <p className="text-sm text-muted-foreground">No readings yet.</p>}
-        {series.map((entry) => (
-          <VitalChart
-            key={entry.code}
-            title={entry.label}
-            data={entry.points}
-            unit={entry.unit}
-            baselineLabel={entry.baselineLabel}
-          />
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Measure filter">
+        {MEASURE_FILTERS.map((entry) => (
+          <button
+            key={entry.id}
+            type="button"
+            aria-pressed={filter === entry.id}
+            onClick={() => setFilter(entry.id)}
+            className={`rounded-full border px-3 py-1 text-sm ${filter === entry.id ? "border-foreground font-semibold text-foreground" : "border-border text-muted-foreground"}`}
+          >
+            {entry.label}
+          </button>
         ))}
+      </div>
+      <div className="mt-4 space-y-4">
+        {(() => {
+          const active = MEASURE_FILTERS.find((item) => item.id === filter);
+          const codes = active?.codes;
+          const visible = !codes ? series : series.filter((entry) => codes.has(entry.code));
+          if (visible.length === 0) return <p className="text-sm text-muted-foreground">No readings yet.</p>;
+          return visible.map((entry) => (
+            <VitalChart
+              key={entry.code}
+              title={entry.label}
+              data={entry.points}
+              unit={entry.unit}
+              baselineLabel={entry.baselineLabel}
+            />
+          ));
+        })()}
       </div>
       {CATALOG.measures.length > 0 && (
         <p className="mt-4 text-xs text-muted-foreground">
