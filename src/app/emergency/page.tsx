@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getKbEntry, citeLabel } from "@/lib/kb";
+import { deviceDb } from "@/lib/db";
 import { enqueueReport } from "@/lib/outbox";
 import type { Report } from "@starplus/core";
 
@@ -32,19 +33,35 @@ export default function EmergencyPage() {
   const [summary, setSummary] = useState("");
   const [queued, setQueued] = useState(false);
   const [discarded, setDiscarded] = useState(false);
+  const [setting, setSetting] = useState("iss");
+
+  useEffect(() => {
+    deviceDb()
+      .then((db) => db.get("settings", "setting"))
+      .then((row) => {
+        if (row) setSetting(row.value);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const inflight = setting === "iss" || setting === "mars_transit";
 
   const steps = useMemo(() => {
     const scenario = SCENARIOS.find((s) => s.id === scenarioId);
     if (!scenario) return [];
     return scenario.entries.flatMap((id) => {
       const entry = getKbEntry(id);
-      return (entry?.text ?? []).map((text) => ({
-        entry: entry?.title ?? id,
-        source: entry?.citations[0] ? citeLabel(entry.citations[0]) : "",
-        text,
+      const variant = inflight ? entry?.inflight : undefined;
+      const text = variant?.text ?? entry?.text ?? [];
+      const citations = variant?.citations ?? entry?.citations ?? [];
+      return text.map((line) => ({
+        entry: `${entry?.title ?? id}${variant ? " (in flight)" : ""}`,
+        source: citations[0] ? citeLabel(citations[0]) : "",
+        note: !variant ? entry?.inflight?.note : undefined,
+        text: line,
       }));
     });
-  }, [scenarioId]);
+  }, [scenarioId, inflight]);
 
   const done = stepIndex >= steps.length;
 
@@ -193,6 +210,7 @@ export default function EmergencyPage() {
       <h1 className="mt-1 text-2xl font-bold text-foreground">{step.entry}</h1>
       <p className="mt-3 text-lg leading-relaxed text-foreground">{step.text}</p>
       {step.source && <p className="mt-2 text-xs text-muted-foreground">Source: {step.source}</p>}
+      {step.note && <p className="mt-2 text-xs text-muted-foreground">Note: {step.note}</p>}
       <div className="mt-6 flex gap-3">
         <button
           type="button"
