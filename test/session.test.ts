@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deviceDb } from "../src/lib/db";
-import { checkPin, getSession, login, logout, setPin } from "../src/lib/session";
+import { checkPin, getSession, isSharedDevice, login, logout, setPin, setSharedDevice } from "../src/lib/session";
 
 afterEach(async () => {
   vi.unstubAllGlobals();
@@ -43,5 +43,37 @@ describe("session", () => {
   it("throws when the code is rejected", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 401 })));
     await expect(login("ZZZZZZZZ")).rejects.toThrow();
+  });
+
+  it("sends shared:true when the device is marked shared", async () => {
+    const seen: unknown[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        seen.push(JSON.parse(init.body as string));
+        return ok({ token: "tok-shared", crew_id: "shared-crew", role: "astronaut", expires_at: "2030-01-01T00:00:00Z" });
+      })
+    );
+    await setSharedDevice(true);
+    expect(await isSharedDevice()).toBe(true);
+    await login("SHAREDCD");
+    expect(seen).toEqual([
+      expect.objectContaining({ code: "SHAREDCD", shared: true }),
+    ]);
+    await setSharedDevice(false);
+    await login("NORMALCD");
+    expect(seen[1]).toEqual(expect.not.objectContaining({ shared: true }));
+  });
+
+  it("salts the PIN hash per device", async () => {
+    await setPin("salt-crew", "1234");
+    const db = await deviceDb();
+    const salt = (await db.get("settings", "pin_salt"))?.value;
+    expect(typeof salt).toBe("string");
+    expect(salt!.length).toBeGreaterThan(0);
+    const profile = await db.get("profiles", "salt-crew");
+    expect(profile?.pin_hash).not.toContain("1234");
+    expect(await checkPin("salt-crew", "1234")).toBe(true);
+    expect(await checkPin("salt-crew", "0000")).toBe(false);
   });
 });

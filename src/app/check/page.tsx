@@ -19,7 +19,7 @@ import {
 } from "@starplus/core";
 import { MeasureForm } from "@/components/measure-form";
 import { deviceDb, profileDb } from "@/lib/db";
-import { getModelDefinition, getKbEntry } from "@/lib/kb";
+import { getModelDefinition, getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueMeasurement, enqueueResult } from "@/lib/outbox";
 import { getSession } from "@/lib/session";
 
@@ -196,7 +196,7 @@ function CheckForm() {
         <MeasureForm
           measure={measure}
           howto={kb?.text[0] ?? ""}
-          why={kb?.text[1] ?? kb?.citations[0]?.source ?? ""}
+          why={kb?.text[1] ?? (kb?.citations[0] ? citeLabel(kb.citations[0]) : "")}
           onSubmit={submit}
         />
       </div>

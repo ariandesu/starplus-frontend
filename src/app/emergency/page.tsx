@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { getKbEntry } from "@/lib/kb";
+import { getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueReport } from "@/lib/outbox";
 import type { Report } from "@starplus/core";
 
@@ -40,7 +40,7 @@ export default function EmergencyPage() {
       const entry = getKbEntry(id);
       return (entry?.text ?? []).map((text) => ({
         entry: entry?.title ?? id,
-        source: entry?.citations[0]?.source ?? "",
+        source: entry?.citations[0] ? citeLabel(entry.citations[0]) : "",
         text,
       }));
     });

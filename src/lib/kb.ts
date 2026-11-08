@@ -1,4 +1,4 @@
-import type { KbEntry } from "@starplus/core";
+import type { KbEntry, KbCitation } from "@starplus/core";
 import hazardAlteredGravity from "@starplus/core/content/kb/hazard-altered-gravity.json" with { type: "json" };
 import hazardDistance from "@starplus/core/content/kb/hazard-distance-from-earth.json" with { type: "json" };
 import hazardEnvironment from "@starplus/core/content/kb/hazard-hostile-environment.json" with { type: "json" };
@@ -77,4 +77,8 @@ export function getKbEntry(key: string): KbEntry | null {
 
 export function getModelDefinition(): ModelDefinition {
   return modelJson as unknown as ModelDefinition;
+}
+
+export function citeLabel(citation: KbCitation): string {
+  return `${citation.title} — ${citation.publisher}, ${citation.year}`;
 }

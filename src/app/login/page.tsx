@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { checkPin, listProfiles, login } from "@/lib/session";
+import { checkPin, isSharedDevice, listProfiles, login, setSharedDevice } from "@/lib/session";
 import type { ProfileRecord } from "@/lib/db";
 import { useEffect } from "react";
 
@@ -12,11 +12,13 @@ export default function LoginPage() {
   const [profiles, setProfiles] = useState<ProfileRecord[]>([]);
   const [pinCrew, setPinCrew] = useState<string | null>(null);
   const [pin, setPinValue] = useState("");
+  const [shared, setShared] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     listProfiles().then(setProfiles).catch(() => undefined);
+    isSharedDevice().then(setShared).catch(() => undefined);
   }, []);
 
   async function submitCode(event: React.FormEvent) {
@@ -70,6 +72,20 @@ export default function LoginPage() {
             {error}
           </p>
         )}
+        <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={shared}
+            onChange={(event) => {
+              setShared(event.target.checked);
+              setSharedDevice(event.target.checked).catch(() => undefined);
+            }}
+          />
+          This is a shared device
+        </label>
+        <p className="mt-1 text-xs text-muted-foreground">
+          On a shared device, sessions last 24 hours instead of 30 days.
+        </p>
         <button
           type="submit"
           disabled={busy}

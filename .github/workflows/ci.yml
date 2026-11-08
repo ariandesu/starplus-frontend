@@ -16,7 +16,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - name: core matches backend main
+      - name: core matches backend
         run: |
-          curl -fsSL https://raw.githubusercontent.com/ariandesu/starplus-backend/main/core/core.sha256 -o /tmp/backend-core.sha256
+          BRANCH="${GITHUB_REF_NAME}"
+          if curl -fsSL "https://raw.githubusercontent.com/ariandesu/starplus-backend/${BRANCH}/core/core.sha256" -o /tmp/backend-core.sha256; then
+            echo "comparing with backend branch ${BRANCH}"
+          else
+            echo "no backend branch ${BRANCH}; comparing with backend main"
+            curl -fsSL https://raw.githubusercontent.com/ariandesu/starplus-backend/main/core/core.sha256 -o /tmp/backend-core.sha256
+          fi
           diff core/core.sha256 /tmp/backend-core.sha256

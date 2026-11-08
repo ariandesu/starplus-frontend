@@ -7,7 +7,7 @@ import { CATALOG, type Measurement, type Result } from "@starplus/core";
 import { Citation, StatusTone } from "@/components/citation";
 import { ModelView } from "@/components/model-view";
 import { profileDb } from "@/lib/db";
-import { getKbEntry } from "@/lib/kb";
+import { getKbEntry, citeLabel } from "@/lib/kb";
 
 function ResultView() {
   const params = useSearchParams();
@@ -88,7 +88,7 @@ function ResultView() {
                           {line}
                         </p>
                       ))}
-                      <Citation source={kb.citations[0]?.source ?? ""} className="mt-2" />
+                      <Citation source={citeLabel(kb.citations[0])} className="mt-2" />
                       <p className="mt-1 text-xs text-muted-foreground">
                         AI-written, reviewed by the developer against the cited source.
                       </p>

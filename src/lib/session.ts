@@ -24,12 +24,33 @@ export async function deviceId(): Promise<string> {
   return id;
 }
 
+export async function deviceSalt(): Promise<string> {
+  const db = await deviceDb();
+  const existing = await db.get("settings", "pin_salt");
+  if (existing) return existing.value;
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  const salt = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  await db.put("settings", { key: "pin_salt", value: salt });
+  return salt;
+}
+
+export async function isSharedDevice(): Promise<boolean> {
+  const db = await deviceDb();
+  return (await db.get("settings", "shared_device"))?.value === "true";
+}
+
+export async function setSharedDevice(shared: boolean): Promise<void> {
+  const db = await deviceDb();
+  await db.put("settings", { key: "shared_device", value: shared ? "true" : "false" });
+}
+
 export async function login(accessCode: string): Promise<SessionInfo> {
   const id = await deviceId();
+  const shared = await isSharedDevice();
   const res = await fetch(`${API_BASE}/api/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code: accessCode, device_id: id }),
+    body: JSON.stringify({ code: accessCode, device_id: id, ...(shared ? { shared: true } : {}) }),
   });
   if (!res.ok) throw new Error("Login failed");
   const session = (await res.json()) as SessionInfo;
@@ -88,12 +109,12 @@ export async function setPin(crewId: string, pin: string): Promise<void> {
     pin_hash: null,
     shared_device: false,
   };
-  await db.put("profiles", { ...base, pin_hash: await sha256Hex(`starplus-pin:${pin}`) });
+  await db.put("profiles", { ...base, pin_hash: await sha256Hex(`starplus-pin:${await deviceSalt()}:${pin}`) });
 }
 
 export async function checkPin(crewId: string, pin: string): Promise<boolean> {
   const db = await deviceDb();
   const profile = await db.get("profiles", crewId);
   if (!profile?.pin_hash) return false;
-  return profile.pin_hash === (await sha256Hex(`starplus-pin:${pin}`));
+  return profile.pin_hash === (await sha256Hex(`starplus-pin:${await deviceSalt()}:${pin}`));
 }
