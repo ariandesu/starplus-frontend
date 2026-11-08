@@ -101,7 +101,7 @@ function SurgeonView() {
       setToken(session.token);
       setAllowed(true);
       try {
-        const body = await getReports(session.token);
+        const body = await getReports(session.token, null, "desc");
         setReports(body.reports as ReportRow[]);
       } catch {
         setError("Could not load reports. Check the link and try again.");
@@ -115,7 +115,7 @@ function SurgeonView() {
     setError(null);
     try {
       await ackReport(token, client_id);
-      const body = await getReports(token);
+      const body = await getReports(token, null, "desc");
       setReports(body.reports as ReportRow[]);
     } catch {
       setError("Acknowledgement failed. Only the flight medical officer can acknowledge.");

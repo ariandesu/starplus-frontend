@@ -53,8 +53,11 @@ export function postReport(token: string, report: unknown) {
   });
 }
 
-export function getReports(token: string, since?: string | null) {
-  const query = since ? `?since=${encodeURIComponent(since)}` : "";
+export function getReports(token: string, since?: string | null, order?: "asc" | "desc") {
+  const params = new URLSearchParams();
+  if (since) params.set("since", since);
+  if (order) params.set("order", order);
+  const query = params.size > 0 ? `?${params}` : "";
   return apiFetch<{ reports: unknown[] }>(`/api/reports${query}`, token);
 }
 
