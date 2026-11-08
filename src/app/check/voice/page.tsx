@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { lookupMeasure, type Measurement, type Phase } from "@starplus/core";
-import { extractReadings } from "@/lib/adapters/voice";
+import {
+  previewReady,
+  transcriptToPreview,
+  type EditableReading,
+} from "@/lib/adapters/voice";
 import { validateRecord } from "@/lib/adapters/validate";
 import { assessAndQueue } from "@/lib/assess-and-queue";
 import { deviceDb } from "@/lib/db";
@@ -49,12 +53,6 @@ const METRIC_OPTIONS = [
 ];
 
 const UNSUPPORTED_REASON = "This browser has no speech recognition";
-
-interface EditableReading {
-  metric: string;
-  value: string;
-  unit: string;
-}
 
 function VoiceForm() {
   const router = useRouter();
@@ -104,13 +102,7 @@ function VoiceForm() {
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const text = event.results[event.results.length - 1][0].transcript;
       setTranscript(text);
-      setReadings(
-        extractReadings(text).map((reading) => ({
-          metric: reading.metric ?? "heart_rate",
-          value: String(reading.value),
-          unit: reading.unit || lookupMeasure(reading.metric ?? "heart_rate")?.unit || "",
-        }))
-      );
+      setReadings(transcriptToPreview(text));
       setListening(false);
     };
     recognition.onerror = () => {
@@ -221,10 +213,14 @@ function VoiceForm() {
                 value={reading.metric}
                 onChange={(event) => {
                   const metric = event.target.value;
-                  updateReading(index, { metric, unit: lookupMeasure(metric)?.unit ?? reading.unit });
+                  updateReading(index, {
+                    metric,
+                    unit: metric ? (lookupMeasure(metric)?.unit ?? reading.unit) : reading.unit,
+                  });
                 }}
                 className="rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground"
               >
+                <option value="">Choose a measure</option>
                 {METRIC_OPTIONS.map((metric) => (
                   <option key={metric} value={metric}>
                     {metric}
@@ -249,7 +245,7 @@ function VoiceForm() {
           <button
             type="submit"
             data-testid="save"
-            disabled={busy}
+            disabled={busy || !previewReady(readings)}
             className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             Save result

@@ -103,6 +103,24 @@ export interface SpokenReading {
   metric: string | null;
 }
 
+export interface EditableReading {
+  metric: string;
+  value: string;
+  unit: string;
+}
+
+export function transcriptToPreview(transcript: string): EditableReading[] {
+  return extractReadings(transcript).map((reading) => ({
+    metric: reading.metric ?? "",
+    value: String(reading.value),
+    unit: reading.unit,
+  }));
+}
+
+export function previewReady(readings: EditableReading[]): boolean {
+  return readings.length > 0 && readings.every((reading) => reading.metric !== "");
+}
+
 interface MetricKeyword {
   metric: string;
   unit: string;

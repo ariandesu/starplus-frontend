@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { extractReadings, parseSpokenNumber } from "../src/lib/adapters/voice";
+import {
+  extractReadings,
+  parseSpokenNumber,
+  previewReady,
+  transcriptToPreview,
+} from "../src/lib/adapters/voice";
 
 describe("parseSpokenNumber", () => {
   it.each([
@@ -97,5 +102,19 @@ describe("extractReadings", () => {
 
   it("returns nothing for prose without numbers", () => {
     expect(extractReadings("feeling fine today")).toEqual([]);
+  });
+});
+
+describe("transcriptToPreview", () => {
+  it("leaves a bare number without a measure and blocks save", () => {
+    const rows = transcriptToPreview("one thirty");
+    expect(rows).toEqual([{ metric: "", value: "130", unit: "" }]);
+    expect(previewReady(rows)).toBe(false);
+  });
+
+  it("allows save when every row has a measure", () => {
+    const rows = transcriptToPreview("pulse sixty six");
+    expect(rows).toEqual([{ metric: "heart_rate", value: "66", unit: "bpm" }]);
+    expect(previewReady(rows)).toBe(true);
   });
 });
