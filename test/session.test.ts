@@ -24,12 +24,12 @@ describe("session", () => {
 
   it("logs in with a code and expires the session", async () => {
     const fetchMock = vi.fn(async () =>
-      ok({ token: "tok-1", crew_id: "sess-crew", role: "astronaut", expires_at: "2030-01-01T00:00:00Z" })
+      ok({ token: "tok-1", crew_id: "sess-crew", role: "astronaut", expires_at: "2030-01-01T00:00:00Z", provenance: "real" })
     );
     vi.stubGlobal("fetch", fetchMock);
     const session = await login("ABCDEFGH");
     expect(session.crew_id).toBe("sess-crew");
-    expect(await getSession("sess-crew")).toMatchObject({ token: "tok-1" });
+    expect(await getSession("sess-crew")).toMatchObject({ token: "tok-1", provenance: "real" });
 
     const db = await deviceDb();
     const profile = await db.get("profiles", "sess-crew");

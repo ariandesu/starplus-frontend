@@ -185,6 +185,7 @@ export async function flush(now = Date.now()): Promise<FlushOutcome> {
         });
         if (!res.ok) throw new Error(`report ${res.status}`);
         await db.delete("outbox", report.client_id);
+        await markReportDelivered(session.crew_id, report);
         outcome.sent += 1;
       } catch (error) {
         failures += 1;
@@ -213,6 +214,11 @@ export async function flush(now = Date.now()): Promise<FlushOutcome> {
   return outcome;
 }
 
+async function markReportDelivered(crewId: string, report: Report): Promise<void> {
+  const pdb = await profileDb(crewId);
+  await pdb.put("reports", { ...report, submitted_by: crewId, received_at: report.received_at || new Date().toISOString() });
+}
+
 async function flushOrphanEmergencies(outcome: FlushOutcome): Promise<void> {
   const db = await deviceDb();
   const queued = (await db.getAll("outbox")).filter(
@@ -238,6 +244,7 @@ async function flushOrphanEmergencies(outcome: FlushOutcome): Promise<void> {
       });
       if (!res.ok) throw new Error(`report ${res.status}`);
       await db.delete("outbox", item.client_id);
+      await markReportDelivered(sender.crew_id, { ...report, submitted_by: sender.crew_id });
       outcome.sent += 1;
     } catch (error) {
       await db.put("outbox", {

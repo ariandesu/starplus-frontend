@@ -18,6 +18,7 @@ export interface ProfileRecord {
   token: string | null;
   role: string | null;
   expires_at: string | null;
+  provenance: string | null;
   device_id: string;
   pin_hash: string | null;
   shared_device: boolean;

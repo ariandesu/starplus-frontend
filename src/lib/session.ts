@@ -8,6 +8,7 @@ export interface SessionInfo {
   crew_id: string;
   role: string;
   expires_at: string;
+  provenance: string;
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -62,6 +63,7 @@ export async function login(accessCode: string): Promise<SessionInfo> {
     token: session.token,
     role: session.role,
     expires_at: session.expires_at,
+    provenance: session.provenance ?? previous?.provenance ?? null,
     device_id: id,
     pin_hash: previous?.pin_hash ?? null,
     shared_device: previous?.shared_device ?? false,
@@ -87,6 +89,7 @@ export async function getSession(crewId: string): Promise<SessionInfo | null> {
     crew_id: profile.crew_id,
     role: profile.role ?? "astronaut",
     expires_at: profile.expires_at,
+    provenance: profile.provenance ?? "real",
   };
 }
 
@@ -105,6 +108,7 @@ export async function setPin(crewId: string, pin: string): Promise<void> {
     token: null,
     role: null,
     expires_at: null,
+    provenance: null,
     device_id: await deviceId(),
     pin_hash: null,
     shared_device: false,

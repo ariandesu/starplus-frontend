@@ -69,6 +69,7 @@ async function seedSession(crewId: string, token: string): Promise<void> {
     token,
     role: "astronaut",
     expires_at: "2030-01-01T00:00:00Z",
+    provenance: "real",
     device_id: "device-1",
     pin_hash: null,
     shared_device: false,

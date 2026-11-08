@@ -97,7 +97,7 @@ function ReportsView() {
       {delivered.length === 0 ? (
         <p className="mt-1 text-sm text-muted-foreground">Nothing delivered yet.</p>
       ) : (
-        <ul className="mt-2 space-y-2">
+        <ul aria-label="Delivered reports" className="mt-2 space-y-2">
           {delivered.map((report) => (
             <li key={report.client_id} className="rounded-xl border border-border p-3 text-sm">
               <span className="font-semibold">{report.kind}</span> · delivered

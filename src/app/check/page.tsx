@@ -74,12 +74,14 @@ function CheckForm() {
     setNotice(null);
     try {
       const device_id = (await (await deviceDb()).get("settings", "device_id"))?.value ?? "unknown-device";
+      const session = await getSession(crewId);
       const base = {
         crew_id: crewId,
         device_id,
         setting,
         phase,
-        provenance: "real" as const,
+        provenance: (session?.provenance ?? "real") as "real" | "synthetic" | "simulated_device",
+        confirmed_by_user: false,
       };
       const capture_id = needsPair ? crypto.randomUUID() : undefined;
       const drafts = [{ ...draft, capture_id }];
