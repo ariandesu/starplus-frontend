@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getKbEntry, citeLabel } from "@/lib/kb";
 import { deviceDb } from "@/lib/db";
-import { enqueueReport } from "@/lib/outbox";
+import { enqueueReport, pendingEmergencyCount } from "@/lib/outbox";
+import { onSynced } from "@/lib/outbox-sync";
+import { hasActiveSession } from "@/lib/session";
 import type { Report } from "@starplus/core";
 
 const SCENARIOS: Array<{ id: string; label: string; entries: string[] }> = [
@@ -32,8 +34,34 @@ export default function EmergencyPage() {
   const [subject, setSubject] = useState("unknown crewmate");
   const [summary, setSummary] = useState("");
   const [queued, setQueued] = useState(false);
+  const [waiting, setWaiting] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
   const [discarded, setDiscarded] = useState(false);
   const [setting, setSetting] = useState("iss");
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshWaiting = async () => {
+      const [count, session] = await Promise.all([pendingEmergencyCount(), hasActiveSession()]);
+      if (!cancelled) {
+        setWaiting(count > 0);
+        setHasSession(session);
+      }
+    };
+    void refreshWaiting().catch(() => undefined);
+    const offSynced = onSynced(() => {
+      void refreshWaiting().catch(() => undefined);
+    });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshWaiting().catch(() => undefined);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      offSynced();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   useEffect(() => {
     deviceDb()
@@ -90,6 +118,7 @@ export default function EmergencyPage() {
       acknowledged_at: null,
     };
     await enqueueReport(null, report);
+    setWaiting(true);
     setQueued(true);
   }
 
@@ -107,9 +136,13 @@ export default function EmergencyPage() {
   if (queued) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Report queued</h1>
+        <h1 className="text-2xl font-bold text-foreground">{waiting ? "Report queued" : "Report sent"}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Queued — will send when the link returns. 1 emergency report waiting — log in to send it.
+          {waiting
+            ? hasSession
+              ? "Queued — will send when the link returns. 1 emergency report waiting — sending when the link is up."
+              : "Queued — will send when the link returns. 1 emergency report waiting — log in to send it."
+            : "Sent to the flight surgeon."}
         </p>
         <Link href="/" className="mt-4 inline-block text-sm font-medium text-accent underline">
           Back home

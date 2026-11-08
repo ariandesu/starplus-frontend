@@ -90,6 +90,13 @@ export async function logout(crewId: string): Promise<void> {
   await db.put("profiles", { ...profile, token: null, role: null, expires_at: null });
 }
 
+export async function hasActiveSession(): Promise<boolean> {
+  for (const profile of await listProfiles()) {
+    if (await getSession(profile.crew_id)) return true;
+  }
+  return false;
+}
+
 export async function getSession(crewId: string): Promise<SessionInfo | null> {
   const db = await deviceDb();
   const profile = await db.get("profiles", crewId);

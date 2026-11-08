@@ -3,6 +3,7 @@ import { deviceDb } from "../src/lib/db";
 import { enqueue, flush, outboxStatus } from "../src/lib/outbox";
 import {
   cancelScheduledSync,
+  onSynced,
   requestOutboxSync,
   rescheduleSync,
   startOutboxSync,
@@ -250,6 +251,31 @@ describe("outbox auto-sync", () => {
     expect(await outboxStatus()).toMatchObject({ waiting: 0 });
   });
 
+  it("carries force into the follow-up send after a failure", async () => {
+    await seedSession();
+    await seedQueued("m-f1");
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let calls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        calls += 1;
+        await gate;
+        throw new TypeError("offline");
+      })
+    );
+    const first = requestOutboxSync();
+    await vi.waitFor(() => expect(calls).toBe(1));
+    const forced = requestOutboxSync({ force: true });
+    release();
+    await first.catch(() => undefined);
+    await forced.catch(() => undefined);
+    await vi.waitFor(() => expect(calls).toBeGreaterThanOrEqual(2), { timeout: 2000 });
+  });
+
   it("never sends two batches at once", async () => {
     await seedSession();
     await seedQueued("m-a");
@@ -294,5 +320,36 @@ describe("outbox auto-sync", () => {
     await rescheduleSync();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("fires onSynced after a send that delivers something", async () => {
+    await seedSession();
+    await seedQueued();
+    const seen: string[] = [];
+    const off = onSynced(() => {
+      seen.push("synced");
+    });
+    try {
+      vi.stubGlobal("fetch", vi.fn(async () => okBatch(["m-sync"])));
+      await requestOutboxSync();
+      expect(seen).toEqual(["synced"]);
+    } finally {
+      off();
+    }
+  });
+
+  it("does not fire onSynced after a send that changed nothing", async () => {
+    await seedSession();
+    const seen: string[] = [];
+    const off = onSynced(() => {
+      seen.push("synced");
+    });
+    try {
+      vi.stubGlobal("fetch", vi.fn(async () => okBatch([])));
+      await requestOutboxSync();
+      expect(seen).toEqual([]);
+    } finally {
+      off();
+    }
   });
 });

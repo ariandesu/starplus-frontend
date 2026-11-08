@@ -5,7 +5,8 @@ import { Suspense, useEffect, useState } from "react";
 import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
 import type { Report } from "@starplus/core";
-import { requestOutboxSync } from "@/lib/outbox-sync";
+import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
+import { hasActiveSession } from "@/lib/session";
 
 async function loadView(crewId: string) {
   const db = await deviceDb();
@@ -33,6 +34,7 @@ function ReportsView() {
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
+  const [hasSession, setHasSession] = useState(false);
   const [demoPaused, setDemoPaused] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -41,17 +43,34 @@ function ReportsView() {
     setPending(view.mine);
     setDelivered(view.delivered);
     setEmergencyWaiting(view.emergencyWaiting);
+    setHasSession(await hasActiveSession());
   }
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const view = await loadView(crewId);
+      if (cancelled) return;
       setPending(view.mine);
       setDelivered(view.delivered);
       setEmergencyWaiting(view.emergencyWaiting);
+      setHasSession(await hasActiveSession());
       const db = await deviceDb();
+      if (cancelled) return;
       setDemoPaused((await db.get("settings", "demo_mode"))?.value === "true");
     })().catch(() => undefined);
+    const offSynced = onSynced(() => {
+      void refresh().catch(() => undefined);
+    });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh().catch(() => undefined);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      offSynced();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [crewId]);
 
   async function sendNow() {
@@ -69,7 +88,9 @@ function ReportsView() {
       <h1 className="text-2xl font-bold text-foreground">Reports</h1>
       {emergencyWaiting > 0 && (
         <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          1 emergency report waiting — log in to send it.
+          {hasSession
+            ? "1 emergency report waiting — sending when the link is up."
+            : "1 emergency report waiting — log in to send it."}
         </p>
       )}
       {demoPaused && (

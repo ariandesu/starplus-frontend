@@ -1,9 +1,41 @@
 import { flush, onQueued, outboxStatus, type FlushOutcome } from "./outbox";
+import { deviceDb } from "./db";
 import { getSession, listProfiles } from "./session";
 
 let inFlight: Promise<FlushOutcome> | null = null;
 let dirty = false;
+let dirtyForce = false;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+type SyncedListener = () => void;
+
+const syncedListeners = new Set<SyncedListener>();
+
+export function onSynced(listener: SyncedListener): () => void {
+  syncedListeners.add(listener);
+  return () => {
+    syncedListeners.delete(listener);
+  };
+}
+
+function notifySynced(): void {
+  for (const listener of syncedListeners) {
+    try {
+      listener();
+    } catch {
+      // Listener failures must never break syncing.
+    }
+  }
+}
+
+async function outboxFingerprint(): Promise<string> {
+  const db = await deviceDb();
+  const items = await db.getAll("outbox");
+  return items
+    .map((item) => `${item.client_id}:${item.state}:${item.attempts}:${item.error ?? ""}`)
+    .sort()
+    .join("|");
+}
 
 export function cancelScheduledSync(): void {
   if (retryTimer !== null) {
@@ -30,17 +62,28 @@ export function requestOutboxSync(options?: { force?: boolean }): Promise<FlushO
   }
   if (inFlight) {
     dirty = true;
+    dirtyForce = dirtyForce || options?.force === true;
     return inFlight;
   }
   inFlight = (async () => {
+    const before = await outboxFingerprint();
+    let changed = false;
     try {
-      return await flush(Date.now(), options);
+      const outcome = await flush(Date.now(), options);
+      if (outcome.sent > 0 || outcome.failed > 0) changed = true;
+      return outcome;
     } finally {
       inFlight = null;
       await rescheduleSync();
+      if (!changed) {
+        changed = (await outboxFingerprint()) !== before;
+      }
+      if (changed) notifySynced();
       if (dirty) {
         dirty = false;
-        void requestOutboxSync().catch(() => undefined);
+        const force = dirtyForce;
+        dirtyForce = false;
+        void requestOutboxSync(force ? { force: true } : undefined).catch(() => undefined);
       }
     }
   })();
@@ -62,6 +105,7 @@ export function startOutboxSync(): () => void {
   };
   window.addEventListener("online", onOnline);
   const offQueued = onQueued(() => {
+    notifySynced();
     void requestOutboxSync().catch(() => undefined);
   });
   let stopped = false;
