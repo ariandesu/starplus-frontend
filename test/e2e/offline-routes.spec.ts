@@ -33,12 +33,8 @@ async function waitForPrecachedResult(page: import("@playwright/test").Page): Pr
   await page.waitForTimeout(8000);
 }
 
-test("offline loads never-visited query URLs from the precache", async ({ page, context, browserName }) => {
+test("offline loads never-visited query URLs from the precache", async ({ page, context }) => {
   test.setTimeout(180_000);
-  test.fixme(
-    browserName === "chromium",
-    "Chromium offline emulation intermittently drops a committed navigation back to the previous page; see starplus-backend/docs/progress/phase-3.md M2 evidence. Tracked, not retried."
-  );
   await page.goto(`${BASE_URL}/`);
   await expect(page.getByRole("heading", { name: /STAR PLUS self-check/i })).toBeVisible();
   await waitForPrecachedResult(page);

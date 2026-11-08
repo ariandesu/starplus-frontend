@@ -42,7 +42,26 @@ describe("session", () => {
 
   it("throws when the code is rejected", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 401 })));
-    await expect(login("ZZZZZZZZ")).rejects.toThrow();
+    await expect(login("ZZZZZZZZ")).rejects.toThrow("That code did not work");
+  });
+
+  it("tells a wrong code from a rate limit from a server error", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 401 })));
+    await expect(login("BADCODE1")).rejects.toThrow("That code did not work");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("slow", { status: 429 })));
+    await expect(login("BADCODE2")).rejects.toThrow("Too many tries");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("oops", { status: 500 })));
+    await expect(login("BADCODE3")).rejects.toThrow("Something went wrong");
+  });
+
+  it("says the code was not used when the server cannot be reached", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      })
+    );
+    await expect(login("VALIDCD1")).rejects.toThrow("Your code has not been used");
   });
 
   it("sends shared:true when the device is marked shared", async () => {

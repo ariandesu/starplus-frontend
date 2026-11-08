@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "build:staging": "NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev next build --webpack",
     "start": "next start -p 3100",
     "lint": "eslint",
     "test": "vitest run",

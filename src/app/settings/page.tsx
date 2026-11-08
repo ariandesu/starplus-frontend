@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { deviceDb } from "@/lib/db";
 import { commsSummary } from "@/lib/comms-link";
+import { API_BASE } from "@/lib/api";
 
 const SETTINGS = [
   { value: "iss", label: "ISS" },
@@ -113,6 +114,9 @@ export default function SettingsPage() {
             Measurements are scored on this device first and copied to the server when a link
             returns. The phone PIN is a screen lock only — it does not encrypt stored data.
             Demo data never leaves this device and is never sent.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Server: {API_BASE.replace(/^https?:\/\//, "")}
           </p>
         </div>
       </div>

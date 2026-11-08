@@ -48,12 +48,19 @@ export async function setSharedDevice(shared: boolean): Promise<void> {
 export async function login(accessCode: string): Promise<SessionInfo> {
   const id = await deviceId();
   const shared = await isSharedDevice();
-  const res = await fetch(`${API_BASE}/api/auth`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code: accessCode, device_id: id, ...(shared ? { shared: true } : {}) }),
-  });
-  if (!res.ok) throw new Error("Login failed");
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/auth`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: accessCode, device_id: id, ...(shared ? { shared: true } : {}) }),
+    });
+  } catch {
+    throw new Error("Can't reach the server. Check the connection and try again. Your code has not been used.");
+  }
+  if (res.status === 401) throw new Error("That code did not work. Check it and try again.");
+  if (res.status === 429) throw new Error("Too many tries. Wait a minute and try again.");
+  if (!res.ok) throw new Error("Something went wrong. Try again.");
   const session = (await res.json()) as SessionInfo;
   const db = await deviceDb();
   const previous = await db.get("profiles", session.crew_id);

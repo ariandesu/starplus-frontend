@@ -28,8 +28,8 @@ export default function LoginPage() {
     try {
       const session = await login(code.trim());
       router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
-    } catch {
-      setError("That code did not work. Check it and try again.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
     } finally {
       setBusy(false);
     }
