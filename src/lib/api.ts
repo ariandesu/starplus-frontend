@@ -70,3 +70,7 @@ export function getCrewResults(token: string, crew_id: string, since?: string | 
   if (since) params.set("since", since);
   return apiFetch<{ results: unknown[]; cursor: string | null }>(`/api/crew/results?${params}`, token);
 }
+
+export function getCrewProgress(token: string) {
+  return apiFetch<{ window_days: number; readiness_pct: number }>("/api/crew/progress", token);
+}

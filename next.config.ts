@@ -5,7 +5,7 @@ const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   reloadOnOnline: false,
-  additionalPrecacheEntries: ["/", "/login", "/check", "/check/questionnaire", "/check/reaction", "/emergency", "/reports", "/result", "/history", "/surgeon", "/settings", "/demo", "/body", "/import"],
+  additionalPrecacheEntries: ["/", "/login", "/check", "/check/questionnaire", "/check/reaction", "/emergency", "/reports", "/result", "/history", "/surgeon", "/settings", "/demo", "/body", "/import", "/progress", "/medicines"],
   disable: process.env.NODE_ENV === "development",
 });
 
