@@ -14,6 +14,10 @@ describe("parseSpokenNumber", () => {
     ["minus five", -5],
     ["negative twelve", -12],
     ["one hundred", 100],
+    ["one thirty five", 135],
+    ["one oh five", 105],
+    ["two ten", 210],
+    ["thirty five", 35],
   ])("parses %s as %s", (text, expected) => {
     expect(parseSpokenNumber(text)).toBe(expected);
   });
@@ -57,6 +61,36 @@ describe("extractReadings", () => {
     ["i weigh seventy eight kilos", [{ value: 78, unit: "kg", metric: "body_mass" }]],
     ["breathing rate fourteen", [{ value: 14, unit: "/min", metric: "respiratory_rate" }]],
     ["pulse sixty six", [{ value: 66, unit: "bpm", metric: "heart_rate" }]],
+    [
+      "one thirty five over eighty five",
+      [
+        { value: 135, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 85, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    [
+      "one oh five over seventy",
+      [
+        { value: 105, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 70, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    [
+      "one forty over ninety",
+      [
+        { value: 140, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 90, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    [
+      "ninety five over sixty",
+      [
+        { value: 95, unit: "mmHg", metric: "blood_pressure_systolic" },
+        { value: 60, unit: "mmHg", metric: "blood_pressure_diastolic" },
+      ],
+    ],
+    ["pulse one oh two", [{ value: 102, unit: "bpm", metric: "heart_rate" }]],
+    ["thirty five", [{ value: 35, unit: "", metric: null }]],
   ])("extracts readings from %s", (text, expected) => {
     expect(extractReadings(text)).toEqual(expected);
   });

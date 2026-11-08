@@ -42,7 +42,23 @@ function parseWhole(words: string[]): number | null {
   let total = 0;
   let current = 0;
   let seen = false;
-  for (const word of words) {
+  let index = 0;
+  while (index < words.length) {
+    const word = words[index];
+    if (
+      word in ONES && ONES[word] >= 1 && ONES[word] <= 9 &&
+      index + 1 < words.length && (words[index + 1] in HUNDREDS_NEXT || words[index + 1] === "oh")
+    ) {
+      current += ONES[word] * 100;
+      seen = true;
+      index += 1;
+      continue;
+    }
+    if (word === "oh") {
+      seen = true;
+      index += 1;
+      continue;
+    }
     if (word in ONES) {
       current += ONES[word];
       seen = true;
@@ -60,14 +76,17 @@ function parseWhole(words: string[]): number | null {
     } else {
       return null;
     }
+    index += 1;
   }
   if (!seen) return null;
   return total + current;
 }
 
 const SECOND_WORDS: Record<string, number> = { ...TENS };
+const HUNDREDS_NEXT: Record<string, number> = { ...TENS };
 for (const [word, value] of Object.entries(ONES)) {
   if (value >= 10) SECOND_WORDS[word] = value;
+  if (value >= 10 && value < 100) HUNDREDS_NEXT[word] = value;
 }
 
 function parseBloodPressureNumber(words: string[]): number | null {
