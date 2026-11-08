@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn } from "lucide-react";
+import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn, ChartLine, Stethoscope, Settings, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
@@ -17,12 +17,16 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-// The dashboard is a single page, so nav items jump to its sections.
+// App routes for the self-check app.
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Self-check", href: "/check", icon: HeartPulse },
+  { label: "History", href: "/history", icon: ChartLine },
   { label: "Emergency", href: "/emergency", icon: Siren },
   { label: "Reports", href: "/reports", icon: FileText },
+  { label: "Surgeon", href: "/surgeon", icon: Stethoscope },
+  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Demo", href: "/demo", icon: FlaskConical },
   { label: "Login", href: "/login", icon: LogIn },
 ];
 

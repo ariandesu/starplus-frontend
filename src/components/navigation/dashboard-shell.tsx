@@ -4,6 +4,7 @@ import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
+import { DemoBanner } from "../dashboard/demo-badge";
 import { deviceDb } from "@/lib/db";
 
 function useSetting(key: string, fallback: string): string {
@@ -22,11 +23,23 @@ function useSetting(key: string, fallback: string): string {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const close = useCallback(() => setIsOpen(false), []);
-  const [demo] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "1"
-  );
+  const [demo, setDemo] = useState(false);
   const setting = useSetting("setting", "iss");
   const phase = useSetting("phase", "inflight");
+
+  useEffect(() => {
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const db = await deviceDb();
+      if (params.get("demo") === "1") {
+        await db.put("settings", { key: "demo_mode", value: "true" });
+        setDemo(true);
+      } else {
+        const row = await db.get("settings", "demo_mode");
+        if (row?.value === "true") setDemo(true);
+      }
+    })().catch(() => undefined);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -36,11 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         trailing={<EmergencyButton />}
         context={`${setting} · ${phase}`}
       />
-      {demo && (
-        <div role="status" className="bg-accent px-4 py-2 text-center text-sm font-semibold text-accent-foreground">
-          Demo mode — all data shown is synthetic and stays on this device.
-        </div>
-      )}
+      {demo && <DemoBanner />}
       <MobileNav isOpen={isOpen} onClose={close} />
       <main className="flex-1 overflow-x-hidden">{children}</main>
     </div>

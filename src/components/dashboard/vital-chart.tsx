@@ -7,18 +7,21 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface VitalChartProps {
   title: string;
-  data: Array<{ name: string; value: number }>;
+  data: Array<{ name: string; value: number; low?: number; high?: number }>;
   unit: string;
+  baselineLabel?: string;
   className?: string;
 }
 
-export function VitalChart({ title, data, unit, className }: VitalChartProps) {
+export function VitalChart({ title, data, unit, baselineLabel, className }: VitalChartProps) {
+  const hasBand = data.some((point) => point.low !== undefined && point.high !== undefined);
   return (
     <Card className={cn(className)}>
       <CardHeader>
         <CardTitle className="text-sm">
           {title} <span className="font-normal text-muted">({unit})</span>
         </CardTitle>
+        {baselineLabel && <p className="text-xs text-muted-foreground">{baselineLabel}</p>}
       </CardHeader>
       <CardContent>
         <div className="h-56 w-full">
@@ -28,6 +31,12 @@ export function VitalChart({ title, data, unit, className }: VitalChartProps) {
               <XAxis dataKey="name" stroke="#71717A" fontSize={11} tickLine={false} />
               <YAxis stroke="#71717A" fontSize={11} tickLine={false} domain={["auto", "auto"]} />
               <Tooltip formatter={(value) => [`${value ?? "-"} ${unit}`, title]} />
+              {hasBand && (
+                <>
+                  <Line type="monotone" dataKey="low" stroke="#94A3B8" strokeDasharray="4 4" strokeWidth={1} dot={false} />
+                  <Line type="monotone" dataKey="high" stroke="#94A3B8" strokeDasharray="4 4" strokeWidth={1} dot={false} />
+                </>
+              )}
               <Line
                 type="monotone"
                 dataKey="value"

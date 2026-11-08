@@ -93,12 +93,13 @@ export interface FlushOutcome {
 
 export async function flush(now = Date.now()): Promise<FlushOutcome> {
   const outcome: FlushOutcome = { sent: 0, failed: 0, nextRetryAt: null };
+  const db = await deviceDb();
+  if ((await db.get("settings", "demo_mode"))?.value === "true") return outcome;
   const retryAt = await nextRetryAt();
   if (retryAt !== null && now < retryAt) {
     outcome.nextRetryAt = retryAt;
     return outcome;
   }
-  const db = await deviceDb();
   const queued = (await db.getAll("outbox")).filter((item) => item.state === "queued");
   if (queued.length === 0) {
     await setNextRetryAt(null);

@@ -1,21 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { CATALOG, type Measurement, type Result } from "@starplus/core";
+import { CATALOG, assess, type Measurement, type Result } from "@starplus/core";
 import { Citation, StatusTone } from "@/components/citation";
 import { ModelView } from "@/components/model-view";
 import { profileDb } from "@/lib/db";
+import { enqueueResult } from "@/lib/outbox";
 import { getKbEntry, citeLabel } from "@/lib/kb";
 
 function ResultView() {
+  const router = useRouter();
   const params = useSearchParams();
   const crewId = params.get("crew") ?? "";
   const resultId = params.get("result") ?? "";
   const [result, setResult] = useState<Result | null>(null);
   const [records, setRecords] = useState<Measurement[]>([]);
   const [simpleId, setSimpleId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  async function confirmEstimate(clientId: string, phase: string) {
+    if (!crewId || confirming) return;
+    setConfirming(clientId);
+    try {
+      const db = await profileDb(crewId);
+      const record = await db.get("measurements", clientId);
+      if (!record) return;
+      await db.put("measurements", { ...record, confirmed_by_user: 1 as const });
+      const history = await db.getAll("measurements");
+      const next = await assess(history, { now: Date.now(), phase: phase as "preflight" | "inflight" | "surface" | "postflight", model: null });
+      await enqueueResult(crewId, next);
+      router.push(`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(next.client_id)}`);
+    } finally {
+      setConfirming(null);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -61,10 +81,20 @@ function ResultView() {
               </p>
               <Citation source={measure?.limit_source ?? ""} className="mt-1" />
               {entry.values.confirm_required && (
-                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  Estimated and abnormal: re-measure with a device, or confirm it stands and tell
-                  the crew medical officer.
-                </p>
+                <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  <p>
+                    Estimated and abnormal: re-measure with a device, or confirm it stands and tell
+                    the crew medical officer.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={confirming === entry.values.client_id}
+                    onClick={() => confirmEstimate(entry.values.client_id, record?.phase ?? "inflight")}
+                    className="mt-2 rounded-lg bg-amber-700 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    Confirm reading stands
+                  </button>
+                </div>
               )}
               {entry.values.refuted.length > 0 && (
                 <p className="mt-2 text-sm text-muted-foreground">
