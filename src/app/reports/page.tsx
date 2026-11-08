@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
 import type { Report } from "@starplus/core";
@@ -38,23 +38,19 @@ function ReportsView() {
   const [demoPaused, setDemoPaused] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const view = await loadView(crewId);
     setPending(view.mine);
     setDelivered(view.delivered);
     setEmergencyWaiting(view.emergencyWaiting);
     setHasSession(await hasActiveSession());
-  }
+  }, [crewId]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const view = await loadView(crewId);
+      await refresh();
       if (cancelled) return;
-      setPending(view.mine);
-      setDelivered(view.delivered);
-      setEmergencyWaiting(view.emergencyWaiting);
-      setHasSession(await hasActiveSession());
       const db = await deviceDb();
       if (cancelled) return;
       setDemoPaused((await db.get("settings", "demo_mode"))?.value === "true");
@@ -71,7 +67,7 @@ function ReportsView() {
       offSynced();
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [crewId]);
+  }, [refresh]);
 
   async function sendNow() {
     setBusy(true);
