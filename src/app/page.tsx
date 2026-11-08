@@ -86,6 +86,12 @@ function HomeView() {
           >
             Emergency
           </Link>
+          <Link
+            href="/login"
+            className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground"
+          >
+            Try the demo
+          </Link>
         </div>
       </div>
     );

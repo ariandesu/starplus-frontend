@@ -22,6 +22,7 @@ export interface ProfileRecord {
   device_id: string;
   pin_hash: string | null;
   shared_device: boolean;
+  demo?: boolean;
 }
 
 export interface SettingRecord {

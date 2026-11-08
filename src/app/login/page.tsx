@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { checkPin, isSharedDevice, listProfiles, login, setSharedDevice } from "@/lib/session";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { checkPin, isSharedDevice, listProfiles, login, loginDemo, pullHistory, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
 import type { ProfileRecord } from "@/lib/db";
-import { useEffect } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const [code, setCode] = useState("");
   const [profiles, setProfiles] = useState<ProfileRecord[]>([]);
   const [pinCrew, setPinCrew] = useState<string | null>(null);
@@ -16,24 +16,67 @@ export default function LoginPage() {
   const [shared, setShared] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [demoState, setDemoState] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     listProfiles().then(setProfiles).catch(() => undefined);
     isSharedDevice().then(setShared).catch(() => undefined);
   }, []);
 
+  async function enterDemo(role: "astronaut" | "flight_medical_officer") {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setError(null);
+    setDemoState(role === "astronaut" ? "Opening the demo…" : "Opening the surgeon demo…");
+    try {
+      const session = await loginDemo(role);
+      setDemoState("Loading demo history…");
+      try {
+        await pullHistory(session.crew_id, session.token);
+      } catch {
+        /* offline: local data still works */
+      }
+      setDone(true);
+      router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
+      setDemoState(null);
+    } finally {
+      setBusy(false);
+      inFlight.current = false;
+    }
+  }
+
+  useEffect(() => {
+    const demo = params.get("demo");
+    if (demo !== "astronaut" && demo !== "surgeon") return;
+    const role = demo === "astronaut" ? ("astronaut" as const) : ("flight_medical_officer" as const);
+    (async () => {
+      await enterDemo(role);
+    })().catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
+
   async function submitCode(event: React.FormEvent) {
     event.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setError(null);
     try {
       const session = await login(code.trim());
+      setCode("");
+      setDone(true);
       void requestOutboxSync().catch(() => undefined);
       router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
     } finally {
       setBusy(false);
+      inFlight.current = false;
     }
   }
 
@@ -55,7 +98,34 @@ export default function LoginPage() {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Log in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <section aria-label="Trying the demo" className="mt-4 rounded-xl border border-border p-4">
+        <h2 className="text-sm font-semibold text-foreground">Trying the demo?</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          One tap, no code. A pre-filled month of synthetic data, ready to explore.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            data-testid="demo-astronaut"
+            onClick={() => void enterDemo("astronaut")}
+            disabled={busy}
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+          >
+            Demo astronaut
+          </button>
+          <button
+            type="button"
+            data-testid="demo-surgeon"
+            onClick={() => void enterDemo("flight_medical_officer")}
+            disabled={busy}
+            className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
+          >
+            Demo flight surgeon
+          </button>
+        </div>
+        {demoState && <p className="mt-2 text-sm text-muted-foreground">{demoState}</p>}
+      </section>
+      <p className="mt-4 text-sm text-muted-foreground">
         Enter the 8-character access code from the flight surgeon. Emergency help needs no login.
       </p>
       <form onSubmit={submitCode} className="mt-4 rounded-xl border border-border p-4">
@@ -90,10 +160,10 @@ export default function LoginPage() {
         </p>
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || done}
           className="mt-3 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90 disabled:opacity-50"
         >
-          Log in
+          {done ? "Logged in, opening…" : "Log in"}
         </button>
       </form>
 
@@ -141,5 +211,13 @@ export default function LoginPage() {
         </section>
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>}>
+      <LoginForm />
+    </Suspense>
   );
 }

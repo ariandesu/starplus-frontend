@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { deviceDb } from "../src/lib/db";
-import { checkPin, getSession, isSharedDevice, login, logout, setPin, setSharedDevice } from "../src/lib/session";
+import { deviceDb, profileDb } from "../src/lib/db";
+import { checkPin, getSession, isSharedDevice, login, loginDemo, logout, pullHistory, setPin, setSharedDevice } from "../src/lib/session";
 
 afterEach(async () => {
   vi.unstubAllGlobals();
@@ -99,5 +99,79 @@ describe("session", () => {
     expect(profile?.pin_hash).not.toContain("1234");
     expect(await checkPin("salt-crew", "1234")).toBe(true);
     expect(await checkPin("salt-crew", "0000")).toBe(false);
+  });
+
+  it("logs in to the demo crew and marks the session", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        ok({ token: "tok-demo", crew_id: "demo-astronaut", role: "astronaut", expires_at: "2030-01-01T00:00:00Z", provenance: "synthetic", demo: true })
+      )
+    );
+    const session = await loginDemo("astronaut");
+    expect(session).toMatchObject({ crew_id: "demo-astronaut", demo: true });
+    expect(await getSession("demo-astronaut")).toMatchObject({ token: "tok-demo", demo: true });
+  });
+
+  it("pulls history pages with per-table cursors", async () => {
+    const seen: string[] = [];
+    const measurement = (id: string) => ({
+      client_id: id,
+      crew_id: "pull-crew",
+      metric: "heart_rate",
+      value_num: 70,
+      value_text: null,
+      unit: "bpm",
+      measured_at: "2026-11-08T10:00:00Z",
+      received_at: "",
+      source: "manual",
+      device_id: "d",
+      capture_id: null,
+      is_estimate: 0,
+      confirmed_by_user: 0,
+      provenance: "synthetic",
+      setting: "iss",
+      phase: "inflight",
+      phase_day: null,
+      supersedes_client_id: null,
+      voided: 0,
+      catalog_version: "1",
+      schema_version: 1,
+    });
+    const result = (id: string) => ({
+      client_id: id,
+      crew_id: "pull-crew",
+      assessed_at: "2026-11-08T10:05:00Z",
+      overall_status: "nominal",
+      per_measure_json: "[]",
+      model_advice_json: null,
+      model_id: "none",
+      model_version: "none",
+      catalog_version: "1",
+      kb_version: "none",
+      inputs_hash: "abc",
+      received_at: "",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        seen.push(url);
+        if (url.includes("since_measurements=c1")) {
+          return ok({ measurements: [measurement("m-2")], results: [result("r-1")], reports_status: [], cursor: "c2", measurements_cursor: null, results_cursor: null });
+        }
+        return ok({ measurements: [measurement("m-1")], results: [], reports_status: [], cursor: "c1", measurements_cursor: "c1", results_cursor: null });
+      })
+    );
+    await pullHistory("pull-crew", "tok-pull");
+    expect(seen).toHaveLength(2);
+    expect(seen[1]).toContain("since_measurements=c1");
+    const db = await profileDb("pull-crew");
+    expect(await db.get("measurements", "m-1")).toBeDefined();
+    expect(await db.get("measurements", "m-2")).toBeDefined();
+    const stored = await db.get("results", "r-1");
+    expect(stored?.per_measure).toEqual([]);
+    expect(stored?.model_advice).toBeNull();
+    await db.clear("measurements");
+    await db.clear("results");
   });
 });

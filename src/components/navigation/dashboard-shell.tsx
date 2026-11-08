@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
 import { DemoBanner } from "../dashboard/demo-badge";
 import { OutboxSync } from "../outbox-sync";
 import { deviceDb } from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 function useSetting(key: string, fallback: string): string {
   const [value, setValue] = useState(fallback);
@@ -19,6 +21,28 @@ function useSetting(key: string, fallback: string): string {
       .catch(() => undefined);
   }, [key]);
   return value;
+}
+
+function DemoAccountBanner() {
+  const params = useSearchParams();
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const crewId = params.get("crew");
+      const session = crewId ? await getSession(crewId).catch(() => null) : null;
+      if (!cancelled) setShow(session?.demo ?? false);
+    })().catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [params]);
+  if (!show) return null;
+  return (
+    <p role="status" className="bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-900" data-testid="demo-banner">
+      Demo account: synthetic data
+    </p>
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -52,6 +76,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         context={`${setting} · ${phase}`}
       />
       {demo && <DemoBanner />}
+      <Suspense>
+        <DemoAccountBanner />
+      </Suspense>
       <MobileNav isOpen={isOpen} onClose={close} />
       <main className="flex-1 overflow-x-hidden">{children}</main>
     </div>

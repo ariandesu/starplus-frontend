@@ -38,12 +38,19 @@ export function postBatch(
   );
 }
 
-export function getSync(token: string, since?: string | null) {
-  const query = since ? `?since=${encodeURIComponent(since)}` : "";
-  return apiFetch<{ measurements: unknown[]; results: unknown[]; reports_status: unknown[]; cursor: string | null }>(
-    `/api/sync${query}`,
-    token
-  );
+export function getSync(token: string, sinceMeasurements?: string | null, sinceResults?: string | null) {
+  const params = new URLSearchParams();
+  if (sinceMeasurements) params.set("since_measurements", sinceMeasurements);
+  if (sinceResults) params.set("since_results", sinceResults);
+  const query = params.size > 0 ? `?${params}` : "";
+  return apiFetch<{
+    measurements: unknown[];
+    results: unknown[];
+    reports_status: unknown[];
+    cursor: string | null;
+    measurements_cursor: string | null;
+    results_cursor: string | null;
+  }>(`/api/sync${query}`, token);
 }
 
 export function postReport(token: string, report: unknown) {

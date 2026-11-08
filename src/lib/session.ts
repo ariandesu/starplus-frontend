@@ -1,5 +1,6 @@
-import { deviceDb, type ProfileRecord } from "./db";
-
+import { deviceDb, profileDb, type ProfileRecord } from "./db";
+import { getSync } from "./api";
+import type { Measurement, Result } from "@starplus/core";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "https://starplus-backend.shareflow.workers.dev";
 
@@ -9,6 +10,7 @@ export interface SessionInfo {
   role: string;
   expires_at: string;
   provenance: string;
+  demo: boolean;
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -75,12 +77,72 @@ export async function login(accessCode: string): Promise<SessionInfo> {
       device_id: id,
       pin_hash: previous?.pin_hash ?? null,
       shared_device: previous?.shared_device ?? false,
+      demo: false,
     };
     await db.put("profiles", record);
-    return session;
+    return { ...session, demo: false };
   } catch {
     throw new Error("Logged in, but this device could not save the session. Ask for a new code if it keeps happening.");
   }
+}
+
+export async function loginDemo(role: "astronaut" | "flight_medical_officer"): Promise<SessionInfo> {
+  const id = await deviceId();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/auth/demo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, device_id: id }),
+    });
+  } catch {
+    throw new Error("Can't reach the server. Check the connection and try the demo again.");
+  }
+  if (res.status === 404) throw new Error("Demo login is switched off on this server.");
+  if (!res.ok) throw new Error("Something went wrong. Try again.");
+  const session = (await res.json()) as SessionInfo;
+  const db = await deviceDb();
+  const previous = await db.get("profiles", session.crew_id);
+  const record: ProfileRecord = {
+    crew_id: session.crew_id,
+    display_name: previous?.display_name ?? session.crew_id,
+    token: session.token,
+    role: session.role,
+    expires_at: session.expires_at,
+    provenance: session.provenance ?? "synthetic",
+    device_id: id,
+    pin_hash: previous?.pin_hash ?? null,
+    shared_device: previous?.shared_device ?? false,
+    demo: true,
+  };
+  await db.put("profiles", record);
+  return { ...session, demo: true };
+}
+
+export async function pullHistory(crewId: string, token: string): Promise<void> {
+  const db = await profileDb(crewId);
+  let mSince: string | null = null;
+  let rSince: string | null = null;
+  for (let page = 0; page < 20; page++) {
+    const body = await getSync(token, mSince, rSince);
+    for (const item of body.measurements) await db.put("measurements", item as Measurement);
+    for (const item of body.results) await db.put("results", parseSyncResult(item as Record<string, unknown>));
+    mSince = body.measurements_cursor;
+    rSince = body.results_cursor;
+    if (!mSince && !rSince) break;
+  }
+}
+
+function parseSyncResult(row: Record<string, unknown>): Result {
+  const { per_measure_json, model_advice_json, ...rest } = row as Record<string, unknown> & {
+    per_measure_json?: string;
+    model_advice_json?: string | null;
+  };
+  return {
+    ...(rest as unknown as Result),
+    per_measure: typeof per_measure_json === "string" ? (JSON.parse(per_measure_json) as Result["per_measure"]) : [],
+    model_advice: typeof model_advice_json === "string" && model_advice_json ? (JSON.parse(model_advice_json) as Result["model_advice"]) : null,
+  };
 }
 
 export async function logout(crewId: string): Promise<void> {
@@ -108,6 +170,7 @@ export async function getSession(crewId: string): Promise<SessionInfo | null> {
     role: profile.role ?? "astronaut",
     expires_at: profile.expires_at,
     provenance: profile.provenance ?? "real",
+    demo: profile.demo ?? false,
   };
 }
 
