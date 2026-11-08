@@ -233,6 +233,87 @@ describe("fhir import", () => {
     expect(rejected).toEqual([{ index: 0, reason: "out_of_bounds" }]);
   });
 
+  it("accepts UCUM heart-rate units /min, {beats}/min, 1/min and {beat}/min", () => {
+    for (const unit of ["/min", "{beats}/min", "1/min", "{beat}/min"]) {
+      const obs = {
+        resourceType: "Observation",
+        status: "final",
+        code: { coding: [{ system: "http://loinc.org", code: "8867-4" }] },
+        valueQuantity: { value: 70, unit },
+        effectiveDateTime: "2026-11-08T10:00:00Z",
+      };
+      const { records, rejected } = importFhir(obs, base);
+      expect(rejected, unit).toEqual([]);
+      expect(records, unit).toHaveLength(1);
+      expect(records[0].unit).toBe("bpm");
+    }
+  });
+
+  it("accepts respiratory-rate units {breaths}/min, {Breaths}/min and 1/min", () => {
+    for (const unit of ["{breaths}/min", "{Breaths}/min", "1/min"]) {
+      const obs = {
+        resourceType: "Observation",
+        status: "final",
+        code: { coding: [{ system: "http://loinc.org", code: "9279-1" }] },
+        valueQuantity: { value: 14, unit },
+        effectiveDateTime: "2026-11-08T10:00:00Z",
+      };
+      const { records, rejected } = importFhir(obs, base);
+      expect(rejected, unit).toEqual([]);
+      expect(records, unit).toHaveLength(1);
+      expect(records[0].unit).toBe("/min");
+    }
+  });
+
+  it("accepts oxygen saturation by UCUM code with a display unit", () => {
+    const obs = {
+      resourceType: "Observation",
+      status: "final",
+      code: { coding: [{ system: "http://loinc.org", code: "2708-6" }] },
+      valueQuantity: { value: 97, unit: "percent", code: "%" },
+      effectiveDateTime: "2026-11-08T10:00:00Z",
+    };
+    const { records, rejected } = importFhir(obs, base);
+    expect(rejected).toEqual([]);
+    expect(records).toHaveLength(1);
+    expect(records[0].unit).toBe("%");
+  });
+
+  it("reads effectiveInstant and effectivePeriod.start when there is no effectiveDateTime", () => {
+    const byInstant = {
+      resourceType: "Observation",
+      status: "final",
+      code: { coding: [{ system: "http://loinc.org", code: "8867-4" }] },
+      valueQuantity: { value: 71, unit: "bpm" },
+      effectiveInstant: "2026-11-08T09:30:00Z",
+    };
+    const first = importFhir(byInstant, { crewId: "fhir-crew", provenance: "real" });
+    expect(first.rejected).toEqual([]);
+    expect(first.records[0].measured_at).toBe("2026-11-08T09:30:00.000Z");
+    const byPeriod = {
+      resourceType: "Observation",
+      status: "final",
+      code: { coding: [{ system: "http://loinc.org", code: "8867-4" }] },
+      valueQuantity: { value: 72, unit: "bpm" },
+      effectivePeriod: { start: "2026-11-08T08:15:00Z", end: "2026-11-08T08:20:00Z" },
+    };
+    const second = importFhir(byPeriod, { crewId: "fhir-crew", provenance: "real" });
+    expect(second.rejected).toEqual([]);
+    expect(second.records[0].measured_at).toBe("2026-11-08T08:15:00.000Z");
+  });
+
+  it("rejects a missing timestamp when nothing provides one", () => {
+    const obs = {
+      resourceType: "Observation",
+      status: "final",
+      code: { coding: [{ system: "http://loinc.org", code: "8867-4" }] },
+      valueQuantity: { value: 70, unit: "bpm" },
+    };
+    const { records, rejected } = importFhir(obs, { crewId: "fhir-crew", provenance: "real" });
+    expect(records).toHaveLength(0);
+    expect(rejected).toEqual([{ index: 0, reason: "missing timestamp" }]);
+  });
+
   it("skips non-final observations without a rejection", () => {
     for (const status of ["entered-in-error", "preliminary", "cancelled"]) {
       const { records, rejected } = importFhir(fhirObs("8867-4", 70, "bpm", { status }), base);

@@ -29,6 +29,8 @@ interface FhirObservation {
   code?: { coding?: Array<{ code?: unknown; display?: unknown }>; text?: unknown };
   valueQuantity?: FhirQuantity;
   effectiveDateTime?: unknown;
+  effectiveInstant?: unknown;
+  effectivePeriod?: { start?: unknown };
   component?: FhirObservation[];
 }
 
@@ -40,7 +42,7 @@ interface MetricMapping {
 }
 
 const LOINC_TO_METRIC: Record<string, MetricMapping> = {
-  "8867-4": { code: "heart_rate", unit: "bpm", accept: ["bpm", "beats/min", "beats/minute"] },
+  "8867-4": { code: "heart_rate", unit: "bpm", accept: ["bpm", "beats/min", "beats/minute", "/min", "{beats}/min", "1/min", "{beat}/min"] },
   "8480-6": { code: "blood_pressure_systolic", unit: "mmHg", accept: ["mmhg", "mm[hg]", "mm hg"] },
   "8462-4": { code: "blood_pressure_diastolic", unit: "mmHg", accept: ["mmhg", "mm[hg]", "mm hg"] },
   "2708-6": { code: "oxygen_saturation", unit: "%", accept: ["%", "percent", "pct"] },
@@ -49,7 +51,7 @@ const LOINC_TO_METRIC: Record<string, MetricMapping> = {
     unit: "°C",
     accept: ["cel", "°c", "c", "celsius", "[degf]", "degf", "°f", "f", "fahrenheit"],
   },
-  "9279-1": { code: "respiratory_rate", unit: "/min", accept: ["/min", "br/min", "breaths/min", "breaths/minute"] },
+  "9279-1": { code: "respiratory_rate", unit: "/min", accept: ["/min", "br/min", "breaths/min", "breaths/minute", "{breaths}/min", "{Breaths}/min", "1/min"] },
   "2339-0": {
     code: "blood_glucose",
     unit: "mg/dL",
@@ -134,6 +136,20 @@ export function importFhir(input: unknown, context: FhirImportContext): FhirImpo
   return { records, rejected };
 }
 
+function observationTime(observation: FhirObservation): string | undefined {
+  const candidates: Array<unknown> = [
+    observation.effectiveDateTime,
+    observation.effectiveInstant,
+    typeof observation.effectivePeriod === "object" && observation.effectivePeriod !== null
+      ? (observation.effectivePeriod as { start?: unknown }).start
+      : undefined,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate) return candidate;
+  }
+  return undefined;
+}
+
 function observationUnit(observation: FhirObservation): string {
   const quantity = observation.valueQuantity ?? {};
   const raw = quantity as Record<string, unknown>;
@@ -198,10 +214,13 @@ function makeRecord(
   const measure = lookupMeasure(mapping.code);
   if (!measure) return reject("unknown metric");
   let measuredAt = defaultMeasuredAt;
-  if (typeof observation.effectiveDateTime === "string" && observation.effectiveDateTime) {
-    const parsed = Date.parse(observation.effectiveDateTime);
+  const effectiveRaw = observationTime(observation);
+  if (effectiveRaw !== undefined) {
+    const parsed = Date.parse(effectiveRaw);
     if (Number.isNaN(parsed)) return reject("invalid effectiveDateTime");
-    measuredAt = new Date(observation.effectiveDateTime).toISOString();
+    measuredAt = new Date(effectiveRaw).toISOString();
+  } else if (!context.measuredAt) {
+    return reject("missing timestamp");
   }
   const record: Measurement = {
     client_id: crypto.randomUUID(),

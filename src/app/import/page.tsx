@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { CATALOG, type Measurement, type Provenance } from "@starplus/core";
 import { importCsv, importJsonRecords, parseCsvRows, suggestColumnMapping } from "@/lib/adapters/import-csv";
@@ -46,7 +46,6 @@ function parseFile(name: string, text: string): ParsedFile | { kind: "error"; re
 function ImportForm() {
   const params = useSearchParams();
   const crewId = params.get("crew") ?? "";
-  const router = useRouter();
   const [loggedIn, setLoggedIn] = useState(false);
   const [ready, setReady] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -145,7 +144,6 @@ function ImportForm() {
         await enqueueMeasurement(crewId, { ...record, device_id: deviceId });
       }
       setImported(records.length);
-      router.refresh();
     } finally {
       setBusy(false);
     }
