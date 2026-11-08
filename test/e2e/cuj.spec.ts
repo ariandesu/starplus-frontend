@@ -8,8 +8,8 @@
  * Needs one single-use staging code in STARPLUS_STAGING_CODE_ASTRO (skips the
  * staging flow without it; CUJ 1 and CUJ 8 always run).
  *
- * Run: NEXT_PUBLIC_API_BASE=https://starplus-backend.shareflow.workers.dev npm run build && \
- * NEXT_PUBLIC_API_BASE=https://starplus-backend.shareflow.workers.dev \
+ * Run: NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev npm run build && \
+ * NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev \
  * STARPLUS_STAGING_CODE_ASTRO=<code> \
  * npx playwright test test/e2e/cuj.spec.ts --project=chromium
  */

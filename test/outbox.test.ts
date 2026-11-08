@@ -116,6 +116,25 @@ describe("outbox flush", () => {
     expect(kept?.attempts).toBe(1);
   });
 
+  it("pauses sending while demo mode is on and resumes after", async () => {
+    await seedSession("demo-crew", "tok-demo");
+    await enqueue({ client_id: "m-demo", crew_id: "demo-crew", kind: "measurement", payload: measurement("m-demo", "demo-crew") as never });
+    const db = await deviceDb();
+    await db.put("settings", { key: "demo_mode", value: "true" });
+    const paused = await flush();
+    expect(paused.sent).toBe(0);
+    expect(await db.get("outbox", "m-demo")).toBeDefined();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ accepted: ["m-demo"], duplicates: [], rejected: [], max_items: 100 }), { status: 200 }))
+    );
+    await db.put("settings", { key: "demo_mode", value: "false" });
+    const resumed = await flush();
+    expect(resumed.sent).toBe(1);
+    expect(await db.get("outbox", "m-demo")).toBeUndefined();
+  });
+
   it("sends an emergency report under the next session", async () => {
     await seedSession("later-crew", "tok-later");
     await enqueue({

@@ -33,6 +33,7 @@ function ReportsView() {
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
+  const [demoPaused, setDemoPaused] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function refresh() {
@@ -48,6 +49,8 @@ function ReportsView() {
       setPending(view.mine);
       setDelivered(view.delivered);
       setEmergencyWaiting(view.emergencyWaiting);
+      const db = await deviceDb();
+      setDemoPaused((await db.get("settings", "demo_mode"))?.value === "true");
     })().catch(() => undefined);
   }, [crewId]);
 
@@ -67,6 +70,11 @@ function ReportsView() {
       {emergencyWaiting > 0 && (
         <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
           1 emergency report waiting — log in to send it.
+        </p>
+      )}
+      {demoPaused && (
+        <p role="status" className="mt-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+          Sending paused in demo mode.
         </p>
       )}
       <div className="mt-4">
