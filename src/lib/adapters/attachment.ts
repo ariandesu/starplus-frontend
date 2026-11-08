@@ -1,6 +1,7 @@
 import { API_BASE } from "../api.ts";
 
 export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+export const MAX_ATTACHMENT_SIDE = 1600;
 
 export interface PendingAttachment {
   id: string;
@@ -18,12 +19,45 @@ export function base64Bytes(dataBase64: string): number {
   return Math.floor((dataBase64.length * 3) / 4) - padding;
 }
 
+export function scaleToFit(width: number, height: number, maxSide = MAX_ATTACHMENT_SIDE): { width: number; height: number } {
+  const longest = Math.max(width, height);
+  if (longest <= maxSide || longest <= 0) return { width, height };
+  const factor = maxSide / longest;
+  return { width: Math.max(1, Math.round(width * factor)), height: Math.max(1, Math.round(height * factor)) };
+}
+
+export function stripApp1Segments(jpeg: Uint8Array): Uint8Array {
+  if (jpeg.length < 4 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) return jpeg;
+  const out: number[] = [0xff, 0xd8];
+  let pos = 2;
+  while (pos + 1 < jpeg.length) {
+    const marker = (jpeg[pos] << 8) | jpeg[pos + 1];
+    if (marker === 0xffd9 || marker === 0xffda || marker < 0xff01) {
+      out.push(...jpeg.subarray(pos));
+      break;
+    }
+    if (marker >= 0xffd0 && marker <= 0xffd7) {
+      out.push(jpeg[pos], jpeg[pos + 1]);
+      pos += 2;
+      continue;
+    }
+    if (pos + 3 >= jpeg.length) {
+      out.push(...jpeg.subarray(pos));
+      break;
+    }
+    const length = (jpeg[pos + 2] << 8) | jpeg[pos + 3];
+    if (marker !== 0xffe1) out.push(...jpeg.subarray(pos, pos + 2 + length));
+    pos += 2 + length;
+  }
+  return Uint8Array.from(out);
+}
+
 export async function compressImage(blob: Blob, maxBytes = MAX_ATTACHMENT_BYTES): Promise<Blob> {
-  if (blob.size <= maxBytes) return blob;
   const bitmap = await createImageBitmap(blob);
   try {
-    let width = bitmap.width;
-    let height = bitmap.height;
+    const start = scaleToFit(bitmap.width, bitmap.height);
+    let width = start.width;
+    let height = start.height;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     if (!context) throw new Error("This browser cannot compress images");
@@ -33,7 +67,10 @@ export async function compressImage(blob: Blob, maxBytes = MAX_ATTACHMENT_BYTES)
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       const quality = 0.85 - attempt * 0.12;
       const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-      if (out && out.size <= maxBytes) return out;
+      if (out && out.size <= maxBytes) {
+        const stripped = stripApp1Segments(new Uint8Array(await out.arrayBuffer()));
+        return new Blob([stripped.buffer as ArrayBuffer], { type: "image/jpeg" });
+      }
       width *= 0.7;
       height *= 0.7;
     }

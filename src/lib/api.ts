@@ -74,3 +74,16 @@ export function getCrewResults(token: string, crew_id: string, since?: string | 
 export function getCrewProgress(token: string) {
   return apiFetch<{ window_days: number; readiness_pct: number }>("/api/crew/progress", token);
 }
+
+export async function getAttachment(token: string, id: string): Promise<Blob> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/attachments/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (error) {
+    throw new ApiError(0, error instanceof Error ? error.message : "network failed");
+  }
+  if (!res.ok) throw new ApiError(res.status, `attachment fetch failed with ${res.status}`);
+  return res.blob();
+}

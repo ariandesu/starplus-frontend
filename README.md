@@ -10,8 +10,9 @@ Crew log in with single-use access codes, run self-checks (manual form, question
 reaction test, CSV/FHIR import, Bluetooth, voice, camera display reading, camera
 heart-rate estimate), review history charts and the body map, track progress and
 gamification, read the medicines formulary, and file emergency reports (with optional
-photos). A role-gated surgeon view reads crew results. All data is synthetic (see
-`../starplus-backend/docs/disclosure.md`).
+photos). A role-gated surgeon view reads crew results. All data is synthetic; prior
+work, the build timeline and AI tool use are stated in
+`../starplus-backend/docs/disclosure.md`, which the author must read before submission.
 
 ## Architecture
 

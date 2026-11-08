@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { ackReport, getReports } from "@/lib/api";
+import { ackReport, ApiError, getAttachment, getReports } from "@/lib/api";
 import { getSession } from "@/lib/session";
 
 interface ReportRow {
@@ -18,6 +18,64 @@ interface ReportRow {
   payload_json: string;
   summary_text: string | null;
   status: string;
+}
+
+function attachmentIds(payloadJson: string): string[] {
+  try {
+    const payload = JSON.parse(payloadJson) as { attachments?: Array<{ id?: unknown }> };
+    if (!Array.isArray(payload.attachments)) return [];
+    return payload.attachments
+      .map((attachment) => (typeof attachment.id === "string" ? attachment.id : ""))
+      .filter((id) => id.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function ReportPhotos({ token, report }: { token: string; report: ReportRow }) {
+  const [urls, setUrls] = useState<Array<{ id: string; url: string }>>([]);
+  const [expired, setExpired] = useState<string[]>([]);
+  const ids = attachmentIds(report.payload_json);
+  useEffect(() => {
+    let cancelled = false;
+    const created: string[] = [];
+    (async () => {
+      for (const id of attachmentIds(report.payload_json)) {
+        try {
+          const blob = await getAttachment(token, id);
+          if (cancelled) return;
+          const url = URL.createObjectURL(blob);
+          created.push(url);
+          setUrls((prev) => [...prev, { id, url }]);
+        } catch (error) {
+          if (cancelled) return;
+          if (error instanceof ApiError && error.status === 404) {
+            setExpired((prev) => [...prev, id]);
+          }
+        }
+      }
+    })().catch(() => undefined);
+    return () => {
+      cancelled = true;
+      for (const url of created) URL.revokeObjectURL(url);
+    };
+  }, [token, report.client_id, report.payload_json]);
+  if (ids.length === 0) return null;
+  return (
+    <div className="mt-2">
+      <p className="text-sm font-semibold text-foreground">Photos</p>
+      <div className="mt-1 flex flex-wrap gap-2">
+        {urls.map(({ id, url }) => (
+          <img key={id} src={url} alt="Report photo" data-testid="photo-thumb" className="h-24 w-24 rounded-lg border border-border object-cover" />
+        ))}
+        {expired.map((id) => (
+          <p key={id} className="text-xs text-muted-foreground">
+            Photo expired (90 days)
+          </p>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function SurgeonView() {
@@ -97,6 +155,7 @@ function SurgeonView() {
               </div>
               <p className="mt-1 text-sm text-muted-foreground">From {report.submitted_by} · {new Date(report.received_at).toUTCString()}</p>
               {report.summary_text && <p className="mt-1 text-sm text-foreground">{report.summary_text}</p>}
+              <ReportPhotos token={token} report={report} />
               <details className="mt-2">
                 <summary className="cursor-pointer text-sm text-accent">Raw values and steps</summary>
                 <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-xs text-foreground">{report.payload_json}</pre>
