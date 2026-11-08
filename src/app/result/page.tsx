@@ -8,7 +8,45 @@ import { Citation, StatusTone } from "@/components/citation";
 import { ModelView } from "@/components/model-view";
 import { profileDb } from "@/lib/db";
 import { enqueueResult } from "@/lib/outbox";
-import { getKbEntry, citeLabel } from "@/lib/kb";
+import { getExplanation, getKbEntry, citeLabel } from "@/lib/kb";
+import type { KbEntry } from "@starplus/core";
+
+function ExplainMore({ entry, metric }: { entry: KbEntry; metric: string }) {
+  const [open, setOpen] = useState(false);
+  const [aiText, setAiText] = useState<string | null | undefined>(undefined);
+  async function toggle() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setOpen(true);
+    if (aiText === undefined) setAiText(await getExplanation(entry.id, "simple"));
+  }
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => void toggle()}
+        className="text-sm font-medium text-accent underline"
+      >
+        {open ? "Hide the simple explanation" : "Explain more simply"}
+      </button>
+      {open && (
+        <div className="mt-2 rounded-lg bg-muted/40 p-3 text-sm text-foreground">
+          {(aiText ?? entry.text.join("\n")).split("\n").map((line, i) => (
+            <p key={`${metric}-${i}`} className="mt-1 first:mt-0">
+              {line}
+            </p>
+          ))}
+          <Citation source={citeLabel(entry.citations[0])} className="mt-2" />
+          <p className="mt-1 text-xs text-muted-foreground">
+            {aiText ? "AI-written, reviewed by the developer against the cited source." : "From the cited source."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ResultView() {
   const router = useRouter();
@@ -17,7 +55,6 @@ function ResultView() {
   const resultId = params.get("result") ?? "";
   const [result, setResult] = useState<Result | null>(null);
   const [records, setRecords] = useState<Measurement[]>([]);
-  const [simpleId, setSimpleId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
 
   async function confirmEstimate(clientId: string, phase: string) {
@@ -102,30 +139,7 @@ function ResultView() {
                   affect the baseline.
                 </p>
               )}
-              {kb && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setSimpleId(simpleId === entry.metric ? null : entry.metric)}
-                    className="text-sm font-medium text-accent underline"
-                  >
-                    {simpleId === entry.metric ? "Hide the simple explanation" : "Explain more simply"}
-                  </button>
-                  {simpleId === entry.metric && (
-                    <div className="mt-2 rounded-lg bg-muted/40 p-3 text-sm text-foreground">
-                      {kb.text.map((line, i) => (
-                        <p key={i} className="mt-1 first:mt-0">
-                          {line}
-                        </p>
-                      ))}
-                      <Citation source={citeLabel(kb.citations[0])} className="mt-2" />
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        AI-written, reviewed by the developer against the cited source.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+              {kb && <ExplainMore entry={kb} metric={entry.metric} />}
               {record?.is_estimate === 1 && record.confirmed_by_user === 0 && (
                 <p className="mt-2 text-xs text-muted-foreground">Recorded as an estimate.</p>
               )}

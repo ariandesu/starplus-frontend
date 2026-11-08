@@ -7,7 +7,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: [
-      { find: "@starplus/core", replacement: join(root, "core/src/index.ts") },
+      { find: /^@starplus\/core$/, replacement: join(root, "core/src/index.ts") },
       { find: /^@starplus\/core\/(.*)/, replacement: join(root, "core/$1") },
       { find: "@", replacement: join(root, "src") },
     ],

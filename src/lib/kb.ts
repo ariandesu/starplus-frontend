@@ -1,4 +1,5 @@
 import type { KbEntry, KbCitation } from "@starplus/core";
+import explainCache from "@starplus/core/content/explain-cache.json" with { type: "json" };
 import hazardAlteredGravity from "@starplus/core/content/kb/hazard-altered-gravity.json" with { type: "json" };
 import hazardDistance from "@starplus/core/content/kb/hazard-distance-from-earth.json" with { type: "json" };
 import hazardEnvironment from "@starplus/core/content/kb/hazard-hostile-environment.json" with { type: "json" };
@@ -73,6 +74,30 @@ const ENTRIES: Record<string, KbEntry> = {
 
 export function getKbEntry(key: string): KbEntry | null {
   return ENTRIES[key] ?? null;
+}
+
+// Mirror of tools/pregenerate.ts: MODEL + ":standard+simple:" + model + ":prompts-v" + PROMPT_VERSION.
+const EXPLAIN_MODEL = "muse-spark-1.3-contributor";
+const EXPLAIN_PROMPTS = "prompts-v1";
+
+async function explainKey(id: string, text: string[]): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${id}\n${text.join("\n")}`));
+  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex}:standard+simple:${EXPLAIN_MODEL}:${EXPLAIN_PROMPTS}`;
+}
+
+interface ExplainCacheFile {
+  entries: Record<string, { standard: string; simple: string; status: string }>;
+}
+
+/** Reviewed AI text for an entry, or null (rejected/missing/changed source). */
+export async function getExplanation(entryId: string, level: "standard" | "simple"): Promise<string | null> {
+  const entry = ENTRIES[entryId];
+  if (!entry) return null;
+  const key = await explainKey(entry.id, entry.text);
+  const cached = (explainCache as unknown as ExplainCacheFile).entries[key];
+  if (!cached || cached.status !== "reviewed") return null;
+  return cached[level] ?? null;
 }
 
 export function getModelDefinition(): ModelDefinition {
