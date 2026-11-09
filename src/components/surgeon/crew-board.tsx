@@ -4,6 +4,7 @@ import Link from "next/link";
 import { StatusTone } from "@/components/citation";
 import type { RosterRow } from "@/lib/api";
 import { shortDate } from "@/lib/report-title";
+import { sortVitals } from "@/lib/vital-order";
 
 export function timeAgo(iso: string | null): string {
   if (!iso) return "no check-in yet";
@@ -20,8 +21,8 @@ const VITAL_LABELS: Record<string, string> = {
   blood_pressure_diastolic: "Diastolic",
   oxygen_saturation: "SpO2",
   temperature_c: "Temp",
-  blood_glucose: "Glucose",
   respiratory_rate: "Resp rate",
+  hrv_rmssd: "HRV",
 };
 
 function vitalLabel(metric: string): string {
@@ -29,6 +30,7 @@ function vitalLabel(metric: string): string {
 }
 
 function CrewCard({ row }: { row: RosterRow }) {
+  const vitals = sortVitals(row.vitals);
   return (
     <Link
       href={`/surgeon/crew?id=${encodeURIComponent(row.crew_id)}`}
@@ -50,9 +52,9 @@ function CrewCard({ row }: { row: RosterRow }) {
           </span>
         )}
       </p>
-      {row.vitals.length > 0 && (
+      {vitals.length > 0 && (
         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          {row.vitals.slice(0, 6).map((vital) => (
+          {vitals.slice(0, 6).map((vital) => (
             <div key={vital.metric} className="flex items-baseline justify-between gap-2">
               <dt className="text-muted-foreground">{vitalLabel(vital.metric)}</dt>
               <dd className="font-medium text-foreground">

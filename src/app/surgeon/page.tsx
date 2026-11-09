@@ -31,7 +31,7 @@ function SurgeonView() {
       const byId = new Map(roster.crew.map((row) => [row.crew_id, row.name] as const));
       setNames(byId);
       const stamp = new Date().toISOString();
-      setUpdatedAt(new Date(stamp).toUTCString());
+      setUpdatedAt(new Date(stamp).toLocaleString());
       await writeSurgeonCache("roster", roster.crew);
       await writeSurgeonCache("reports", inbox.reports);
     } catch {
@@ -39,7 +39,7 @@ function SurgeonView() {
       const cachedReports = await readSurgeonCache<InboxReport[]>("reports");
       if (cachedRoster) {
         setRows(cachedRoster.data);
-        setUpdatedAt(new Date(cachedRoster.updatedAt).toUTCString());
+        setUpdatedAt(new Date(cachedRoster.updatedAt).toLocaleString());
       }
       if (cachedReports) setReports(cachedReports.data);
       if (cachedRoster) {

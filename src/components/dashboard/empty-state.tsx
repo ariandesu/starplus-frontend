@@ -15,7 +15,7 @@ const TONES = {
   normal: { icon: CheckCircle2, wrap: "bg-accent/10 text-accent" },
   watch: { icon: AlertCircle, wrap: "bg-amber-100 text-amber-700" },
   critical: { icon: AlertTriangle, wrap: "bg-red-100 text-red-700" },
-  insufficient: { icon: HelpCircle, wrap: "bg-muted text-muted-foreground" },
+  insufficient: { icon: HelpCircle, wrap: "bg-muted text-white" },
 } as const;
 
 export function EmptyState({ title, description, tone = "normal", action, className }: EmptyStateProps) {

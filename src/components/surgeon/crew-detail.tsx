@@ -8,6 +8,7 @@ import { VitalChart } from "@/components/dashboard/vital-chart";
 import { getCrewMeasurements, getCrewResults } from "@/lib/api";
 import { getKbEntry, reasonText } from "@/lib/kb";
 import { inboxTitle } from "@/lib/report-title";
+import { sortVitals } from "@/lib/vital-order";
 import { buildSeries, type MetricSeries } from "@/lib/vital-series";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
 import { ReportPhotos, type PhotoReport } from "./report-photos";
@@ -39,7 +40,10 @@ export interface DetailReport extends PhotoReport {
 function seriesFor(records: Measurement[]): MetricSeries[] {
   const now = Date.now();
   const codes = [...new Set(records.map((r) => r.metric))];
-  return codes
+  const ordered = sortVitals(codes.map((code) => ({ metric: code, status: "nominal" }))).map(
+    (entry) => entry.metric
+  );
+  return ordered
     .map((code) => buildSeries(records, code, now))
     .filter((entry) => entry !== null);
 }
@@ -89,7 +93,7 @@ export function CrewDetail({
         if (cancelled) return;
         setResults(fetchedResults.sort((a, b) => (a.assessed_at < b.assessed_at ? -1 : 1)));
         setSeries(seriesFor(fetchedRecords));
-        setUpdatedAt(new Date().toUTCString());
+        setUpdatedAt(new Date().toLocaleString());
         await writeSurgeonCache(`detail:${crewId}`, { results: fetchedResults, records: fetchedRecords });
       } catch {
         if (cancelled) return;
@@ -97,7 +101,7 @@ export function CrewDetail({
         if (cached) {
           setResults(cached.data.results);
           setSeries(seriesFor(cached.data.records));
-          setUpdatedAt(new Date(cached.updatedAt).toUTCString());
+          setUpdatedAt(new Date(cached.updatedAt).toLocaleString());
         }
       } finally {
         if (!cancelled) setReady(true);
@@ -139,8 +143,7 @@ export function CrewDetail({
             {[...results].reverse().map((result) => (
               <li key={result.client_id} className="flex items-center gap-2 text-sm">
                 <StatusTone status={result.overall_status} />
-                <span className="text-foreground">{result.overall_status}</span>
-                <span className="text-muted-foreground">{new Date(result.assessed_at).toUTCString()}</span>
+                <span className="text-muted-foreground">{new Date(result.assessed_at).toLocaleString()}</span>
               </li>
             ))}
           </ol>
@@ -151,7 +154,7 @@ export function CrewDetail({
         <section aria-label="Latest measures" className="mt-4">
           <h2 className="text-lg font-semibold text-foreground">Latest measures</h2>
           <ul className="mt-2 space-y-3">
-            {latest.per_measure.map((entry) => {
+            {sortVitals(latest.per_measure).map((entry) => {
               const measure = CATALOG.measures.find((m) => m.code === entry.metric);
               const kb = measure ? getKbEntry(measure.guidance_key) : null;
               return (

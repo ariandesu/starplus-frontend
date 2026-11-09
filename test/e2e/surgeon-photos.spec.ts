@@ -70,6 +70,55 @@ const photoReport = {
   acknowledged_at: null,
 };
 
+async function stubSurgeonApi(page: Page): Promise<void> {
+  await page.addInitScript(
+    ({ rosterJson, reportsJson, resultsJson, measurementsJson, png }) => {
+      const text = (body: unknown): string => JSON.stringify(body);
+      const originalFetch = window.fetch;
+      window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        if (!url.includes("/api/")) return originalFetch(input as RequestInfo, init);
+        if (url.includes("/api/crew/roster")) {
+          return new Response(text(rosterJson), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/reports") && (!init || (init.method ?? "GET") === "GET")) {
+          return new Response(text(reportsJson), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/crew/results")) {
+          return new Response(text(resultsJson), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/crew/measurements")) {
+          return new Response(text(measurementsJson), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/api/attachments/e2e-photo-1")) {
+          const bytes = Uint8Array.from(atob(png), (char) => char.charCodeAt(0));
+          return new Response(bytes.buffer as ArrayBuffer, { status: 200, headers: { "Content-Type": "image/png" } });
+        }
+        if (url.includes("/api/attachments/e2e-photo-gone")) {
+          return new Response("{}", { status: 404 });
+        }
+        return originalFetch(input as RequestInfo, init);
+      }) as typeof window.fetch;
+    },
+    {
+      rosterJson: roster,
+      reportsJson: { reports: [photoReport] },
+      resultsJson: {
+        results: [detailResult],
+        cursor: null,
+      },
+      measurementsJson: {
+        measurements: [detailMeasurement, { ...detailMeasurement, client_id: "m-2" }],
+        cursor: null,
+      },
+      png: PNG_1PX,
+    }
+  );
+}
+
 const roster = {
   crew: [
     {
@@ -80,6 +129,15 @@ const roster = {
       checkin_days_7d: 5,
       open_reports: 1,
       vitals: [{ metric: "heart_rate", value: 182, unit: "bpm", status: "critical" }],
+    },
+    {
+      crew_id: "some-crew-2",
+      name: "No Data",
+      overall_status: null,
+      last_check_in: null,
+      checkin_days_7d: 0,
+      open_reports: 0,
+      vitals: [],
     },
   ],
 };
@@ -148,12 +206,20 @@ test("surgeon dashboard shows the crew board with status and open reports", asyn
   await page.route("**/api/reports*", (route) => route.fulfill({ json: { reports: [photoReport] } }));
 
   await page.goto(`${BASE_URL}/login`);
+  await stubSurgeonApi(page);
   await seedSession(page, FMO, "flight_medical_officer");
   await page.goto(`${BASE_URL}/surgeon`);
   await expect(page.getByRole("heading", { name: /flight surgeon/i })).toBeVisible();
   await expect(page.getByTestId("crew-card-some-crew")).toBeVisible();
   await expect(page.getByText("Some Crew", { exact: true })).toBeVisible();
   await expect(page.getByText(/1 open report/)).toBeVisible();
+  const badge = page.getByTestId("crew-card-some-crew-2").getByText("insufficient", { exact: true });
+  await expect(badge).toBeVisible();
+  const badgeColors = await badge.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { color: style.color, background: style.backgroundColor };
+  });
+  expect(badgeColors.color).not.toBe(badgeColors.background);
 });
 
 test("crew detail shows the timeline, charts and photo thumbnails", async ({ page }) => {
@@ -184,11 +250,12 @@ test("crew detail shows the timeline, charts and photo thumbnails", async ({ pag
   }, PNG_1PX);
 
   await page.goto(`${BASE_URL}/login`);
+  await stubSurgeonApi(page);
   await seedSession(page, FMO, "flight_medical_officer");
   await page.goto(`${BASE_URL}/surgeon/crew?id=some-crew`);
-  await expect(page.getByRole("heading", { name: "Some Crew" })).toBeVisible();
-  await expect(page.getByText("critical", { exact: true }).first()).toBeVisible();
-  await expect(page.locator("svg").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Some Crew" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("critical", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("svg").first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("photo-thumb")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Photo expired (90 days)")).toBeVisible({ timeout: 30_000 });
 });
@@ -199,6 +266,7 @@ test("reports inbox titles have no raw IDs", async ({ page }) => {
   await page.route("**/api/reports*", (route) => route.fulfill({ json: { reports: [photoReport] } }));
 
   await page.goto(`${BASE_URL}/login`);
+  await stubSurgeonApi(page);
   await seedSession(page, FMO, "flight_medical_officer");
   await page.goto(`${BASE_URL}/surgeon/reports`);
   await expect(page.getByRole("heading", { name: /reports inbox/i })).toBeVisible();

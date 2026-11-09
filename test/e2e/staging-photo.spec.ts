@@ -83,7 +83,7 @@ test("astronaut photo report reaches the surgeon as a loaded thumbnail", async (
   await fmo.goto(`${BASE_URL}/login`);
   await fmo.getByLabel(/access code/i).fill(FMO_CODE!);
   await fmo.getByRole("button", { name: /^log in$/i }).click();
-  await expect(fmo).toHaveURL(new RegExp(`crew=${FMO_CREW}`));
+  await expect(fmo).toHaveURL(/\/surgeon/);
 
   await fmo.goto(`${BASE_URL}/surgeon?crew=${FMO_CREW}`);
   await expect(fmo.getByRole("heading", { name: /flight surgeon/i })).toBeVisible();

@@ -27,7 +27,7 @@ function SurgeonReportsView() {
       const byId = new Map(roster.crew.map((row) => [row.crew_id, row.name] as const));
       setNames(byId);
       const stamp = new Date().toISOString();
-      setUpdatedAt(new Date(stamp).toUTCString());
+      setUpdatedAt(new Date(stamp).toLocaleString());
       await writeSurgeonCache("reports", inbox.reports);
       await writeSurgeonCache("roster", roster.crew);
     } catch {
@@ -35,7 +35,7 @@ function SurgeonReportsView() {
       const cachedRoster = await readSurgeonCache<Array<{ crew_id: string; name: string }>>("roster");
       if (cached) {
         setReports(cached.data);
-        setUpdatedAt(new Date(cached.updatedAt).toUTCString());
+        setUpdatedAt(new Date(cached.updatedAt).toLocaleString());
       }
       if (cachedRoster) setNames(new Map(cachedRoster.data.map((row) => [row.crew_id, row.name] as const)));
       if (!cached) setError("Could not load reports. Check the link and try again.");

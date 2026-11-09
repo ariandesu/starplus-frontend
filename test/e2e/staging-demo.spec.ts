@@ -89,5 +89,5 @@ test("demo flight surgeon sees the dashboard with four crew cards", async ({ pag
   await expect(page.getByTestId("crew-card-demo-crew-2")).toBeVisible();
   await expect(page.getByTestId("crew-card-demo-crew-3")).toBeVisible();
   await expect(page.getByTestId("crew-card-demo-crew-4")).toBeVisible();
-  await expect(page.getByText("Mia Chen")).toBeVisible();
+  await expect(page.getByText("Mia Chen", { exact: true })).toBeVisible();
 });

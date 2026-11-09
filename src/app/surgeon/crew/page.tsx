@@ -29,7 +29,7 @@ function CrewPageView() {
       setRows(roster.crew);
       setReports(inbox.reports as DetailReport[]);
       const stamp = new Date().toISOString();
-      setUpdatedAt(new Date(stamp).toUTCString());
+      setUpdatedAt(new Date(stamp).toLocaleString());
       await writeSurgeonCache("roster", roster.crew);
       await writeSurgeonCache("reports", inbox.reports);
     } catch {
@@ -37,7 +37,7 @@ function CrewPageView() {
       const cachedReports = await readSurgeonCache<DetailReport[]>("reports");
       if (cachedRoster) {
         setRows(cachedRoster.data);
-        setUpdatedAt(new Date(cachedRoster.updatedAt).toUTCString());
+        setUpdatedAt(new Date(cachedRoster.updatedAt).toLocaleString());
       }
       if (cachedReports) setReports(cachedReports.data);
     } finally {

@@ -36,12 +36,15 @@ test("surgeon dashboard shows four crew cards, Mia first", async ({ page }) => {
 
   await page.goto(`${BASE_URL}/surgeon`);
   await expect(page.getByRole("heading", { name: /flight surgeon/i })).toBeVisible();
+  await expect(page.locator('[data-testid^="crew-card-"]')).toHaveCount(4, { timeout: 60_000 });
   for (const id of ["demo-astronaut", "demo-crew-2", "demo-crew-3", "demo-crew-4"]) {
     await expect(page.getByTestId(`crew-card-${id}`)).toBeVisible({ timeout: 60_000 });
   }
   const cards = page.locator('[data-testid^="crew-card-"]');
   await expect(cards.first()).toContainText("Mia Chen");
   await expect(page.getByTestId("crew-card-demo-crew-3")).toContainText("critical");
+  await expect(page.getByTestId("crew-card-demo-crew-3")).toContainText("SpO2");
+  await expect(page.getByTestId("crew-card-demo-crew-3")).toContainText("88");
   const names = ["Alex Rivera", "Sam Okafor", "Mia Chen", "Leo Haas"];
   for (const name of names) {
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
@@ -79,6 +82,39 @@ test("Mia detail shows timeline, charts and the emergency photo; ack clears the 
   await expect(page.getByTestId("crew-card-demo-crew-3")).not.toContainText("open report", { timeout: 30_000 });
 });
 
+test("acknowledgement is per session: a new login still sees the emergency open", async ({ page }) => {
+  test.setTimeout(300_000);
+  if (!(await demoAvailable(page))) test.skip(true, "demo login is switched off here");
+  await loginSurgeon(page);
+
+  await page.goto(`${BASE_URL}/surgeon/crew?id=demo-crew-3`);
+  await expect(page.getByRole("button", { name: "Acknowledge" })).toHaveCount(2, { timeout: 60_000 });
+  await page.getByRole("button", { name: "Acknowledge" }).first().click();
+  await expect(page.getByRole("button", { name: "Acknowledge" })).toHaveCount(1, { timeout: 30_000 });
+
+  await page.evaluate(() => {
+    return new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open("starplus-device");
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction(["profiles", "settings"], "readwrite");
+        tx.objectStore("profiles").delete("demo-surgeon");
+        tx.objectStore("settings").put({ key: "active_crew", value: "" });
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      open.onerror = () => reject(open.error);
+    });
+  });
+  await page.goto(`${BASE_URL}/login?demo=surgeon`);
+  await expect(page).toHaveURL(/\/surgeon/, { timeout: 30_000 });
+  await page.goto(`${BASE_URL}/surgeon/crew?id=demo-crew-3`);
+  await expect(page.getByRole("button", { name: "Acknowledge" })).toHaveCount(2, { timeout: 60_000 });
+});
+
 test("reports inbox has titles with crew names and no raw IDs", async ({ page }) => {
   test.setTimeout(300_000);
   if (!(await demoAvailable(page))) test.skip(true, "demo login is switched off here");
@@ -88,6 +124,7 @@ test("reports inbox has titles with crew names and no raw IDs", async ({ page })
   await expect(page.getByRole("heading", { name: /reports inbox/i })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "All", exact: true }).click();
   await expect(page.getByText("Emergency · Mia Chen ·").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('section[aria-label="Reports inbox"] li')).toHaveCount(4, { timeout: 30_000 });
   await expect(page.getByText(/Routine · Mia Chen ·/).first()).toBeVisible();
   await expect(page.getByText(/Routine · Alex Rivera ·/).first()).toBeVisible();
   const body = (await page.textContent("body")) ?? "";
