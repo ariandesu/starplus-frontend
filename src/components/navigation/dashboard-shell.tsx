@@ -8,7 +8,7 @@ import { EmergencyButton } from "../emergency-button";
 import { DemoBanner } from "../dashboard/demo-badge";
 import { OutboxSync } from "../outbox-sync";
 import { deviceDb } from "@/lib/db";
-import { getSession } from "@/lib/session";
+import { getSession, touchActivity } from "@/lib/session";
 
 function useSetting(key: string, fallback: string): string {
   const [value, setValue] = useState(fallback);
@@ -64,6 +64,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         if (row?.value === "true") setDemo(true);
       }
     })().catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    let last = 0;
+    const touch = () => {
+      const now = Date.now();
+      if (now - last < 60_000) return;
+      last = now;
+      touchActivity().catch(() => undefined);
+    };
+    window.addEventListener("pointerdown", touch);
+    window.addEventListener("keydown", touch);
+    return () => {
+      window.removeEventListener("pointerdown", touch);
+      window.removeEventListener("keydown", touch);
+    };
   }, []);
 
   return (

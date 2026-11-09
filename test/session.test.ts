@@ -177,6 +177,96 @@ describe("session", () => {
     expect(await getActiveCrewId(null)).toBeNull();
   });
 
+  it("touches last activity when the active crew is set", async () => {
+    const { setActiveCrew, lastActivity } = await import("../src/lib/session");
+    const before = Date.now();
+    await setActiveCrew("touch-crew");
+    const last = await lastActivity();
+    expect(last).not.toBeNull();
+    expect(Date.parse(last!)).toBeGreaterThanOrEqual(before);
+  });
+
+  it("ignores the stored crew on a shared device idle over 30 minutes", async () => {
+    const db = await deviceDb();
+    await db.put("settings", { key: "shared_device", value: "true" });
+    await db.put("profiles", {
+      crew_id: "idle-crew",
+      display_name: "idle-crew",
+      token: "tok-idle",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: true,
+    });
+    await db.put("settings", { key: "active_crew", value: "idle-crew" });
+    await db.put("settings", { key: "last_active", value: new Date(Date.now() - 31 * 60 * 1000).toISOString() });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBeNull();
+    expect((await db.get("settings", "active_crew"))?.value).toBe("");
+  });
+
+  it("keeps the stored crew on a shared device used recently", async () => {
+    const db = await deviceDb();
+    await db.put("settings", { key: "shared_device", value: "true" });
+    await db.put("profiles", {
+      crew_id: "fresh-crew",
+      display_name: "fresh-crew",
+      token: "tok-fresh",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: true,
+    });
+    await db.put("settings", { key: "active_crew", value: "fresh-crew" });
+    await db.put("settings", { key: "last_active", value: new Date().toISOString() });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBe("fresh-crew");
+  });
+
+  it("keeps the stored crew on a personal device regardless of idle time", async () => {
+    const db = await deviceDb();
+    await db.put("settings", { key: "shared_device", value: "false" });
+    await db.put("profiles", {
+      crew_id: "personal-crew",
+      display_name: "personal-crew",
+      token: "tok-personal",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    await db.put("settings", { key: "active_crew", value: "personal-crew" });
+    await db.put("settings", { key: "last_active", value: "2020-01-01T00:00:00Z" });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBe("personal-crew");
+  });
+
+  it("still honors a valid URL crew on an idle shared device", async () => {
+    const db = await deviceDb();
+    await db.put("settings", { key: "shared_device", value: "true" });
+    await db.put("profiles", {
+      crew_id: "url-shared-crew",
+      display_name: "url-shared-crew",
+      token: "tok-url-shared",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: true,
+    });
+    await db.put("settings", { key: "active_crew", value: "other-crew" });
+    await db.put("settings", { key: "last_active", value: "2020-01-01T00:00:00Z" });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId("url-shared-crew")).toBe("url-shared-crew");
+  });
+
   it("logs in to the demo crew and marks the session", async () => {
     vi.stubGlobal(
       "fetch",
@@ -267,5 +357,33 @@ describe("session", () => {
     expect(stored?.model_advice).toBeNull();
     await db.clear("measurements");
     await db.clear("results");
+  });
+
+  it("stores the crew's own reports from the sync as delivered", async () => {
+    const report = (id: string, kind: string) => ({
+      client_id: id,
+      device_id: "seed-demo",
+      submitted_by: "pull-crew",
+      subject_crew_id: null,
+      subject_label: "unknown crewmate",
+      kind,
+      created_at: "2026-11-08T10:00:00Z",
+      received_at: "2026-11-08T10:00:01Z",
+      payload_json: "{}",
+      summary_text: null,
+      summary_edited: 0,
+      status: "delivered",
+      acknowledged_by: null,
+      acknowledged_at: null,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ok({ measurements: [], results: [], reports_status: [], reports: [report("rep-1", "routine"), report("rep-2", "emergency")], cursor: null, measurements_cursor: null, results_cursor: null }))
+    );
+    await pullHistory("pull-crew", "tok-pull");
+    const db = await profileDb("pull-crew");
+    expect(await db.get("reports", "rep-1")).toMatchObject({ kind: "routine", status: "delivered" });
+    expect(await db.get("reports", "rep-2")).toMatchObject({ kind: "emergency", status: "delivered" });
+    await db.clear("reports");
   });
 });

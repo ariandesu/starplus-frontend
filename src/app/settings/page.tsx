@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { deviceDb } from "@/lib/db";
 import { commsSummary } from "@/lib/comms-link";
 import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-settings";
 import { API_BASE } from "@/lib/api";
+import { getSession, logout } from "@/lib/session";
 
 const SETTINGS = [
   { value: "iss", label: "ISS" },
@@ -30,11 +32,13 @@ async function setSetting(key: string, value: string): Promise<void> {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [setting, setSettingValue] = useState("iss");
   const [phase, setPhase] = useState("inflight");
   const [missionStart, setMissionStart] = useState("");
   const [blackout, setBlackout] = useState(false);
   const [gamification, setGamification] = useState(true);
+  const [crewId, setCrewId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -44,6 +48,10 @@ export default function SettingsPage() {
       setMissionStart(await getSetting("mission_start", ""));
       setBlackout((await getSetting("comms_blackout", "false")) === "true");
       setGamification(gamificationEnabled());
+      const db = await deviceDb();
+      const active = await db.get("settings", "active_crew");
+      const id = typeof active?.value === "string" && active.value ? active.value : null;
+      setCrewId(id && (await getSession(id).catch(() => null)) ? id : null);
       setReady(true);
     })().catch(() => setReady(true));
   }, []);
@@ -51,6 +59,12 @@ export default function SettingsPage() {
   async function update(key: string, value: string, apply: (v: string) => void) {
     apply(value);
     await setSetting(key, value);
+  }
+
+  async function signOut() {
+    if (crewId) await logout(crewId).catch(() => undefined);
+    setCrewId(null);
+    router.push("/login");
   }
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
@@ -125,6 +139,18 @@ export default function SettingsPage() {
             Show points, streaks and patches on the Progress page
           </label>
         </div>
+        {crewId && (
+          <div className="rounded-xl border border-border p-4">
+            <p className="text-sm font-semibold text-foreground">Signed in as {crewId}</p>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="mt-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground"
+            >
+              Log out
+            </button>
+          </div>
+        )}
         <div className="rounded-xl border border-border p-4">
           <h2 className="text-sm font-semibold text-foreground">Data notice</h2>
           <p className="mt-1 text-sm text-muted-foreground">

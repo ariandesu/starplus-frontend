@@ -57,6 +57,7 @@ function ResultView() {
   const [result, setResult] = useState<Result | null>(null);
   const [records, setRecords] = useState<Measurement[]>([]);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [settled, setSettled] = useState(false);
 
   async function confirmEstimate(clientId: string, phase: string) {
     if (!crewId || confirming) return;
@@ -78,16 +79,24 @@ function ResultView() {
   useEffect(() => {
     if (!crewReady) return;
     (async () => {
-      if (!crewId || !resultId) return;
+      if (!crewId) return;
       const db = await profileDb(crewId);
-      const stored = await db.get("results", resultId);
-      if (!stored) return;
+      let stored = resultId ? await db.get("results", resultId) : undefined;
+      if (!stored && !resultId) {
+        const all = await db.getAll("results");
+        stored = all.sort((a, b) => (a.assessed_at < b.assessed_at ? 1 : -1))[0];
+      }
+      if (!stored) {
+        setSettled(true);
+        return;
+      }
       setResult(stored);
       const measures = await Promise.all(
         stored.per_measure.map((entry) => db.get("measurements", entry.values.client_id))
       );
       setRecords(measures.filter((m): m is Measurement => !!m));
-    })().catch(() => undefined);
+      setSettled(true);
+    })().catch(() => setSettled(true));
   }, [crewId, crewReady, resultId]);
 
   if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
@@ -102,9 +111,18 @@ function ResultView() {
     );
   }
   if (!result) {
+    if (!settled && resultId) {
+      return (
+        <div className="mx-auto w-full max-w-2xl px-4 py-8">
+          <p className="text-sm text-muted-foreground">Loading the result…</p>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <p className="text-sm text-muted-foreground">Loading the result…</p>
+        <p className="text-sm text-muted-foreground">
+          No result yet. <Link href={crewId ? `/check?crew=${encodeURIComponent(crewId)}` : "/check"} className="text-accent underline">Start a self-check</Link>
+        </p>
       </div>
     );
   }

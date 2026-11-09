@@ -1,10 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn, ChartLine, Stethoscope, Settings, FlaskConical, PersonStanding, Trophy, Pill } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn, LogOut, ChartLine, Stethoscope, Settings, FlaskConical, PersonStanding, Trophy, Pill } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { deviceDb } from "@/lib/db";
+import { logout } from "@/lib/session";
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -45,6 +48,17 @@ function Logo() {
 }
 
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
+  const router = useRouter();
+  const [crewId, setCrewId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    deviceDb()
+      .then((db) => db.get("settings", "active_crew"))
+      .then((row) => {
+        setCrewId(typeof row?.value === "string" && row.value ? row.value : null);
+      })
+      .catch(() => undefined);
+  }, [isOpen]);
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -55,6 +69,12 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
       document.body.style.overflow = "";
     };
   }, [isOpen, onClose]);
+
+  async function signOut() {
+    if (crewId) await logout(crewId).catch(() => undefined);
+    onClose();
+    router.push("/login");
+  }
 
   return (
     <>
@@ -103,6 +123,16 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
               </a>
             );
           })}
+          {crewId && (
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted transition-colors hover:bg-accent/10 hover:text-accent focus-ring"
+            >
+              <LogOut className="w-5 h-5" />
+              Log out
+            </button>
+          )}
         </nav>
       </aside>
     </>

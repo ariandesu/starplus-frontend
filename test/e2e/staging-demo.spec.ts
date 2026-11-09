@@ -65,6 +65,10 @@ test("demo astronaut sees pre-filled history and opens the latest result", async
   await expect(page.getByRole("heading", { name: /your result/i })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("critical", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/at or beyond a critical limit/i).first()).toBeVisible();
+
+  await page.goto(`${BASE_URL}/reports`);
+  await expect(page.getByRole("heading", { name: /^reports$/i })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('ul[aria-label="Delivered reports"] li')).toHaveCount(2, { timeout: 30_000 });
 });
 
 test("demo flight surgeon sees reports with a loaded photo", async ({ page }) => {

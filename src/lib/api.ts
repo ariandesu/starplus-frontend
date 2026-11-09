@@ -47,6 +47,7 @@ export function getSync(token: string, sinceMeasurements?: string | null, sinceR
     measurements: unknown[];
     results: unknown[];
     reports_status: unknown[];
+    reports: unknown[];
     cursor: string | null;
     measurements_cursor: string | null;
     results_cursor: string | null;

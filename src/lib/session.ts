@@ -1,6 +1,6 @@
 import { deviceDb, profileDb, type ProfileRecord } from "./db";
 import { getSync } from "./api";
-import type { Measurement, Result } from "@starplus/core";
+import type { Measurement, Report, Result } from "@starplus/core";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "https://starplus-backend.shareflow.workers.dev";
 
@@ -142,6 +142,9 @@ export async function pullHistory(crewId: string, token: string): Promise<void> 
     const body = await getSync(token, mSince, rSince);
     for (const item of body.measurements) await db.put("measurements", item as Measurement);
     for (const item of body.results) await db.put("results", parseSyncResult(item as Record<string, unknown>));
+    if (Array.isArray(body.reports)) {
+      for (const item of body.reports) await db.put("reports", item as Report);
+    }
     mSince = body.measurements_cursor;
     rSince = body.results_cursor;
     if (!mSince && !rSince) break;
@@ -175,12 +178,28 @@ export async function logout(crewId: string): Promise<void> {
 export async function setActiveCrew(crewId: string): Promise<void> {
   const db = await deviceDb();
   await db.put("settings", { key: "active_crew", value: crewId });
+  await db.put("settings", { key: "last_active", value: new Date().toISOString() });
 }
+
+export async function touchActivity(): Promise<void> {
+  const db = await deviceDb();
+  await db.put("settings", { key: "last_active", value: new Date().toISOString() });
+}
+
+export async function lastActivity(): Promise<string | null> {
+  const db = await deviceDb();
+  const row = await db.get("settings", "last_active");
+  return typeof row?.value === "string" && row.value ? row.value : null;
+}
+
+export const SHARED_IDLE_MS = 30 * 60 * 1000;
 
 /**
  * The single source of truth for the active crew member: the `?crew=` URL
  * value when it has a valid session on this device, otherwise the stored
- * active crew (set on login and cleared on logout or expiry).
+ * active crew (set on login and cleared on logout or expiry). On a shared
+ * device idle more than 30 minutes, the stored crew is ignored so the next
+ * person unlocks with the profile PIN instead.
  */
 export async function getActiveCrewId(urlCrew: string | null): Promise<string | null> {
   if (urlCrew) {
@@ -188,6 +207,13 @@ export async function getActiveCrewId(urlCrew: string | null): Promise<string | 
     if (session) return urlCrew;
   }
   const db = await deviceDb();
+  if (await isSharedDevice()) {
+    const last = await lastActivity();
+    if (!last || Date.now() - Date.parse(last) > SHARED_IDLE_MS) {
+      await db.put("settings", { key: "active_crew", value: "" });
+      return null;
+    }
+  }
   const stored = await db.get("settings", "active_crew");
   const crewId = typeof stored?.value === "string" && stored.value ? stored.value : null;
   if (!crewId) return null;

@@ -243,3 +243,129 @@ test("expired sessions fall back to logged-out views with Try the demo", async (
     await expect(page.getByText("Try the demo", { exact: true }).first()).toBeVisible({ timeout: 15_000 });
   }
 });
+
+async function setShared(page: Page, shared: boolean, lastActive: string | null): Promise<void> {
+  await page.evaluate(([isShared, last]) => {
+    return new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open("starplus-device");
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction("settings", "readwrite");
+        tx.objectStore("settings").put({ key: "shared_device", value: isShared ? "true" : "false" });
+        if (last) tx.objectStore("settings").put({ key: "last_active", value: last });
+        else {
+          const del = tx.objectStore("settings").delete("last_active");
+          del.onsuccess = () => undefined;
+        }
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      open.onerror = () => reject(open.error);
+    });
+  }, [shared, lastActive] as const);
+}
+
+test("log out from the menu and settings ends the session", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto(`${BASE_URL}/`);
+  await seedCrew(page, ASTRONAUT, "astronaut");
+  await page.goto(`${BASE_URL}/`);
+
+  const openMenu = page.getByRole("button", { name: /open menu/i });
+  await openMenu.click();
+  const logoutItem = page.locator('aside[aria-label="Main navigation"]').getByRole("button", { name: "Log out", exact: true });
+  await expect(logoutItem).toBeVisible();
+  await logoutItem.click();
+  await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
+  await expect(page.getByText("Try the demo", { exact: true })).toBeVisible();
+  expect(await activeCrewSetting(page)).toBe("");
+
+  await seedCrew(page, ASTRONAUT, "astronaut");
+  await page.goto(`${BASE_URL}/settings`);
+  await expect(page.getByText(`Signed in as ${ASTRONAUT}`)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
+  await expect(page.getByText("Try the demo", { exact: true })).toBeVisible();
+  expect(await activeCrewSetting(page)).toBe("");
+});
+
+test("a shared device idle over 30 minutes asks for the PIN instead", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto(`${BASE_URL}/`);
+  await seedCrew(page, ASTRONAUT, "astronaut");
+
+  await setShared(page, true, new Date(Date.now() - 31 * 60 * 1000).toISOString());
+  await page.goto(`${BASE_URL}/body`);
+  await expect(page.getByText("Try the demo", { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+  expect(await activeCrewSetting(page)).toBe("");
+
+  await seedCrew(page, ASTRONAUT, "astronaut");
+  await setShared(page, true, new Date().toISOString());
+  await page.goto(`${BASE_URL}/body`);
+  await expect(page.getByText(/body map/i)).toBeVisible({ timeout: 15_000 });
+  await expectLoggedIn(page);
+
+  await setShared(page, false, "2020-01-01T00:00:00Z");
+  await page.goto(`${BASE_URL}/history`);
+  await expect(page.getByText(/^history$/i).first()).toBeVisible({ timeout: 15_000 });
+  await expectLoggedIn(page);
+});
+
+async function seedResults(page: Page, crewId: string, assessedAts: string[]): Promise<void> {
+  await page.evaluate(([id, stamps]) => {
+    return new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open(`starplus-${id}`);
+      open.onupgradeneeded = () => {
+        const db = open.result;
+        if (!db.objectStoreNames.contains("measurements")) db.createObjectStore("measurements", { keyPath: "client_id" });
+        if (!db.objectStoreNames.contains("results")) db.createObjectStore("results", { keyPath: "client_id" });
+        if (!db.objectStoreNames.contains("reports")) db.createObjectStore("reports", { keyPath: "client_id" });
+      };
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction("results", "readwrite");
+        for (const [index, assessed_at] of stamps.entries()) {
+          tx.objectStore("results").put({
+            client_id: `res-${index}`,
+            crew_id: id,
+            assessed_at,
+            overall_status: "nominal",
+            per_measure: [],
+            model_advice: null,
+            model_id: "none",
+            model_version: "none",
+            catalog_version: "1",
+            kb_version: "none",
+            inputs_hash: "e2e",
+            received_at: assessed_at,
+          });
+        }
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      open.onerror = () => reject(open.error);
+    });
+  }, [crewId, assessedAts] as const);
+}
+
+test("result without an ID opens the latest, or the empty state", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto(`${BASE_URL}/`);
+  await seedCrew(page, ASTRONAUT, "astronaut");
+
+  await page.goto(`${BASE_URL}/result`);
+  await expect(page.getByText(/no result yet/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("link", { name: /start a self-check/i })).toBeVisible();
+  await expectLoggedIn(page);
+
+  await seedResults(page, ASTRONAUT, ["2026-11-07T12:00:00Z", "2026-11-08T12:00:00Z"]);
+  await page.goto(`${BASE_URL}/result`);
+  await expect(page.getByRole("heading", { name: /your result/i })).toBeVisible({ timeout: 15_000 });
+  await expectLoggedIn(page);
+});
