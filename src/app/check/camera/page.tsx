@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { lookupMeasure, type Measurement, type Phase } from "@starplus/core";
 import { parseDisplayReading, recognizeDisplay } from "@/lib/adapters/ocr";
 import { previewFromReadings, type EditableReading } from "@/lib/adapters/voice";

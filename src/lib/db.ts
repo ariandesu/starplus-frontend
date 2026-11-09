@@ -37,10 +37,17 @@ interface ProfileSchema extends DBSchema {
   content: { key: string; value: { id: string; json: string } };
 }
 
+export interface CacheRecord {
+  key: string;
+  value: unknown;
+  updated_at: string;
+}
+
 interface DeviceSchema extends DBSchema {
   outbox: { key: string; value: OutboxItem; indexes: { "by-state": string } };
   settings: { key: string; value: SettingRecord };
   profiles: { key: string; value: ProfileRecord };
+  surgeon_cache: { key: string; value: CacheRecord };
 }
 
 function upgradeProfile(db: IDBPDatabase<ProfileSchema>): void {
@@ -71,12 +78,17 @@ export function demoDb(): Promise<IDBPDatabase<ProfileSchema>> {
 }
 
 export function deviceDb(): Promise<IDBPDatabase<DeviceSchema>> {
-  return openDB<DeviceSchema>("starplus-device", 1, {
-    upgrade(db) {
-      const outbox = db.createObjectStore("outbox", { keyPath: "client_id" });
-      outbox.createIndex("by-state", "state");
-      db.createObjectStore("settings", { keyPath: "key" });
-      db.createObjectStore("profiles", { keyPath: "crew_id" });
+  return openDB<DeviceSchema>("starplus-device", 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const outbox = db.createObjectStore("outbox", { keyPath: "client_id" });
+        outbox.createIndex("by-state", "state");
+        db.createObjectStore("settings", { keyPath: "key" });
+        db.createObjectStore("profiles", { keyPath: "crew_id" });
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore("surgeon_cache", { keyPath: "key" });
+      }
     },
   });
 }

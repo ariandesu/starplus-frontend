@@ -68,20 +68,26 @@ test("demo astronaut sees pre-filled history and opens the latest result", async
 
   await page.goto(`${BASE_URL}/reports`);
   await expect(page.getByRole("heading", { name: /^reports$/i })).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator('ul[aria-label="Delivered reports"] li')).toHaveCount(2, { timeout: 30_000 });
+  await expect(page.locator('ul[aria-label="Delivered reports"] li')).toHaveCount(1, { timeout: 30_000 });
+  await expect(page.getByText(/Routine · .* · acknowledged/).first()).toBeVisible();
+  const deliveredBody = (await page.textContent("body")) ?? "";
+  expect(deliveredBody).not.toContain("seed-demo-report");
+  expect(deliveredBody).not.toContain("demo-astronaut");
 });
 
-test("demo flight surgeon sees reports with a loaded photo", async ({ page }) => {
+test("demo flight surgeon sees the dashboard with four crew cards", async ({ page }) => {
   test.setTimeout(300_000);
   if (!(await demoAvailable(page))) test.skip(true, "demo login is switched off here");
 
   await page.goto(`${BASE_URL}/login?demo=surgeon`);
-  await expect(page).toHaveURL(/crew=demo-surgeon/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/surgeon/, { timeout: 30_000 });
   await expect(page.getByTestId("demo-banner")).toBeVisible();
 
   await page.goto(`${BASE_URL}/surgeon?crew=demo-surgeon`);
   await expect(page.getByRole("heading", { name: /flight surgeon/i })).toBeVisible();
-  const thumb = page.getByTestId("photo-thumb").first();
-  await expect(thumb).toBeVisible({ timeout: 60_000 });
-  expect(await thumb.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect(page.getByTestId("crew-card-demo-astronaut")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("crew-card-demo-crew-2")).toBeVisible();
+  await expect(page.getByTestId("crew-card-demo-crew-3")).toBeVisible();
+  await expect(page.getByTestId("crew-card-demo-crew-4")).toBeVisible();
+  await expect(page.getByText("Mia Chen")).toBeVisible();
 });

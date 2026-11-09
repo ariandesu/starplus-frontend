@@ -134,9 +134,9 @@ test("CUJ 8 demo mode stays on the device", async ({ page }) => {
   await page.goto(`${BASE_URL}/demo`);
   await page.getByRole("button", { name: /switch on demo mode/i }).click();
   await expect(page).toHaveURL(/\?demo=1/);
-  await expect(page.getByText(/everything shown is synthetic/i)).toBeVisible();
+  await expect(page.getByText("Demo: synthetic crew data")).toBeVisible();
   await page.goto(`${BASE_URL}/demo`);
   await page.getByRole("button", { name: /exit demo mode/i }).click();
   await expect(page).toHaveURL(`${BASE_URL}/`);
-  await expect(page.getByText(/everything shown is synthetic/i)).toHaveCount(0);
+  await expect(page.getByText("Demo: synthetic crew data")).toHaveCount(0);
 });

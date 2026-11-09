@@ -82,6 +82,33 @@ export function getCrewResults(token: string, crew_id: string, since?: string | 
   return apiFetch<{ results: unknown[]; cursor: string | null }>(`/api/crew/results?${params}`, token);
 }
 
+export interface RosterVital {
+  metric: string;
+  value: number | string | null;
+  unit: string;
+  status: string;
+}
+
+export interface RosterRow {
+  crew_id: string;
+  name: string;
+  overall_status: string | null;
+  last_check_in: string | null;
+  checkin_days_7d: number;
+  open_reports: number;
+  vitals: RosterVital[];
+}
+
+export function getCrewRoster(token: string) {
+  return apiFetch<{ crew: RosterRow[] }>("/api/crew/roster", token);
+}
+
+export function getCrewMeasurements(token: string, crew_id: string, since?: string | null) {
+  const params = new URLSearchParams({ crew_id });
+  if (since) params.set("since", since);
+  return apiFetch<{ measurements: unknown[]; cursor: string | null }>(`/api/crew/measurements?${params}`, token);
+}
+
 export function getCrewProgress(token: string) {
   return apiFetch<{ window_days: number; readiness_pct: number }>("/api/crew/progress", token);
 }

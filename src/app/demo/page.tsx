@@ -63,7 +63,7 @@ export default function DemoPage() {
     <div className="mx-auto w-full max-w-md px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Demo mode</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Loads a synthetic crew with 30 days of history into a separate on-device store. The
+        Loads a demo crew with 30 days of history into a separate on-device store. The
         outbox is disabled: nothing is ever sent. For judges trying the app.
       </p>
       <div className="mt-4 flex flex-wrap gap-3">

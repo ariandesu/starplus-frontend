@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { WaitingBanner } from "@/components/waiting-banner";
 import { profileDb } from "@/lib/db";
-import { hasActiveSession } from "@/lib/session";
+import { getSession, hasActiveSession } from "@/lib/session";
 import { onSynced } from "@/lib/outbox-sync";
 import { pendingEmergencyCount } from "@/lib/outbox";
 import type { Result } from "@starplus/core";
 import { useActiveCrew } from "@/lib/use-active-crew";
 
 function HomeView() {
+  const router = useRouter();
   const { crewId, ready: crewReady } = useActiveCrew();
   const [ready, setReady] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -50,6 +52,11 @@ function HomeView() {
         return;
       }
       try {
+        const session = await getSession(crewId);
+        if (session && (session.role === "flight_medical_officer" || session.role === "mission_control")) {
+          router.replace("/surgeon");
+          return;
+        }
         const db = await profileDb(crewId);
         const results = await db.getAllFromIndex("results", "by-assessed");
         setLatest(results.length > 0 ? results[results.length - 1] : null);
@@ -59,7 +66,7 @@ function HomeView() {
         setReady(true);
       }
     })().catch(() => setReady(true));
-  }, [crewId, crewReady]);
+  }, [crewId, crewReady, router]);
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
 

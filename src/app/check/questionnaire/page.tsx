@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import type { Phase } from "@starplus/core";
 import { assessAndQueue } from "@/lib/assess-and-queue";
 import { answerQuestionnaire, questionnaireQuestions } from "@/lib/adapters/questionnaire";

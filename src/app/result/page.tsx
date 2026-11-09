@@ -8,7 +8,7 @@ import { Citation, StatusTone } from "@/components/citation";
 import { ModelView } from "@/components/model-view";
 import { profileDb } from "@/lib/db";
 import { enqueueResult } from "@/lib/outbox";
-import { getExplanation, getKbEntry, citeLabel } from "@/lib/kb";
+import { getExplanation, getKbEntry, citeLabel, reasonText } from "@/lib/kb";
 import type { KbEntry } from "@starplus/core";
 import { useActiveCrew } from "@/lib/use-active-crew";
 
@@ -201,29 +201,6 @@ function ResultView() {
       </div>
     </div>
   );
-}
-
-function reasonText(reason: string): string {
-  switch (reason) {
-    case "limit_watch":
-      return "at or beyond a watch limit";
-    case "limit_critical":
-      return "at or beyond a critical limit";
-    case "baseline_watch":
-      return "rising against the personal baseline";
-    case "baseline_critical":
-      return "rising strongly against the personal baseline";
-    case "within_limits":
-      return "inside the safety limits";
-    case "insufficient_baseline":
-      return "not enough history yet — a baseline needs 5 readings older than 3 days";
-    case "estimate_abnormal":
-      return "estimated and outside the limits — confirm with a device";
-    case "refuted_estimate":
-      return "an earlier estimate a device reading overruled";
-    default:
-      return reason;
-  }
 }
 
 export default function ResultPage() {

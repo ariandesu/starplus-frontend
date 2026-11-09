@@ -23,7 +23,7 @@ export function DemoBanner({ className }: { className?: string }) {
         className
       )}
     >
-      Demo mode — everything shown is synthetic and stays on this device
+      Demo: synthetic crew data
     </div>
   );
 }

@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
 import { DemoBanner } from "../dashboard/demo-badge";
 import { OutboxSync } from "../outbox-sync";
 import { deviceDb } from "@/lib/db";
 import { getSession, touchActivity } from "@/lib/session";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 function useSetting(key: string, fallback: string): string {
   const [value, setValue] = useState(fallback);
@@ -24,23 +24,23 @@ function useSetting(key: string, fallback: string): string {
 }
 
 function DemoAccountBanner() {
-  const params = useSearchParams();
+  const { crewId, ready: crewReady } = useActiveCrew();
   const [show, setShow] = useState(false);
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const crewId = params.get("crew");
+      if (!crewReady) return;
       const session = crewId ? await getSession(crewId).catch(() => null) : null;
       if (!cancelled) setShow(session?.demo ?? false);
     })().catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [params]);
+  }, [crewId, crewReady]);
   if (!show) return null;
   return (
-    <p role="status" className="bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-900" data-testid="demo-banner">
-      Demo account: synthetic data
+    <p role="status" className="bg-accent px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-accent-foreground" data-testid="demo-banner">
+      Demo: synthetic crew data
     </p>
   );
 }

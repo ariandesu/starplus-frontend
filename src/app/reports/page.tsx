@@ -6,6 +6,7 @@ import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
 import type { Report } from "@starplus/core";
 import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
+import { ownReportTitle } from "@/lib/report-title";
 import { hasActiveSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
 
@@ -133,8 +134,12 @@ function ReportsView() {
         <ul aria-label="Delivered reports" className="mt-2 space-y-2">
           {delivered.map((report) => (
             <li key={report.client_id} className="rounded-xl border border-border p-3 text-sm">
-              <span className="font-semibold">{report.kind}</span> · delivered
-              <span className="block text-xs text-muted-foreground">{report.client_id.slice(0, 8)}</span>
+              <span className="font-semibold">
+                {ownReportTitle(report.kind, report.received_at || report.created_at, report.status)}
+              </span>
+              {report.summary_text && (
+                <span className="block text-xs text-muted-foreground">{report.summary_text}</span>
+              )}
             </li>
           ))}
         </ul>

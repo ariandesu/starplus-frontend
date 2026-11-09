@@ -24,7 +24,6 @@ function ProgressView() {
   const [streak, setStreak] = useState(0);
   const [patches, setPatches] = useState<MissionPatch[]>([]);
   const [crewPct, setCrewPct] = useState<number | null>(null);
-  const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,7 +36,6 @@ function ProgressView() {
       try {
         const session = await getSession(crewId);
         const demo = session?.demo ?? false;
-        setIsDemo(demo);
         const db = await profileDb(crewId);
         const measurements = await db.getAll("measurements");
         const results = await db.getAll("results");
@@ -94,11 +92,6 @@ function ProgressView() {
         </label>
       </div>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      {isDemo ? (
-        <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900">
-          Demo points (synthetic data)
-        </p>
-      ) : null}
       {enabled ? (
         <>
           <section aria-label="Daily readiness">

@@ -145,7 +145,7 @@ test("menu taps keep the active crew without ?crew=", async ({ page }) => {
 
 test("surgeon gate keeps the role check on the stored crew", async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto(`${BASE_URL}/`);
+  await page.goto(`${BASE_URL}/login`);
   await seedCrew(page, ASTRONAUT, "astronaut");
   await seedCrew(page, SURGEON, "flight_medical_officer");
   await page.evaluate(([id]) => {

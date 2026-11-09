@@ -128,7 +128,7 @@ function LoginForm() {
       <section aria-label="Trying the demo" className="mt-4 rounded-xl border border-border p-4">
         <h2 className="text-sm font-semibold text-foreground">Try the demo</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          One tap, no code. A pre-filled month of synthetic data, ready to explore.
+          One tap, no code. A pre-filled month of crew data, ready to explore.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button

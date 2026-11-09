@@ -1,129 +1,80 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
-import { ackReport, ApiError, getAttachment, getReports } from "@/lib/api";
-import { getSession } from "@/lib/session";
-import { useActiveCrew } from "@/lib/use-active-crew";
-
-interface ReportRow {
-  client_id: string;
-  device_id: string;
-  submitted_by: string;
-  subject_crew_id: string | null;
-  subject_label: string | null;
-  kind: string;
-  created_at: string;
-  received_at: string;
-  payload_json: string;
-  summary_text: string | null;
-  status: string;
-}
-
-function attachmentIds(payloadJson: string): string[] {
-  try {
-    const payload = JSON.parse(payloadJson) as { attachments?: Array<{ id?: unknown }> };
-    if (!Array.isArray(payload.attachments)) return [];
-    return payload.attachments
-      .map((attachment) => (typeof attachment.id === "string" ? attachment.id : ""))
-      .filter((id) => id.length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function ReportPhotos({ token, report }: { token: string; report: ReportRow }) {
-  const [urls, setUrls] = useState<Array<{ id: string; url: string }>>([]);
-  const [expired, setExpired] = useState<string[]>([]);
-  const ids = attachmentIds(report.payload_json);
-  useEffect(() => {
-    let cancelled = false;
-    const created: string[] = [];
-    (async () => {
-      for (const id of attachmentIds(report.payload_json)) {
-        try {
-          const blob = await getAttachment(token, id);
-          if (cancelled) return;
-          const url = URL.createObjectURL(blob);
-          created.push(url);
-          setUrls((prev) => [...prev, { id, url }]);
-        } catch (error) {
-          if (cancelled) return;
-          if (error instanceof ApiError && error.status === 404) {
-            setExpired((prev) => [...prev, id]);
-          }
-        }
-      }
-    })().catch(() => undefined);
-    return () => {
-      cancelled = true;
-      for (const url of created) URL.revokeObjectURL(url);
-    };
-  }, [token, report.client_id, report.payload_json]);
-  if (ids.length === 0) return null;
-  return (
-    <div className="mt-2">
-      <p className="text-sm font-semibold text-foreground">Photos</p>
-      <div className="mt-1 flex flex-wrap gap-2">
-        {urls.map(({ id, url }) => (
-          <img key={id} src={url} alt="Report photo" data-testid="photo-thumb" className="h-24 w-24 rounded-lg border border-border object-cover" />
-        ))}
-        {expired.map((id) => (
-          <p key={id} className="text-xs text-muted-foreground">
-            Photo expired (90 days)
-          </p>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { ackReport, getCrewRoster, getReports, type RosterRow } from "@/lib/api";
+import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
+import { CrewBoard } from "@/components/surgeon/crew-board";
+import { ReportsInbox, type InboxReport } from "@/components/surgeon/reports-inbox";
+import { useSurgeonSession } from "@/components/surgeon/use-surgeon";
 
 function SurgeonView() {
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const session = useSurgeonSession();
+  const { crewReady } = session;
+  const [rows, setRows] = useState<RosterRow[]>([]);
+  const [reports, setReports] = useState<InboxReport[]>([]);
+  const [names, setNames] = useState<Map<string, string>>(new Map());
   const [ready, setReady] = useState(false);
-  const [allowed, setAllowed] = useState(false);
-  const [token, setToken] = useState("");
-  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!session.session) return;
+    const token = session.session.token;
+    try {
+      const [roster, inbox] = await Promise.all([
+        getCrewRoster(token),
+        getReports(token, null, "desc"),
+      ]);
+      setRows(roster.crew);
+      setReports(inbox.reports as InboxReport[]);
+      const byId = new Map(roster.crew.map((row) => [row.crew_id, row.name] as const));
+      setNames(byId);
+      const stamp = new Date().toISOString();
+      setUpdatedAt(new Date(stamp).toUTCString());
+      await writeSurgeonCache("roster", roster.crew);
+      await writeSurgeonCache("reports", inbox.reports);
+    } catch {
+      const cachedRoster = await readSurgeonCache<RosterRow[]>("roster");
+      const cachedReports = await readSurgeonCache<InboxReport[]>("reports");
+      if (cachedRoster) {
+        setRows(cachedRoster.data);
+        setUpdatedAt(new Date(cachedRoster.updatedAt).toUTCString());
+      }
+      if (cachedReports) setReports(cachedReports.data);
+      if (cachedRoster) {
+        setNames(new Map(cachedRoster.data.map((row) => [row.crew_id, row.name] as const)));
+      }
+      if (!cachedRoster) setError("Could not load the crew board. Check the link and try again.");
+    } finally {
+      setReady(true);
+    }
+  }, [session.session]);
 
   useEffect(() => {
     if (!crewReady) return;
     (async () => {
-      if (!crewId) {
+      if (!session.session) {
         setReady(true);
         return;
       }
-      const session = await getSession(crewId);
-      if (!session || (session.role !== "flight_medical_officer" && session.role !== "mission_control")) {
-        setReady(true);
-        return;
-      }
-      setToken(session.token);
-      setAllowed(true);
-      try {
-        const body = await getReports(session.token, null, "desc");
-        setReports(body.reports as ReportRow[]);
-      } catch {
-        setError("Could not load reports. Check the link and try again.");
-      } finally {
-        setReady(true);
-      }
+      await refresh();
     })().catch(() => setReady(true));
-  }, [crewId, crewReady]);
+  }, [crewReady, session.session, refresh]);
 
-  async function acknowledge(client_id: string) {
+  async function acknowledge(clientId: string) {
+    if (!session.session) return;
     setError(null);
     try {
-      await ackReport(token, client_id);
-      const body = await getReports(token, null, "desc");
-      setReports(body.reports as ReportRow[]);
+      await ackReport(session.session.token, clientId);
+      await refresh();
     } catch {
       setError("Acknowledgement failed. Only the flight medical officer can acknowledge.");
     }
   }
 
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId || !allowed) {
+  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!session.crewId || !session.allowed || !session.session) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground">Flight surgeon</h1>
@@ -142,38 +93,14 @@ function SurgeonView() {
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>
       )}
-      {reports.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">No reports delivered yet.</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {reports.map((report) => (
-            <li key={report.client_id} className="rounded-xl border border-border p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-foreground">
-                  {report.kind} · {report.subject_label ?? report.subject_crew_id ?? "unknown"}
-                </p>
-                <span className="text-xs text-muted-foreground">{report.status}</span>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">From {report.submitted_by} · {new Date(report.received_at).toUTCString()}</p>
-              {report.summary_text && <p className="mt-1 text-sm text-foreground">{report.summary_text}</p>}
-              <ReportPhotos token={token} report={report} />
-              <details className="mt-2">
-                <summary className="cursor-pointer text-sm text-accent">Raw values and steps</summary>
-                <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-xs text-foreground">{report.payload_json}</pre>
-              </details>
-              {report.status !== "acknowledged" && (
-                <button
-                  type="button"
-                  onClick={() => acknowledge(report.client_id)}
-                  className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
-                >
-                  Acknowledge
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <CrewBoard rows={rows} updatedAt={updatedAt} />
+      <ReportsInbox
+        token={session.session.token}
+        reports={reports}
+        names={names}
+        updatedAt={updatedAt}
+        onAcknowledge={acknowledge}
+      />
     </div>
   );
 }

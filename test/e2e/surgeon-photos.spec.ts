@@ -1,7 +1,8 @@
 /**
- * AA3: the surgeon view shows attached photos as thumbnails, and reports a
- * 404 as an expired photo. Roles: only the sender and the flight surgeon
- * can fetch a photo (mission control and other astronauts get 403).
+ * Surgeon dashboard: the crew board lists astronauts with status and open
+ * reports; the crew detail shows the timeline and attached photos, and
+ * reports a 404 as an expired photo. Roles: only the sender and the flight
+ * surgeon can fetch a photo (mission control and other astronauts get 403).
  */
 import { expect, test, type Page } from "@playwright/test";
 
@@ -21,7 +22,7 @@ async function seedSession(page: Page, crewId: string, role: string): Promise<vo
       };
       open.onsuccess = () => {
         const db = open.result;
-        const tx = db.transaction("profiles", "readwrite");
+        const tx = db.transaction(["profiles", "settings"], "readwrite");
         tx.objectStore("profiles").put({
           crew_id: id,
           display_name: id,
@@ -33,6 +34,7 @@ async function seedSession(page: Page, crewId: string, role: string): Promise<vo
           pin_hash: null,
           shared_device: false,
         });
+        tx.objectStore("settings").put({ key: "active_crew", value: id });
         tx.oncomplete = () => {
           db.close();
           resolve();
@@ -68,18 +70,140 @@ const photoReport = {
   acknowledged_at: null,
 };
 
-test("surgeon view shows photo thumbnails and expired photos", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.route("**/api/reports*", (route) => route.fulfill({ json: { reports: [photoReport] } }));
-  await page.route("**/api/attachments/e2e-photo-1", (route) =>
-    route.fulfill({ body: Buffer.from(PNG_1PX, "base64"), contentType: "image/png" })
-  );
-  await page.route("**/api/attachments/e2e-photo-gone", (route) => route.fulfill({ status: 404 }));
+const roster = {
+  crew: [
+    {
+      crew_id: "some-crew",
+      name: "Some Crew",
+      overall_status: "critical",
+      last_check_in: "2026-11-08T12:00:00.000Z",
+      checkin_days_7d: 5,
+      open_reports: 1,
+      vitals: [{ metric: "heart_rate", value: 182, unit: "bpm", status: "critical" }],
+    },
+  ],
+};
 
-  await page.goto(`${BASE_URL}/`);
+const detailResult = {
+  client_id: "22222222-2222-4222-8222-222222222222",
+  crew_id: "some-crew",
+  assessed_at: "2026-11-08T12:00:00.000Z",
+  overall_status: "critical",
+  per_measure_json: JSON.stringify([
+    {
+      metric: "heart_rate",
+      status: "critical",
+      status_source: "safety_limit",
+      reason_code: "limit_critical",
+      values: {
+        value: 182,
+        unit: "bpm",
+        client_id: "m-1",
+        baseline_mean: null,
+        baseline_n: 0,
+        window_mean: null,
+        z_score: null,
+        trend: null,
+        confirm_required: false,
+        refuted: [],
+      },
+    },
+  ]),
+  model_advice_json: null,
+  model_id: "none",
+  model_version: "none",
+  catalog_version: "1",
+  kb_version: "none",
+  inputs_hash: "abc",
+  received_at: "2026-11-08T12:00:01Z",
+};
+
+const detailMeasurement = {
+  client_id: "m-1",
+  crew_id: "some-crew",
+  metric: "heart_rate",
+  value_num: 182,
+  value_text: null,
+  unit: "bpm",
+  measured_at: "2026-11-08T12:00:00.000Z",
+  received_at: "2026-11-08T12:00:01Z",
+  source: "manual",
+  device_id: "e2e-device",
+  capture_id: null,
+  is_estimate: 0,
+  confirmed_by_user: 0,
+  provenance: "synthetic",
+  setting: "iss",
+  phase: "inflight",
+  phase_day: null,
+  supersedes_client_id: null,
+  voided: 0,
+  catalog_version: "1",
+  schema_version: 1,
+};
+
+test("surgeon dashboard shows the crew board with status and open reports", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.route("**/api/crew/roster*", (route) => route.fulfill({ json: roster }));
+  await page.route("**/api/reports*", (route) => route.fulfill({ json: { reports: [photoReport] } }));
+
+  await page.goto(`${BASE_URL}/login`);
   await seedSession(page, FMO, "flight_medical_officer");
-  await page.goto(`${BASE_URL}/surgeon?crew=${FMO}`);
+  await page.goto(`${BASE_URL}/surgeon`);
   await expect(page.getByRole("heading", { name: /flight surgeon/i })).toBeVisible();
-  await expect(page.getByTestId("photo-thumb")).toBeVisible();
-  await expect(page.getByText("Photo expired (90 days)")).toBeVisible();
+  await expect(page.getByTestId("crew-card-some-crew")).toBeVisible();
+  await expect(page.getByText("Some Crew", { exact: true })).toBeVisible();
+  await expect(page.getByText(/1 open report/)).toBeVisible();
+});
+
+test("crew detail shows the timeline, charts and photo thumbnails", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.route("**/api/crew/roster*", (route) => route.fulfill({ json: roster }));
+  await page.route("**/api/reports*", (route) => route.fulfill({ json: { reports: [photoReport] } }));
+  await page.route("**/api/crew/results*", (route) =>
+    route.fulfill({ json: { results: [detailResult], cursor: null } })
+  );
+  await page.route("**/api/crew/measurements*", (route) =>
+    route.fulfill({ json: { measurements: [detailMeasurement, { ...detailMeasurement, client_id: "m-2" }], cursor: null } })
+  );
+  // In-page fetch stub: on WebKit the service worker intermittently bypasses
+  // page.route for attachments, so stub the photo bytes deterministically.
+  await page.addInitScript((png) => {
+    const originalFetch = window.fetch;
+    window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("/api/attachments/e2e-photo-1")) {
+        const bytes = Uint8Array.from(atob(png), (char) => char.charCodeAt(0));
+        return new Response(bytes.buffer as ArrayBuffer, { status: 200, headers: { "Content-Type": "image/png" } });
+      }
+      if (url.includes("/api/attachments/e2e-photo-gone")) {
+        return new Response("{}", { status: 404 });
+      }
+      return originalFetch(input as RequestInfo, init);
+    }) as typeof window.fetch;
+  }, PNG_1PX);
+
+  await page.goto(`${BASE_URL}/login`);
+  await seedSession(page, FMO, "flight_medical_officer");
+  await page.goto(`${BASE_URL}/surgeon/crew?id=some-crew`);
+  await expect(page.getByRole("heading", { name: "Some Crew" })).toBeVisible();
+  await expect(page.getByText("critical", { exact: true }).first()).toBeVisible();
+  await expect(page.locator("svg").first()).toBeVisible();
+  await expect(page.getByTestId("photo-thumb")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Photo expired (90 days)")).toBeVisible({ timeout: 30_000 });
+});
+
+test("reports inbox titles have no raw IDs", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.route("**/api/crew/roster*", (route) => route.fulfill({ json: roster }));
+  await page.route("**/api/reports*", (route) => route.fulfill({ json: { reports: [photoReport] } }));
+
+  await page.goto(`${BASE_URL}/login`);
+  await seedSession(page, FMO, "flight_medical_officer");
+  await page.goto(`${BASE_URL}/surgeon/reports`);
+  await expect(page.getByRole("heading", { name: /reports inbox/i })).toBeVisible();
+  await expect(page.getByText("Emergency · Some Crew · 8 Nov")).toBeVisible();
+  const body = (await page.textContent("body")) ?? "";
+  expect(body).not.toContain("11111111-1111-4111-8111-111111111111");
+  expect(body).not.toContain("some-crew");
 });

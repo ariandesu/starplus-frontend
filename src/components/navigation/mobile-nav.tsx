@@ -8,33 +8,29 @@ import { Menu, X, Home, HeartPulse, Siren, FileText, LogIn, LogOut, ChartLine, S
 import { cn } from "@/lib/utils";
 import { deviceDb } from "@/lib/db";
 import { logout } from "@/lib/session";
+import { navItemsForRole } from "@/lib/nav-items";
 
 interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-}
-
-// App routes for the self-check app.
-const NAV_ITEMS: NavItem[] = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Self-check", href: "/check", icon: HeartPulse },
-  { label: "History", href: "/history", icon: ChartLine },
-  { label: "Body", href: "/body", icon: PersonStanding },
-  { label: "Progress", href: "/progress", icon: Trophy },
-  { label: "Medicines", href: "/medicines", icon: Pill },
-  { label: "Emergency", href: "/emergency", icon: Siren },
-  { label: "Reports", href: "/reports", icon: FileText },
-  { label: "Surgeon", href: "/surgeon", icon: Stethoscope },
-  { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Demo", href: "/demo", icon: FlaskConical },
-  { label: "Login", href: "/login", icon: LogIn },
-];
+const NAV_ICONS: Record<string, React.ElementType> = {
+  Home,
+  "Self-check": HeartPulse,
+  History: ChartLine,
+  Body: PersonStanding,
+  Progress: Trophy,
+  Medicines: Pill,
+  Emergency: Siren,
+  Reports: FileText,
+  Surgeon: Stethoscope,
+  Settings: Settings,
+  Demo: FlaskConical,
+  Login: LogIn,
+  Dashboard: Stethoscope,
+  Crew: PersonStanding,
+};
 
 function Logo() {
   return (
@@ -50,12 +46,20 @@ function Logo() {
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const router = useRouter();
   const [crewId, setCrewId] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   useEffect(() => {
     if (!isOpen) return;
     deviceDb()
-      .then((db) => db.get("settings", "active_crew"))
-      .then((row) => {
-        setCrewId(typeof row?.value === "string" && row.value ? row.value : null);
+      .then(async (db) => {
+        const active = await db.get("settings", "active_crew");
+        const id = typeof active?.value === "string" && active.value ? active.value : null;
+        setCrewId(id);
+        if (id) {
+          const profile = await db.get("profiles", id);
+          setRole(profile?.role ?? null);
+        } else {
+          setRole(null);
+        }
       })
       .catch(() => undefined);
   }, [isOpen]);
@@ -109,8 +113,8 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
+          {navItemsForRole(role).map((item) => {
+            const Icon = NAV_ICONS[item.label] ?? Menu;
             return (
               <a
                 key={item.label}
