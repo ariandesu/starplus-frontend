@@ -302,6 +302,10 @@ test("a shared device idle over 30 minutes asks for the PIN instead", async ({ p
   await expect(page.getByText("Try the demo", { exact: true }).first()).toBeVisible({ timeout: 15_000 });
   expect(await activeCrewSetting(page)).toBe("");
 
+  await page.goto(`${BASE_URL}/body?crew=${ASTRONAUT}`);
+  await expect(page.getByText("Try the demo", { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+  expect(await activeCrewSetting(page)).toBe("");
+
   await seedCrew(page, ASTRONAUT, "astronaut");
   await setShared(page, true, new Date().toISOString());
   await page.goto(`${BASE_URL}/body`);

@@ -247,7 +247,7 @@ describe("session", () => {
     expect(await getActiveCrewId(null)).toBe("personal-crew");
   });
 
-  it("still honors a valid URL crew on an idle shared device", async () => {
+  it("locks the URL crew too on an idle shared device", async () => {
     const db = await deviceDb();
     await db.put("settings", { key: "shared_device", value: "true" });
     await db.put("profiles", {
@@ -264,7 +264,8 @@ describe("session", () => {
     await db.put("settings", { key: "active_crew", value: "other-crew" });
     await db.put("settings", { key: "last_active", value: "2020-01-01T00:00:00Z" });
     const { getActiveCrewId } = await import("../src/lib/session");
-    expect(await getActiveCrewId("url-shared-crew")).toBe("url-shared-crew");
+    expect(await getActiveCrewId("url-shared-crew")).toBeNull();
+    expect((await db.get("settings", "active_crew"))?.value).toBe("");
   });
 
   it("logs in to the demo crew and marks the session", async () => {

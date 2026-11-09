@@ -198,14 +198,10 @@ export const SHARED_IDLE_MS = 30 * 60 * 1000;
  * The single source of truth for the active crew member: the `?crew=` URL
  * value when it has a valid session on this device, otherwise the stored
  * active crew (set on login and cleared on logout or expiry). On a shared
- * device idle more than 30 minutes, the stored crew is ignored so the next
- * person unlocks with the profile PIN instead.
+ * device idle more than 30 minutes, both the URL and the stored crew are
+ * ignored so the next person unlocks with the profile PIN instead.
  */
 export async function getActiveCrewId(urlCrew: string | null): Promise<string | null> {
-  if (urlCrew) {
-    const session = await getSession(urlCrew);
-    if (session) return urlCrew;
-  }
   const db = await deviceDb();
   if (await isSharedDevice()) {
     const last = await lastActivity();
@@ -213,6 +209,10 @@ export async function getActiveCrewId(urlCrew: string | null): Promise<string | 
       await db.put("settings", { key: "active_crew", value: "" });
       return null;
     }
+  }
+  if (urlCrew) {
+    const session = await getSession(urlCrew);
+    if (session) return urlCrew;
   }
   const stored = await db.get("settings", "active_crew");
   const crewId = typeof stored?.value === "string" && stored.value ? stored.value : null;
