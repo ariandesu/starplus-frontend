@@ -9,33 +9,40 @@ export interface ActiveCrew {
   crewId: string | null;
   /** False until IndexedDB has been read; pages show a loading state meanwhile. */
   ready: boolean;
+  /** True when the session lookup itself failed (logged for diagnosis). */
+  error: boolean;
 }
 
 /**
  * Single source of truth for the active crew member across pages.
  * Reads `?crew=` when it has a valid session on this device, otherwise the
  * stored active crew (set on login, cleared on logout or expiry). Works
- * offline: it only reads IndexedDB.
+ * offline: it only reads IndexedDB. A lookup failure throws during render
+ * so the error boundary shows a reload prompt instead of a logged-out view.
  */
 export function useActiveCrew(): ActiveCrew {
   const params = useSearchParams();
   const urlCrew = params.get("crew");
-  const [state, setState] = useState<ActiveCrew>({ crewId: null, ready: false });
+  const [state, setState] = useState<ActiveCrew>({ crewId: null, ready: false, error: false });
 
   useEffect(() => {
     let cancelled = false;
     getActiveCrewId(urlCrew)
       .then((crewId) => {
-        if (!cancelled) setState({ crewId, ready: true });
+        if (!cancelled) setState({ crewId, ready: true, error: false });
       })
-      .catch(() => {
-        if (!cancelled) setState({ crewId: null, ready: true });
+      .catch((unknownError: unknown) => {
+        console.error("active crew lookup failed", unknownError);
+        if (!cancelled) setState({ crewId: null, ready: true, error: true });
       });
     return () => {
       cancelled = true;
     };
   }, [urlCrew]);
 
+  if (state.error) {
+    throw new Error("active crew lookup failed");
+  }
   return state;
 }
 

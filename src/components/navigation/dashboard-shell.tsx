@@ -9,6 +9,7 @@ import { OutboxSync } from "../outbox-sync";
 import { deviceDb } from "@/lib/db";
 import { getSession, touchActivity } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { CrewErrorBoundary } from "@/components/crew-error-boundary";
 
 function useSetting(key: string, fallback: string): string {
   const [value, setValue] = useState(fallback);
@@ -96,7 +97,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <DemoAccountBanner />
       </Suspense>
       <MobileNav isOpen={isOpen} onClose={close} />
-      <main className="flex-1 overflow-x-hidden">{children}</main>
+      <main className="flex-1 overflow-x-hidden">
+        <CrewErrorBoundary>{children}</CrewErrorBoundary>
+      </main>
     </div>
   );
 }

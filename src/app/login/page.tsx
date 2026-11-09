@@ -41,6 +41,7 @@ function LoginForm() {
         const knownCrew = role === "astronaut" ? "demo-astronaut" : "demo-surgeon";
         const existing = await getSession(knownCrew);
         if (existing?.demo && existing.token && existing.role === role) {
+          await setActiveCrew(knownCrew);
           setDone(true);
           router.push(`/?crew=${encodeURIComponent(knownCrew)}`);
           return;

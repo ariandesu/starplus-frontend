@@ -119,6 +119,25 @@ describe("session", () => {
     expect(await getActiveCrewId("url-crew")).toBe("url-crew");
   });
 
+  it("stores a valid URL crew as the active crew", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "url-store-crew",
+      display_name: "url-store-crew",
+      token: "tok-url-store",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    await db.put("settings", { key: "active_crew", value: "stale-crew" });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId("url-store-crew")).toBe("url-store-crew");
+    expect((await db.get("settings", "active_crew"))?.value).toBe("url-store-crew");
+  });
+
   it("falls back to the stored crew when the URL crew has no session", async () => {
     const db = await deviceDb();
     await db.put("profiles", {

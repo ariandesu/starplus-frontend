@@ -7,6 +7,7 @@ const API_BASE =
 export interface SessionInfo {
   token: string;
   crew_id: string;
+  name?: string;
   role: string;
   expires_at: string;
   provenance: string;
@@ -69,7 +70,7 @@ export async function login(accessCode: string): Promise<SessionInfo> {
     const previous = await db.get("profiles", session.crew_id);
     const record: ProfileRecord = {
       crew_id: session.crew_id,
-      display_name: previous?.display_name ?? session.crew_id,
+      display_name: session.name ?? previous?.display_name ?? session.crew_id,
       token: session.token,
       role: session.role,
       expires_at: session.expires_at,
@@ -119,7 +120,7 @@ export async function loginDemo(role: "astronaut" | "flight_medical_officer"): P
   const previous = await db.get("profiles", session.crew_id);
   const record: ProfileRecord = {
     crew_id: session.crew_id,
-    display_name: previous?.display_name ?? session.crew_id,
+    display_name: session.name ?? previous?.display_name ?? session.crew_id,
     token: session.token,
     role: session.role,
     expires_at: session.expires_at,
@@ -196,10 +197,11 @@ export const SHARED_IDLE_MS = 30 * 60 * 1000;
 
 /**
  * The single source of truth for the active crew member: the `?crew=` URL
- * value when it has a valid session on this device, otherwise the stored
- * active crew (set on login and cleared on logout or expiry). On a shared
- * device idle more than 30 minutes, both the URL and the stored crew are
- * ignored so the next person unlocks with the profile PIN instead.
+ * value when it has a valid session on this device (stored as the active
+ * crew), otherwise the stored active crew (set on login and cleared on
+ * logout or expiry). On a shared device idle more than 30 minutes, both
+ * the URL and the stored crew are ignored so the next person unlocks with
+ * the profile PIN instead.
  */
 export async function getActiveCrewId(urlCrew: string | null): Promise<string | null> {
   const db = await deviceDb();
@@ -212,7 +214,10 @@ export async function getActiveCrewId(urlCrew: string | null): Promise<string | 
   }
   if (urlCrew) {
     const session = await getSession(urlCrew);
-    if (session) return urlCrew;
+    if (session) {
+      await setActiveCrew(urlCrew);
+      return urlCrew;
+    }
   }
   const stored = await db.get("settings", "active_crew");
   const crewId = typeof stored?.value === "string" && stored.value ? stored.value : null;

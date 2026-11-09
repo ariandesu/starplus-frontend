@@ -29,6 +29,29 @@ async function loginAstronaut(page: import("@playwright/test").Page): Promise<vo
   await expect(page.getByText(/loading demo history/i)).toBeHidden({ timeout: 60_000 });
 }
 
+test("role switch keeps the newest login active across astronaut and surgeon", async ({ page }) => {
+  test.setTimeout(300_000);
+  if (!(await demoAvailable(page))) test.skip(true, "demo login is switched off here");
+
+  await loginAstronaut(page);
+  await expect(page.getByRole("heading", { name: /today/i })).toBeVisible({ timeout: 30_000 });
+
+  await loginSurgeon(page);
+  await page.goto(`${BASE_URL}/surgeon`);
+  await expect(page.getByTestId("crew-card-demo-crew-3")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("crew-card-demo-crew-3")).toContainText("critical");
+
+  await loginAstronaut(page);
+  await expect(page.getByRole("heading", { name: /today/i })).toBeVisible({ timeout: 30_000 });
+  const openMenu = page.getByRole("button", { name: /open menu/i });
+  if ((await openMenu.count()) > 0) await openMenu.click();
+  await page.locator('aside[aria-label="Main navigation"]').getByRole("link", { name: "History", exact: true }).click();
+  await expect(page.getByText(/^history$/i).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("svg").first()).toBeVisible({ timeout: 30_000 });
+  const body = (await page.textContent("body")) ?? "";
+  expect(body).not.toContain("Log in to see history");
+});
+
 test("surgeon dashboard shows four crew cards, Mia first", async ({ page }) => {
   test.setTimeout(300_000);
   if (!(await demoAvailable(page))) test.skip(true, "demo login is switched off here");
