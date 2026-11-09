@@ -5,12 +5,13 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { ackReport, getCrewRoster, getReports, type RosterRow } from "@/lib/api";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
 import { CrewBoard } from "@/components/surgeon/crew-board";
+import { ContinueAsButtons } from "@/components/continue-as";
 import { ReportsInbox, type InboxReport } from "@/components/surgeon/reports-inbox";
 import { useSurgeonSession } from "@/components/surgeon/use-surgeon";
 
 function SurgeonView() {
   const session = useSurgeonSession();
-  const { crewReady } = session;
+  const { crewReady, candidates } = session;
   const [rows, setRows] = useState<RosterRow[]>([]);
   const [reports, setReports] = useState<InboxReport[]>([]);
   const [names, setNames] = useState<Map<string, string>>(new Map());
@@ -83,6 +84,7 @@ function SurgeonView() {
           <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=surgeon" className="text-accent underline">Try the demo</Link>
         </p>
+        <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

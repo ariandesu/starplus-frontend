@@ -15,12 +15,13 @@ import { assessAndQueue } from "@/lib/assess-and-queue";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 const UNSUPPORTED_REASON = "This browser has no camera support";
 
 function CameraHrForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [supported] = useState(
     () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
   );
@@ -47,6 +48,7 @@ function CameraHrForm() {
           Log in to measure your heart rate. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
+          <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

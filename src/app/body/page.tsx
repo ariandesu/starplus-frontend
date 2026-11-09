@@ -6,9 +6,10 @@ import type { Measurement } from "@starplus/core";
 import { BodyMap, BodySystemList, BODY_SYSTEMS } from "@/components/body-map";
 import { profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 function BodyView() {
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [records, setRecords] = useState<Measurement[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -60,6 +61,7 @@ function BodyView() {
           Log in to see the body map. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
+          <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

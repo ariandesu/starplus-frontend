@@ -7,6 +7,7 @@ import { VitalChart } from "@/components/dashboard/vital-chart";
 import { buildSeries, type MetricSeries } from "@/lib/vital-series";
 import { profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 interface MeasureFilter {
   id: string;
@@ -22,7 +23,7 @@ const MEASURE_FILTERS: MeasureFilter[] = [
 ];
 
 function HistoryView() {
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [series, setSeries] = useState<MetricSeries[]>([]);
   const [ready, setReady] = useState(false);
   const [filter, setFilter] = useState("all");
@@ -61,6 +62,7 @@ function HistoryView() {
           Log in to see history. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
+          <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

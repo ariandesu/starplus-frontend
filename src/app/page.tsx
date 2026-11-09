@@ -11,10 +11,11 @@ import { onSynced } from "@/lib/outbox-sync";
 import { pendingEmergencyCount } from "@/lib/outbox";
 import type { Result } from "@starplus/core";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 function HomeView() {
   const router = useRouter();
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [ready, setReady] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [hasSession, setHasSession] = useState(false);
@@ -98,6 +99,7 @@ function HomeView() {
             Try the demo
           </Link>
         </div>
+        <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

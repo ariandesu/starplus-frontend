@@ -9,6 +9,7 @@ import { enqueueMeasurement } from "@/lib/outbox";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 type ParsedFile =
   | { kind: "csv"; headers: string[]; text: string }
@@ -44,7 +45,7 @@ function parseFile(name: string, text: string): ParsedFile | { kind: "error"; re
 }
 
 function ImportForm() {
-  const { crewId: activeCrewId, ready: crewReady } = useActiveCrew();
+  const { crewId: activeCrewId, ready: crewReady, candidates } = useActiveCrew();
   const crewId = activeCrewId ?? "";
   const [ready, setReady] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -156,6 +157,7 @@ function ImportForm() {
           Log in to import data. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
+        <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

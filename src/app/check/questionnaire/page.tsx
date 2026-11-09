@@ -9,10 +9,11 @@ import { answerQuestionnaire, questionnaireQuestions } from "@/lib/adapters/ques
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 function QuestionnaireForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,6 +26,7 @@ function QuestionnaireForm() {
           Log in to answer the questionnaire. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
+          <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

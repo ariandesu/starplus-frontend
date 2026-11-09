@@ -50,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const close = useCallback(() => setIsOpen(false), []);
   const [demo, setDemo] = useState(false);
+  const [updated, setUpdated] = useState(false);
   const setting = useSetting("setting", "iss");
   const phase = useSetting("phase", "inflight");
 
@@ -83,9 +84,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const onController = () => setUpdated(true);
+    navigator.serviceWorker.addEventListener("controllerchange", onController);
+    return () => {
+      navigator.serviceWorker.removeEventListener("controllerchange", onController);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col min-h-full">
       <OutboxSync />
+      {updated && (
+        <p role="status" className="bg-accent px-4 py-2 text-center text-sm font-semibold text-accent-foreground">
+          Updated.{" "}
+          <button type="button" onClick={() => window.location.reload()} className="underline">
+            Reload
+          </button>
+        </p>
+      )}
       <TopBar
         isOpen={isOpen}
         onToggle={() => setIsOpen((prev) => !prev)}

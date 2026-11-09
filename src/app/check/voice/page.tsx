@@ -11,6 +11,7 @@ import { ReadingPreview } from "@/components/reading-preview";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 interface SpeechRecognitionResultItem {
   transcript: string;
@@ -43,7 +44,7 @@ const UNSUPPORTED_REASON = "This browser has no speech recognition";
 
 function VoiceForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [supported] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -63,6 +64,7 @@ function VoiceForm() {
           Log in to log a voice reading. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
+          <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

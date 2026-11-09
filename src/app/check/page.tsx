@@ -23,6 +23,7 @@ import { useActiveCrew } from "@/lib/use-active-crew";
 import { getModelDefinition, getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueMeasurement, enqueueResult } from "@/lib/outbox";
 import { getSession } from "@/lib/session";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 async function getSetting(key: string, fallback: string): Promise<string> {
   const db = await deviceDb();
@@ -32,7 +33,7 @@ async function getSetting(key: string, fallback: string): Promise<string> {
 
 function CheckForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [ready, setReady] = useState(false);
   const [setting, setSetting] = useState<Setting>("iss");
   const [phase, setPhase] = useState<Phase>("inflight");
@@ -172,6 +173,7 @@ function CheckForm() {
             Try the demo
           </Link>
         </div>
+        <ContinueAsButtons candidates={candidates} />
       </div>
     );
   }

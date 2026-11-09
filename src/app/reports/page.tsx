@@ -9,6 +9,7 @@ import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
 import { ownReportTitle } from "@/lib/report-title";
 import { hasActiveSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 async function loadView(crewId: string) {
   const db = await deviceDb();
@@ -31,7 +32,7 @@ async function loadView(crewId: string) {
 }
 
 function ReportsView() {
-  const { crewId } = useActiveCrew();
+  const { crewId, candidates } = useActiveCrew();
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
@@ -91,6 +92,7 @@ function ReportsView() {
           <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
         </p>
       )}
+      {checked && !hasSession && <ContinueAsButtons candidates={candidates} />}
       {emergencyWaiting > 0 && (
         <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {hasSession

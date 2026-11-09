@@ -287,6 +287,67 @@ describe("session", () => {
     expect((await db.get("settings", "active_crew"))?.value).toBe("");
   });
 
+  it("adopts a single stranded session and writes active_crew", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "stranded-crew",
+      display_name: "Stranded Crew",
+      token: "tok-stranded",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    const { getActiveCrewId, listAdoptableCrews } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBe("stranded-crew");
+    expect((await db.get("settings", "active_crew"))?.value).toBe("stranded-crew");
+    expect(await listAdoptableCrews()).toEqual([
+      { crew_id: "stranded-crew", display_name: "Stranded Crew", role: "astronaut" },
+    ]);
+  });
+
+  it("returns choose for several stranded sessions and ignores expired ones", async () => {
+    const db = await deviceDb();
+    for (const [id, expires] of [["crew-a", "2030-01-01T00:00:00Z"], ["crew-b", "2031-01-01T00:00:00Z"], ["crew-old", "2020-01-01T00:00:00Z"]] as const) {
+      await db.put("profiles", {
+        crew_id: id,
+        display_name: id,
+        token: `tok-${id}`,
+        role: "astronaut",
+        expires_at: expires,
+        provenance: "real",
+        device_id: "d",
+        pin_hash: null,
+        shared_device: false,
+      });
+    }
+    const { getActiveCrewId, listAdoptableCrews } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBe("choose");
+    expect((await db.get("settings", "active_crew"))?.value ?? "").toBe("");
+    expect((await listAdoptableCrews()).map((profile) => profile.crew_id)).toEqual(["crew-b", "crew-a"]);
+  });
+
+  it("stays locked on a shared device past the idle limit even with stranded sessions", async () => {
+    const db = await deviceDb();
+    await db.put("settings", { key: "shared_device", value: "true" });
+    await db.put("settings", { key: "last_active", value: "2020-01-01T00:00:00Z" });
+    await db.put("profiles", {
+      crew_id: "idle-stranded",
+      display_name: "Idle Stranded",
+      token: "tok-idle-stranded",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: true,
+    });
+    const { getActiveCrewId } = await import("../src/lib/session");
+    expect(await getActiveCrewId(null)).toBeNull();
+  });
+
   it("logs in to the demo crew and marks the session", async () => {
     vi.stubGlobal(
       "fetch",

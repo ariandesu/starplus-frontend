@@ -180,6 +180,38 @@ export async function setActiveCrew(crewId: string): Promise<void> {
   const db = await deviceDb();
   await db.put("settings", { key: "active_crew", value: crewId });
   await db.put("settings", { key: "last_active", value: new Date().toISOString() });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("active-crew-changed"));
+  }
+}
+
+/** Adopt a valid on-device session as the active crew (profile picker). */
+export async function adoptCrew(crewId: string): Promise<void> {
+  await setActiveCrew(crewId);
+}
+
+export interface AdoptableCrew {
+  crew_id: string;
+  display_name: string;
+  role: string;
+}
+
+/** Profiles with a live session on this device, newest expiry first. */
+export async function listAdoptableCrews(): Promise<AdoptableCrew[]> {
+  const found: Array<AdoptableCrew & { expires_at: string }> = [];
+  for (const profile of await listProfiles()) {
+    if (!profile.expires_at) continue;
+    const session = await getSession(profile.crew_id);
+    if (!session) continue;
+    found.push({
+      crew_id: profile.crew_id,
+      display_name: profile.display_name,
+      role: session.role,
+      expires_at: profile.expires_at,
+    });
+  }
+  found.sort((a, b) => (a.expires_at < b.expires_at ? 1 : -1));
+  return found.map(({ crew_id, display_name, role }) => ({ crew_id, display_name, role }));
 }
 
 export async function touchActivity(): Promise<void> {
@@ -195,15 +227,19 @@ export async function lastActivity(): Promise<string | null> {
 
 export const SHARED_IDLE_MS = 30 * 60 * 1000;
 
+export type ActiveCrewState = string | null | "choose";
+
 /**
  * The single source of truth for the active crew member: the `?crew=` URL
  * value when it has a valid session on this device (stored as the active
  * crew), otherwise the stored active crew (set on login and cleared on
- * logout or expiry). On a shared device idle more than 30 minutes, both
- * the URL and the stored crew are ignored so the next person unlocks with
- * the profile PIN instead.
+ * logout or expiry). When neither is usable, a single valid on-device
+ * session is adopted; several valid sessions return "choose" for the
+ * profile picker. On a shared device idle more than 30 minutes, both the
+ * URL and the stored crew are ignored so the next person unlocks with the
+ * profile PIN instead.
  */
-export async function getActiveCrewId(urlCrew: string | null): Promise<string | null> {
+export async function getActiveCrewId(urlCrew: string | null): Promise<ActiveCrewState> {
   const db = await deviceDb();
   if (await isSharedDevice()) {
     const last = await lastActivity();
@@ -221,10 +257,17 @@ export async function getActiveCrewId(urlCrew: string | null): Promise<string | 
   }
   const stored = await db.get("settings", "active_crew");
   const crewId = typeof stored?.value === "string" && stored.value ? stored.value : null;
-  if (!crewId) return null;
-  const session = await getSession(crewId);
-  if (session) return crewId;
-  await db.put("settings", { key: "active_crew", value: "" });
+  if (crewId) {
+    const session = await getSession(crewId);
+    if (session) return crewId;
+    await db.put("settings", { key: "active_crew", value: "" });
+  }
+  const adoptable = await listAdoptableCrews();
+  if (adoptable.length === 1) {
+    await setActiveCrew(adoptable[0].crew_id);
+    return adoptable[0].crew_id;
+  }
+  if (adoptable.length > 1) return "choose";
   return null;
 }
 

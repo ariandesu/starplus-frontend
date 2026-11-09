@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSession, type SessionInfo } from "@/lib/session";
+import { getSession, type AdoptableCrew, type SessionInfo } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
 
 export interface SurgeonSession {
@@ -9,11 +9,12 @@ export interface SurgeonSession {
   crewId: string | null;
   session: SessionInfo | null;
   allowed: boolean;
+  candidates: AdoptableCrew[];
 }
 
 /** Shared gate: logged-in flight surgeon or mission control with a live token. */
 export function useSurgeonSession(): SurgeonSession {
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [checked, setChecked] = useState(false);
 
@@ -37,5 +38,5 @@ export function useSurgeonSession(): SurgeonSession {
     })().catch(() => setChecked(true));
   }, [crewId, crewReady]);
 
-  return { crewReady: crewReady && checked, crewId, session, allowed: session !== null };
+  return { crewReady: crewReady && checked, crewId, session, allowed: session !== null, candidates };
 }

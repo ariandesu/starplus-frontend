@@ -15,9 +15,10 @@ import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-
 import { getSession } from "@/lib/session";
 import { ReadinessRing } from "@/components/readiness-ring";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { ContinueAsButtons } from "@/components/continue-as";
 
 function ProgressView() {
-  const { crewId, ready: crewReady } = useActiveCrew();
+  const { crewId, ready: crewReady, candidates } = useActiveCrew();
   const [ready, setReady] = useState(false);
   const [enabled, setEnabled] = useState(() => gamificationEnabled());
   const [today, setToday] = useState<DayScore | null>(null);
@@ -78,6 +79,7 @@ function ProgressView() {
             Try the demo
           </a>
         </p>
+        <ContinueAsButtons candidates={candidates} />
       </main>
     );
   }
