@@ -87,7 +87,7 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
         setProfile(row ? { name: row.display_name, role: row.role ?? null } : null);
       })
       .catch(() => undefined);
-  }, [isOpen, isDesktop]);
+  }, [isOpen, isDesktop, pathname]);
 
   useEffect(() => {
     if (!isOpen || isDesktop) return;

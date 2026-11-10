@@ -296,7 +296,7 @@ test("log out from the menu and settings ends the session", async ({ page }) => 
   await seedCrew(page, ASTRONAUT, "astronaut");
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText(`Signed in as ${ASTRONAUT}`)).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await page.getByRole("main").getByRole("button", { name: "Log out", exact: true }).click();
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: /select your mission role/i })).toBeVisible({ timeout: 15_000 });
   expect(await activeCrewSetting(page)).toBe("");
