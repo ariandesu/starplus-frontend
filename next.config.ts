@@ -1,11 +1,42 @@
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+
+const asset = (url: string) => ({
+  url,
+  revision: createHash("sha256").update(readFileSync(`public${url}`)).digest("hex").slice(0, 16),
+});
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   reloadOnOnline: false,
-  additionalPrecacheEntries: ["/", "/login", "/check", "/check/questionnaire", "/check/reaction", "/check/bluetooth", "/check/voice", "/check/camera", "/check/camera-hr", "/emergency", "/reports", "/result", "/history", "/surgeon", "/settings", "/demo", "/body", "/import", "/progress", "/medicines"],
+  additionalPrecacheEntries: [
+    "/",
+    "/login",
+    "/check",
+    "/check/questionnaire",
+    "/check/reaction",
+    "/check/bluetooth",
+    "/check/voice",
+    "/check/camera",
+    "/check/camera-hr",
+    "/emergency",
+    "/reports",
+    "/result",
+    "/history",
+    "/surgeon",
+    "/settings",
+    "/demo",
+    "/body",
+    "/import",
+    "/progress",
+    "/medicines",
+    asset("/fonts/satoshi-400.woff2"),
+    asset("/fonts/satoshi-500.woff2"),
+    asset("/fonts/satoshi-700.woff2"),
+  ],
   disable: process.env.NODE_ENV === "development",
 });
 

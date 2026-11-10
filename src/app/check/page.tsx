@@ -217,37 +217,37 @@ function CheckForm() {
         <h2 className="text-base font-semibold text-foreground">Other ways</h2>
         <ul className="mt-2 space-y-1 text-sm">
           <li>
-            <Link className="text-accent underline" href={crewId ? `/check/questionnaire?crew=${encodeURIComponent(crewId)}` : "/check/questionnaire"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/check/questionnaire?crew=${encodeURIComponent(crewId)}` : "/check/questionnaire"}>
               Answer a short questionnaire
             </Link>
           </li>
           <li>
-            <Link className="text-accent underline" href={crewId ? `/check/reaction?crew=${encodeURIComponent(crewId)}` : "/check/reaction"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/check/reaction?crew=${encodeURIComponent(crewId)}` : "/check/reaction"}>
               Take the reaction test
             </Link>
           </li>
           <li>
-            <Link className="text-accent underline" href={crewId ? `/import?crew=${encodeURIComponent(crewId)}` : "/import"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/import?crew=${encodeURIComponent(crewId)}` : "/import"}>
               Import a CSV or FHIR file
             </Link>
           </li>
           <li>
-            <Link className="text-accent underline" href={crewId ? `/check/bluetooth?crew=${encodeURIComponent(crewId)}` : "/check/bluetooth"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/check/bluetooth?crew=${encodeURIComponent(crewId)}` : "/check/bluetooth"}>
               Connect a Bluetooth device
             </Link>
           </li>
           <li>
-            <Link className="text-accent underline" href={crewId ? `/check/voice?crew=${encodeURIComponent(crewId)}` : "/check/voice"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/check/voice?crew=${encodeURIComponent(crewId)}` : "/check/voice"}>
               Speak a reading
             </Link>
           </li>
           <li>
-            <Link className="text-accent underline" href={crewId ? `/check/camera?crew=${encodeURIComponent(crewId)}` : "/check/camera"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/check/camera?crew=${encodeURIComponent(crewId)}` : "/check/camera"}>
               Read a device display
             </Link>
           </li>
           <li>
-            <Link className="text-accent underline" href={crewId ? `/check/camera-hr?crew=${encodeURIComponent(crewId)}` : "/check/camera-hr"}>
+            <Link className="text-accent-strong underline" href={crewId ? `/check/camera-hr?crew=${encodeURIComponent(crewId)}` : "/check/camera-hr"}>
               Measure heart rate with the camera
             </Link>
           </li>

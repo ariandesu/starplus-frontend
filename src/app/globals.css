@@ -27,44 +27,114 @@
   font-style: normal;
 }
 
-/* Design System Tokens — STAR PLUS Mobile Dashboard */
-/* Per DESIGN.md: Satoshi typography, no Inter, no pure black, no neon, max 1 accent */
+/* Design tokens. The four statuses have fixed meaning: nominal, watch,
+   critical, insufficient. Never merge, rename or recolour them. */
 
 :root {
-  --background: #F9FAFB;
-  --foreground: #18181B;
-  --muted: #71717A;
-  --surface: #F1F5F9;
-  --border: #E4E4E7;
-  --accent: #0EA5E9;
-  --accent-foreground: #FFFFFF;
-  --radius: 1rem;
+  /* surfaces */
+  --background: #EFEFEE;   /* page */
+  --card: #FFFFFF;         /* cards */
+  --surface: #F6F6F5;      /* tiles inside cards, inputs */
+  --surface-2: #E7E7E4;    /* tracks, hover, skeleton */
+  --border: #E2E2DF;
+
+  /* ink */
+  --foreground: #0F110F;
+  --muted: #5E5E5A;        /* secondary text; AA on page and card */
+  --faint: #8A8A85;        /* ticks and decoration only, never text */
+
+  /* actions */
+  --primary: #0F110F;      /* main buttons: ink pill, white text */
+  --primary-foreground: #FFFFFF;
+  --accent: #D7F43A;       /* lime: fills only, with ink text on top */
+  --accent-foreground: #0F110F;
+  --accent-strong: #3F6212;/* text-safe green: links, focus, chart highlight */
+  --danger: #D92D20;       /* emergency and destructive */
+  --danger-foreground: #FFFFFF;
+
+  /* the four statuses: fixed meaning, never merged or renamed */
+  --status-nominal-bg: #E6F5B0;
+  --status-nominal-fg: #2F4A0B;
+  --status-nominal-dot: #4F8A1A;
+  --status-watch-bg: #F6E7A8;
+  --status-watch-fg: #6B4A00;
+  --status-watch-dot: #A86F00;
+  --status-critical-bg: #F9D5CF;
+  --status-critical-fg: #8A1C12;
+  --status-critical-dot: #D92D20;
+  --status-insufficient-bg: #E7E7E4;
+  --status-insufficient-fg: #4A4A47;
+  --status-insufficient-dot: #77776F;
+
+  /* hero card glow, one per status */
+  --hero-glow-nominal: #9DBF3A;
+  --hero-glow-watch: #C9972B;
+  --hero-glow-critical: #B4382D;
+  --hero-glow-insufficient: #6B6B68;
+
   --font-sans: "Satoshi", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: #52525B;
+  --color-card: var(--card);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-muted: var(--muted);
+  --color-muted-foreground: #4A4A47;
+  --color-faint: var(--faint);
   --color-border: var(--border);
   --color-input: var(--border);
-  --color-ring: var(--accent);
+  --color-ring: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --radius: var(--radius);
+  --color-accent-strong: var(--accent-strong);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+
+  --color-status-nominal-bg: var(--status-nominal-bg);
+  --color-status-nominal-fg: var(--status-nominal-fg);
+  --color-status-nominal-dot: var(--status-nominal-dot);
+  --color-status-watch-bg: var(--status-watch-bg);
+  --color-status-watch-fg: var(--status-watch-fg);
+  --color-status-watch-dot: var(--status-watch-dot);
+  --color-status-critical-bg: var(--status-critical-bg);
+  --color-status-critical-fg: var(--status-critical-fg);
+  --color-status-critical-dot: var(--status-critical-dot);
+  --color-status-insufficient-bg: var(--status-insufficient-bg);
+  --color-status-insufficient-fg: var(--status-insufficient-fg);
+  --color-status-insufficient-dot: var(--status-insufficient-dot);
+
+  --radius-card: 1.75rem;
+  --radius-tile: 1.125rem;
+  --radius-control: 0.875rem;
+  --shadow-card: 0 1px 2px rgb(15 17 15 / 0.04);
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: radial-gradient(60% 50% at 100% 0%, rgb(215 244 58 / 0.18), transparent 70%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--foreground);
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   overflow-x: hidden;
+}
+
+/* Dark hero card: ink with a soft glow that follows the status shown. */
+.hero-surface {
+  background:
+    radial-gradient(120% 140% at 85% 60%, var(--hero-glow, var(--hero-glow-nominal)) 0%, transparent 60%),
+    #0F110F;
+  color: #FFFFFF;
 }
 
 /* Mobile-first: touch targets minimum 44px */
@@ -78,9 +148,8 @@ body {
 
 /* No circular spinners — skeletal shimmers only */
 .skeleton {
-  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
   border-radius: 0.5rem;
 }
 
@@ -98,20 +167,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* Card hover lift */
-.card-hover {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
-}
-
-.card-hover:hover {
-  transform: translateY(-4px);
-}
-
-/* GSAP card stacking container */
-.card-stack {
-  perspective: 1000px;
-}
-
 /* Hide scrollbar for horizontal scroll sections */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -121,9 +176,9 @@ body {
   scrollbar-width: none;
 }
 
-/* Focus rings in accent color */
+/* Focus rings in ink */
 .focus-ring:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--foreground);
   outline-offset: 2px;
 }
 
@@ -133,19 +188,16 @@ h1, h2 {
   letter-spacing: -0.02em;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 section[id] {
   scroll-margin-top: 4.5rem;
 }
 
-/* Mobile-first base: single column is default */
-@media (min-width: 768px) {
-  .desktop-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 1.5rem;
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: shimmer 1.5s infinite;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 }

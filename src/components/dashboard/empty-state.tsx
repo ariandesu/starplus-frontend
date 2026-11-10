@@ -12,7 +12,7 @@ interface EmptyStateProps {
 }
 
 const TONES = {
-  normal: { icon: CheckCircle2, wrap: "bg-accent/10 text-accent" },
+  normal: { icon: CheckCircle2, wrap: "bg-status-nominal-bg text-status-nominal-fg" },
   watch: { icon: AlertCircle, wrap: "bg-amber-100 text-amber-700" },
   critical: { icon: AlertTriangle, wrap: "bg-red-100 text-red-700" },
   insufficient: { icon: HelpCircle, wrap: "bg-muted text-white" },

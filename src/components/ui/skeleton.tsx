@@ -17,7 +17,7 @@ export function Skeleton({
 }: SkeletonProps) {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-skeleton", className)}
+      className={cn("skeleton", className)}
       style={{ height, width }}
       {...props}
     />

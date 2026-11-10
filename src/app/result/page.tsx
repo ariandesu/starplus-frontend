@@ -29,7 +29,7 @@ function ExplainMore({ entry, metric }: { entry: KbEntry; metric: string }) {
       <button
         type="button"
         onClick={() => void toggle()}
-        className="text-sm font-medium text-accent underline"
+        className="text-sm font-medium text-accent-strong underline"
       >
         {open ? "Hide the simple explanation" : "Explain more simply"}
       </button>
@@ -116,7 +116,7 @@ function ResultView() {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <p className="text-sm text-muted-foreground">
-          No result yet. <Link href={crewId ? `/check?crew=${encodeURIComponent(crewId)}` : "/check"} className="text-accent underline">Start a self-check</Link>
+          No result yet. <Link href={crewId ? `/check?crew=${encodeURIComponent(crewId)}` : "/check"} className="text-accent-strong underline">Start a self-check</Link>
         </p>
       </div>
     );
@@ -183,7 +183,7 @@ function ResultView() {
       <div className="mt-4 flex gap-3">
         <Link
           href={`/check?crew=${encodeURIComponent(crewId)}`}
-          className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
         >
           New check
         </Link>

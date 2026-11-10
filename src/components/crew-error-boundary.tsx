@@ -24,7 +24,7 @@ export class CrewErrorBoundary extends React.Component<{ children: React.ReactNo
       return (
         <p role="alert" className="px-4 py-8 text-sm text-muted-foreground">
           Something went wrong loading this view.{" "}
-          <button type="button" onClick={() => window.location.reload()} className="text-accent underline">
+          <button type="button" onClick={() => window.location.reload()} className="text-accent-strong underline">
             Reload
           </button>
         </p>

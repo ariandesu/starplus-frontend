@@ -34,7 +34,7 @@ function CrewCard({ row }: { row: RosterRow }) {
   return (
     <Link
       href={`/surgeon/crew?id=${encodeURIComponent(row.crew_id)}`}
-      className="block rounded-xl border border-border p-4 transition-colors hover:bg-accent/10 focus-ring"
+      className="block rounded-xl border border-border p-4 transition-colors hover:bg-surface-2 focus-ring"
       data-testid={`crew-card-${row.crew_id}`}
     >
       <div className="flex items-center justify-between gap-2">

@@ -3,18 +3,31 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+type CardVariant = "default" | "tile" | "hero";
+type HeroGlow = "nominal" | "watch" | "critical" | "insufficient";
+
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
+  variant?: CardVariant;
+  glow?: HeroGlow;
 }
 
+const VARIANTS: Record<CardVariant, string> = {
+  default: "rounded-[1.375rem] border border-border bg-card text-foreground shadow-card md:rounded-card",
+  tile: "rounded-tile bg-surface text-foreground",
+  hero: "hero-surface rounded-[1.375rem] text-white md:rounded-card",
+};
+
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, ...props }, ref) => (
+  ({ className, variant = "default", glow = "nominal", style, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        "rounded-xl border border-border bg-background text-foreground shadow-sm",
-        className
-      )}
+      className={cn(VARIANTS[variant], className)}
+      style={
+        variant === "hero"
+          ? ({ ...style, "--hero-glow": `var(--hero-glow-${glow})` } as React.CSSProperties)
+          : style
+      }
       {...props}
     />
   )

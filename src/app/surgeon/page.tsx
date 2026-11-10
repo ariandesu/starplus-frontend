@@ -85,8 +85,8 @@ function SurgeonView() {
         <h1 className="text-2xl font-bold text-foreground">Flight surgeon</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           This view needs a flight medical officer or mission control login.{" "}
-          <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=surgeon" className="text-accent underline">Try the demo</Link>
+          <Link href="/login" className="text-accent-strong underline">Go to login</Link>{" "}
+          <Link href="/login?demo=surgeon" className="text-accent-strong underline">Try the demo</Link>
         </p>
         <ContinueAsButtons candidates={candidates} />
       </div>

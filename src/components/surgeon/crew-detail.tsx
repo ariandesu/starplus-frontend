@@ -128,7 +128,7 @@ export function CrewDetail({
 
   return (
     <div>
-      <Link href="/surgeon/crew" className="text-sm text-accent underline">
+      <Link href="/surgeon/crew" className="text-sm text-accent-strong underline">
         All crew
       </Link>
       <h1 className="mt-1 text-2xl font-bold text-foreground">{crewName}</h1>
@@ -217,7 +217,7 @@ export function CrewDetail({
                     type="button"
                     disabled={busy === report.client_id}
                     onClick={() => void acknowledge(report.client_id)}
-                    className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+                    className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
                   >
                     Acknowledge
                   </button>

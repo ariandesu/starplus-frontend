@@ -227,7 +227,7 @@ function ImportForm() {
             type="button"
             onClick={() => void onImport()}
             disabled={busy || preview.accepted === 0}
-            className="mt-3 w-full rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+            className="mt-3 w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {busy ? "Importing…" : `Import ${preview.accepted} readings`}
           </button>

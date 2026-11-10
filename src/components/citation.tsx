@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 const TONES: Record<string, string> = {
-  nominal: "bg-accent/10 text-accent",
+  nominal: "bg-status-nominal-bg text-status-nominal-fg",
   watch: "bg-amber-100 text-amber-700",
   critical: "bg-red-100 text-red-700",
   insufficient: "bg-muted text-white",

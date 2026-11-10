@@ -120,7 +120,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 key={item.label}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted transition-colors hover:bg-accent/10 hover:text-accent focus-ring"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-accent-strong focus-ring"
               >
                 <Icon className="w-5 h-5" />
                 {item.label}
@@ -131,7 +131,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
             <button
               type="button"
               onClick={() => void signOut()}
-              className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted transition-colors hover:bg-accent/10 hover:text-accent focus-ring"
+              className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-accent-strong focus-ring"
             >
               <LogOut className="w-5 h-5" />
               Log out

@@ -34,7 +34,7 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
     return (
       <p role="alert" className="px-4 py-8 text-sm text-muted-foreground">
         Something went wrong loading your session.{" "}
-        <button type="button" onClick={() => window.location.reload()} className="text-accent underline">
+        <button type="button" onClick={() => window.location.reload()} className="text-accent-strong underline">
           Reload
         </button>
       </p>
@@ -51,7 +51,7 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href={session.username ? `/login?username=${encodeURIComponent(session.username)}` : "/login"}
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             Sign in again
           </Link>
@@ -68,7 +68,7 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
       <h1 className="text-2xl font-bold text-foreground">{heading ?? "Log in to continue"}</h1>
       {intro && <p className="mt-1 text-sm text-muted-foreground">{intro}</p>}
       <div className="mt-4 flex flex-wrap gap-3">
-        <Link href="/login" className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+        <Link href="/login" className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
           Go to login
         </Link>
         {showEmergency && (

@@ -252,7 +252,7 @@ function LoginForm() {
           ref={loginRef}
           type="submit"
           disabled={busy || done}
-          className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90 disabled:opacity-50"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
           {done ? "Logged in, opening…" : "Login"}
         </button>
@@ -268,7 +268,7 @@ function LoginForm() {
             type="button"
             data-testid="show-redeem"
             onClick={() => setRedeeming(true)}
-            className="text-sm text-accent underline"
+            className="text-sm text-accent-strong underline"
           >
             First time? Use your access code
           </button>
@@ -312,7 +312,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={busy}
-              className="mt-3 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+              className="mt-3 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               Redeem and sign in
             </button>
@@ -355,7 +355,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={busy}
-                className="mt-3 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90 disabled:opacity-50"
+                className="mt-3 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
                 Unlock
               </button>
@@ -366,7 +366,7 @@ function LoginForm() {
 
       <p className="mt-4 text-sm text-muted-foreground">
         Emergency help needs no login.{" "}
-        <Link href="/emergency" className="text-accent underline">
+        <Link href="/emergency" className="text-accent-strong underline">
           Open emergency
         </Link>
       </p>

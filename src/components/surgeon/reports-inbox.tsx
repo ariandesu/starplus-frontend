@@ -56,7 +56,7 @@ export function ReportsInbox({
             aria-pressed={filter === option}
             className={`rounded-xl px-4 py-2 text-sm font-semibold ${
               filter === option
-                ? "bg-accent text-accent-foreground"
+                ? "bg-primary text-primary-foreground"
                 : "border border-border text-foreground"
             }`}
           >
@@ -85,7 +85,7 @@ export function ReportsInbox({
                   type="button"
                   disabled={busy === report.client_id}
                   onClick={() => void acknowledge(report.client_id)}
-                  className="mt-3 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+                  className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
                 >
                   Acknowledge
                 </button>

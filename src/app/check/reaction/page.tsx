@@ -102,7 +102,7 @@ function ReactionTest() {
         <button
           type="button"
           onClick={begin}
-          className="mt-4 w-full rounded-xl bg-accent px-4 py-3 text-base font-semibold text-accent-foreground"
+          className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-foreground"
         >
           Start test
         </button>
@@ -130,11 +130,11 @@ function ReactionTest() {
               void save();
             }}
             disabled={busy}
-            className="mt-2 w-full rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+            className="mt-2 w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {busy ? "Saving…" : "Save result"}
           </button>
-          <button type="button" onClick={begin} className="mt-2 w-full text-sm text-accent underline">
+          <button type="button" onClick={begin} className="mt-2 w-full text-sm text-accent-strong underline">
             Try again
           </button>
         </div>

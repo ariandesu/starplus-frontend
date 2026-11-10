@@ -63,7 +63,7 @@ export function ContinueAsButtons({ candidates }: { candidates: AdoptableCrew[] 
             type="button"
             disabled={busy}
             onClick={() => void pick(candidate.crew_id)}
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             Continue as {candidate.display_name} · {roleLabel(candidate.role)}
           </button>

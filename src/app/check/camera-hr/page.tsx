@@ -170,7 +170,7 @@ function CameraHrForm() {
             onClick={() => void start()}
             disabled={busy || !supported}
             title={supported ? undefined : UNSUPPORTED_REASON}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             Measure
           </button>
@@ -197,7 +197,7 @@ function CameraHrForm() {
           data-testid="save"
           onClick={() => void save()}
           disabled={busy}
-          className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
         >
           Save estimate
         </button>

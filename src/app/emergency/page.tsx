@@ -150,7 +150,7 @@ export default function EmergencyPage() {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground">Report discarded</h1>
-        <Link href="/" className="mt-4 inline-block text-sm font-medium text-accent underline">
+        <Link href="/" className="mt-4 inline-block text-sm font-medium text-accent-strong underline">
           Back home
         </Link>
       </div>
@@ -168,7 +168,7 @@ export default function EmergencyPage() {
               : "Queued — will send when the link returns. 1 emergency report waiting — log in to send it."
             : "Sent to the flight surgeon."}
         </p>
-        <Link href="/" className="mt-4 inline-block text-sm font-medium text-accent underline">
+        <Link href="/" className="mt-4 inline-block text-sm font-medium text-accent-strong underline">
           Back home
         </Link>
       </div>
@@ -273,7 +273,7 @@ export default function EmergencyPage() {
           </button>
         </div>
         {!done && (
-          <button type="button" onClick={() => setReview(false)} className="mt-3 text-sm text-accent underline">
+          <button type="button" onClick={() => setReview(false)} className="mt-3 text-sm text-accent-strong underline">
             Back to steps
           </button>
         )}
@@ -305,12 +305,12 @@ export default function EmergencyPage() {
           <button
             type="button"
             onClick={() => setStepIndex((i) => i - 1)}
-            className="text-sm text-accent underline"
+            className="text-sm text-accent-strong underline"
           >
             Back
           </button>
         )}
-        <button type="button" onClick={() => setReview(true)} className="text-sm text-accent underline">
+        <button type="button" onClick={() => setReview(true)} className="text-sm text-accent-strong underline">
           Finish and review report
         </button>
       </div>
