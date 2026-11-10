@@ -1,5 +1,10 @@
 "use client";
 
+import * as React from "react";
+import { lookupMeasure } from "@starplus/core";
+import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+
 export interface BodySystem {
   id: string;
   label: string;
@@ -14,39 +19,59 @@ export const BODY_SYSTEMS: BodySystem[] = [
   { id: "whole", label: "Whole body", measures: ["temperature_c", "radiation_dose"] },
 ];
 
+const REGION_FILL: Record<string, string> = {
+  nominal: "fill-status-nominal-dot",
+  watch: "fill-status-watch-dot",
+  critical: "fill-status-critical-dot",
+  insufficient: "fill-status-insufficient-dot",
+};
+
+function fillFor(status: string | null): string {
+  return status ? (REGION_FILL[status] ?? "fill-surface-2") : "fill-surface-2";
+}
+
 export function systemHasData(system: BodySystem, codes: ReadonlySet<string>): boolean {
   return system.measures.some((code) => codes.has(code));
 }
 
 export function BodyMap({
   active,
-  hasData,
+  statusFor,
   onSelect,
 }: {
   active: string | null;
-  hasData: (systemId: string) => boolean;
+  statusFor: (systemId: string) => string | null;
   onSelect: (systemId: string) => void;
 }) {
   return (
-    <svg viewBox="0 0 200 220" role="img" aria-label="Body map" className="mx-auto h-64">
-      <circle cx="100" cy="40" r="22" fill={hasData("mind") ? "#f59e0b" : "#e5e7eb"} data-system="mind" onClick={() => onSelect("mind")} style={{ cursor: "pointer" }}>
+    <svg viewBox="0 0 200 220" role="img" aria-label="Body map" className="mx-auto h-full max-h-[520px]">
+      <circle
+        cx="100"
+        cy="40"
+        r="22"
+        className={cn(fillFor(statusFor("mind")), "cursor-pointer")}
+        data-system="mind"
+        onClick={() => onSelect("mind")}
+      >
         <title>Head: sleep and mind</title>
       </circle>
-      <g onClick={() => onSelect("cardio")} style={{ cursor: "pointer" }}>
+      <g onClick={() => onSelect("cardio")} className="cursor-pointer">
         <title>Chest: heart and circulation</title>
-        <rect x="78" y="62" width="44" height="34" rx="10" fill={hasData("cardio") ? "#ef4444" : "#e5e7eb"} data-system="cardio" />
+        <rect x="78" y="62" width="44" height="34" rx="10" className={fillFor(statusFor("cardio"))} data-system="cardio" />
       </g>
-      <g onClick={() => onSelect("lungs")} style={{ cursor: "pointer" }}>
+      <g onClick={() => onSelect("lungs")} className="cursor-pointer">
         <title>Lungs and breathing</title>
-        <rect x="70" y="100" width="60" height="30" rx="10" fill={hasData("lungs") ? "#38bdf8" : "#e5e7eb"} data-system="lungs" />
+        <rect x="70" y="100" width="60" height="30" rx="10" className={fillFor(statusFor("lungs"))} />
       </g>
-      <g onClick={() => onSelect("fuel")} style={{ cursor: "pointer" }}>
+      <g onClick={() => onSelect("fuel")} className="cursor-pointer">
         <title>Belly: fuel and fluids</title>
-        <rect x="78" y="134" width="44" height="36" rx="10" fill={hasData("fuel") ? "#22c55e" : "#e5e7eb"} data-system="fuel" />
+        <rect x="78" y="134" width="44" height="36" rx="10" className={fillFor(statusFor("fuel"))} />
       </g>
-      <rect x="88" y="174" width="10" height="34" rx="5" fill="#e5e7eb" />
-      <rect x="102" y="174" width="10" height="34" rx="5" fill="#e5e7eb" />
-      {active !== null && <rect x="4" y="4" width="192" height="212" rx="12" fill="none" stroke="#111827" strokeWidth="2" strokeDasharray="6 4" />}
+      <rect x="88" y="174" width="10" height="34" rx="5" className="fill-surface-2" />
+      <rect x="102" y="174" width="10" height="34" rx="5" className="fill-surface-2" />
+      {active !== null && (
+        <rect x="4" y="4" width="192" height="212" rx="12" className="fill-none stroke-foreground" strokeWidth="2" strokeDasharray="6 4" />
+      )}
     </svg>
   );
 }
@@ -55,37 +80,52 @@ export function BodySystemList({
   systems,
   active,
   latest,
+  statusFor,
+  renderTiles,
   onSelect,
 }: {
   systems: BodySystem[];
   active: string | null;
   latest: (code: string) => string | null;
+  statusFor: (systemId: string) => string | null;
+  renderTiles?: (systemId: string) => React.ReactNode;
   onSelect: (systemId: string) => void;
 }) {
   return (
-    <ul className="mt-4 space-y-2">
+    <ul className="space-y-2">
       {systems.map((system) => {
         const values = system.measures
-          .map((code) => ({ code, value: latest(code) }))
+          .map((code) => ({ code, label: lookupMeasure(code)?.label ?? code, value: latest(code) }))
           .filter((entry) => entry.value !== null);
+        const status = statusFor(system.id);
         const selected = active === system.id;
         return (
           <li key={system.id}>
-            <button
-              type="button"
-              onClick={() => onSelect(system.id)}
-              aria-pressed={selected}
-              className={`w-full rounded-xl border px-4 py-3 text-left ${selected ? "border-foreground" : "border-border"}`}
-            >
-              <span className="font-semibold text-foreground">{system.label}</span>
-              {values.length === 0 ? (
-                <span className="mt-1 block text-sm text-muted-foreground">No data yet.</span>
-              ) : (
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  {values.map((entry) => `${entry.code}: ${entry.value}`).join(" · ")}
+            <div className={cn("rounded-tile border bg-card", selected ? "border-foreground" : "border-border")}>
+              <button
+                type="button"
+                onClick={() => onSelect(system.id)}
+                aria-pressed={selected}
+                className="min-h-11 w-full px-4 py-3 text-left"
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">{system.label}</span>
+                  {status ? (
+                    <StatusPill status={status} />
+                  ) : (
+                    <span className="text-sm text-muted">No data yet.</span>
+                  )}
                 </span>
+                {values.length > 0 && (
+                  <span className="mt-1 block text-sm text-muted">
+                    {values.map((entry) => `${entry.label}: ${entry.value}`).join(" · ")}
+                  </span>
+                )}
+              </button>
+              {selected && renderTiles && (
+                <div className="border-t border-border p-3">{renderTiles(system.id)}</div>
               )}
-            </button>
+            </div>
           </li>
         );
       })}

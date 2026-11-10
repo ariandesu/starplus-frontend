@@ -36,6 +36,8 @@ const withSerwist = withSerwistInit({
     asset("/fonts/satoshi-400.woff2"),
     asset("/fonts/satoshi-500.woff2"),
     asset("/fonts/satoshi-700.woff2"),
+    asset("/models/body-female.glb"),
+    asset("/models/body-male.glb"),
   ],
   disable: process.env.NODE_ENV === "development",
 });
