@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
 import { DemoBanner } from "../dashboard/demo-badge";
 import { OutboxSync } from "../outbox-sync";
 import { deviceDb } from "@/lib/db";
+import { cn } from "@/lib/utils";
 import { getSession, touchActivity } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { CrewErrorBoundary } from "@/components/crew-error-boundary";
@@ -49,6 +51,8 @@ function DemoAccountBanner() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const close = useCallback(() => setIsOpen(false), []);
+  const pathname = usePathname() ?? "";
+  const bare = pathname === "/login";
   const [demo, setDemo] = useState(false);
   const [updated, setUpdated] = useState(false);
   const setting = useSetting("setting", "iss");
@@ -96,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full">
       <OutboxSync />
-      <div className="flex min-h-full flex-col lg:pl-[264px]">
+      <div className={cn("flex min-h-full flex-col", !bare && "lg:pl-[264px]")}>
         {updated && (
           <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-semibold text-accent-foreground">
             Updated.{" "}
@@ -109,12 +113,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           isOpen={isOpen}
           onToggle={() => setIsOpen((prev) => !prev)}
           trailing={<EmergencyButton />}
+          bare={bare}
         />
         {demo && <DemoBanner />}
         <Suspense>
           <DemoAccountBanner />
         </Suspense>
-        <MobileNav isOpen={isOpen} onClose={close} context={`${setting} · ${phase}`} />
+        {!bare && <MobileNav isOpen={isOpen} onClose={close} context={`${setting} · ${phase}`} />}
         <main className="flex-1 overflow-x-hidden">
           <CrewErrorBoundary>{children}</CrewErrorBoundary>
         </main>

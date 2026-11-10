@@ -229,28 +229,31 @@ export function TopBar({
   isOpen,
   onToggle,
   trailing,
+  bare = false,
 }: {
   isOpen: boolean;
   onToggle: () => void;
   trailing?: React.ReactNode;
+  bare?: boolean;
 }) {
   const isMobile = useIsMobileChrome();
+  const showMenu = isMobile && !bare;
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
       <div
         className={cn(
           "mx-auto flex max-w-6xl items-center gap-3 px-4 py-2",
-          isMobile ? "justify-between" : "justify-end"
+          showMenu ? "justify-between" : "justify-end"
         )}
       >
-        {isMobile && (
+        {showMenu && (
           <Link href="/" className="focus-ring rounded-lg">
             <Logo />
           </Link>
         )}
         <div className="flex items-center gap-2">
           {trailing}
-          {isMobile && (
+          {showMenu && (
             <button
               type="button"
               onClick={onToggle}
