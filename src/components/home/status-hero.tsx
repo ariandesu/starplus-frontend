@@ -1,0 +1,82 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { AlertCircle, AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+const ICONS = {
+  nominal: CheckCircle2,
+  watch: AlertCircle,
+  critical: AlertTriangle,
+  insufficient: HelpCircle,
+} as const;
+
+type HeroStatus = keyof typeof ICONS;
+
+function toStatus(status: string | null): HeroStatus {
+  return status === "nominal" || status === "watch" || status === "critical" || status === "insufficient"
+    ? status
+    : "insufficient";
+}
+
+function assessedLabel(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+interface StatusHeroProps {
+  status: string | null;
+  assessedAt: string | null;
+  checkHref: string;
+  reportsHref: string;
+}
+
+export function StatusHero({ status, assessedAt, checkHref, reportsHref }: StatusHeroProps) {
+  const name = toStatus(status);
+  const Icon = ICONS[name];
+  return (
+    <Card variant="hero" glow={name} className="p-5 lg:p-6">
+      <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">
+        Overall status
+      </p>
+      <div role="status" className="mt-2 flex items-center gap-2">
+        {status ? (
+          <>
+            <Icon className="h-8 w-8 shrink-0" aria-hidden />
+            <span className="text-[2rem] font-normal capitalize tracking-tight md:text-[2.75rem]">{status}</span>
+          </>
+        ) : (
+          <p className="text-[2rem] font-normal tracking-tight md:text-[2.75rem]">No check-in yet</p>
+        )}
+      </div>
+      <p className="mt-2 text-sm text-white/70">
+        {status && assessedAt
+          ? `Last assessed ${assessedLabel(assessedAt)}`
+          : "Your first self-check starts your personal baseline."}
+      </p>
+      <p className="mt-4 text-sm text-white/70">
+        Reminder: take today&apos;s check-in — two measures, under a minute.
+      </p>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Button asChild variant="accent">
+          <Link href={checkHref}>Start self-check</Link>
+        </Button>
+        <Link
+          href={reportsHref}
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 focus-ring"
+        >
+          Reports
+        </Link>
+      </div>
+    </Card>
+  );
+}
