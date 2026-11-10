@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ackReport, getCrewRoster, getReports } from "@/lib/api";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { ReportsInbox, type InboxReport } from "@/components/surgeon/reports-inbox";
 import { useSurgeonSession } from "@/components/surgeon/use-surgeon";
 import { RequireSession } from "@/components/require-session";
@@ -67,15 +68,15 @@ function SurgeonReportsView() {
     }
   }
 
-  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted">Loading…</p>;
   if (session.state.status !== "active") {
     return <RequireSession session={session.state} heading="Reports inbox" />;
   }
   if (!session.allowed || !session.session) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Reports inbox</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <PageHeader title="Reports inbox" />
+        <p className="mt-1 text-sm text-muted">
           This view needs a flight medical officer or mission control login.{" "}
           <Link href="/login" className="text-accent-strong underline">Go to login</Link>{" "}
           <Link href="/login?demo=surgeon" className="text-accent-strong underline">Try the demo</Link>
@@ -85,8 +86,12 @@ function SurgeonReportsView() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Reports inbox</h1>
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+      <PageHeader
+        eyebrow="MISSION MEDICAL"
+        title="Reports inbox"
+        actions={updatedAt ? <p className="text-xs text-muted">Last updated {updatedAt}</p> : null}
+      />
       {error && (
         <p role="alert" className="mt-2 text-sm text-danger">{error}</p>
       )}
@@ -103,7 +108,7 @@ function SurgeonReportsView() {
 
 export default function SurgeonReportsPage() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading…</p>}>
       <SurgeonReportsView />
     </Suspense>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { StatusTone } from "@/components/citation";
+import { StatusPill } from "@/components/ui/status-pill";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import type { RosterRow } from "@/lib/api";
 import { shortDate } from "@/lib/report-title";
 import { sortVitals } from "@/lib/vital-order";
@@ -25,8 +26,19 @@ const VITAL_LABELS: Record<string, string> = {
   hrv_rmssd: "HRV",
 };
 
+const STATUS_DOT: Record<string, string> = {
+  nominal: "bg-status-nominal-dot",
+  watch: "bg-status-watch-dot",
+  critical: "bg-status-critical-dot",
+  insufficient: "bg-status-insufficient-dot",
+};
+
 function vitalLabel(metric: string): string {
   return VITAL_LABELS[metric] ?? metric;
+}
+
+function statusDot(status: string): string {
+  return STATUS_DOT[status] ?? STATUS_DOT.insufficient;
 }
 
 function CrewCard({ row }: { row: RosterRow }) {
@@ -34,31 +46,42 @@ function CrewCard({ row }: { row: RosterRow }) {
   return (
     <Link
       href={`/surgeon/crew?id=${encodeURIComponent(row.crew_id)}`}
-      className="block rounded-xl border border-border p-4 transition-colors hover:bg-surface-2 focus-ring"
       data-testid={`crew-card-${row.crew_id}`}
+      className="block rounded-card border border-border bg-card p-4 shadow-card transition-colors hover:bg-surface-2 focus-ring"
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-2">
         <p className="font-semibold text-foreground">{row.name}</p>
-        <StatusTone status={row.overall_status ?? "insufficient"} />
+        <StatusPill status={row.overall_status ?? "insufficient"} />
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {row.overall_status ?? "no data yet"} · {timeAgo(row.last_check_in)}
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {row.checkin_days_7d} check-in {row.checkin_days_7d === 1 ? "day" : "days"} in the last 7
-        {row.open_reports > 0 && (
-          <span className="ml-2 rounded-full bg-status-watch-bg px-2 py-0.5 text-xs font-semibold text-status-watch-fg">
-            {row.open_reports} open {row.open_reports === 1 ? "report" : "reports"}
-          </span>
-        )}
-      </p>
+      <p className="mt-1 text-sm text-muted">{timeAgo(row.last_check_in)}</p>
+
+      <div className="mt-3">
+        <ProgressBar
+          value={row.checkin_days_7d}
+          max={7}
+          label={`${row.name}: ${row.checkin_days_7d} of 7 check-in days`}
+        />
+        <p className="mt-1 text-sm text-muted">
+          {row.checkin_days_7d} check-in {row.checkin_days_7d === 1 ? "day" : "days"} in the last 7
+          {row.open_reports > 0 && (
+            <span className="ml-2 rounded-full bg-status-watch-bg px-2 py-0.5 text-xs font-semibold text-status-watch-fg">
+              {row.open_reports} open {row.open_reports === 1 ? "report" : "reports"}
+            </span>
+          )}
+        </p>
+      </div>
+
       {vitals.length > 0 && (
-        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <dl className="mt-3 grid grid-cols-1 gap-y-1 text-sm">
           {vitals.slice(0, 6).map((vital) => (
             <div key={vital.metric} className="flex items-baseline justify-between gap-2">
-              <dt className="text-muted-foreground">{vitalLabel(vital.metric)}</dt>
-              <dd className="font-medium text-foreground">
-                {String(vital.value)} {vital.unit} · {vital.status}
+              <dt className="text-muted">{vitalLabel(vital.metric)}</dt>
+              <dd className="flex items-center gap-1.5">
+                <span className="font-medium text-foreground">
+                  {String(vital.value)} {vital.unit}
+                </span>
+                <span className={`h-2 w-2 rounded-full ${statusDot(vital.status)}`} aria-hidden />
+                <span className="text-xs capitalize text-muted">{vital.status}</span>
               </dd>
             </div>
           ))}
@@ -70,15 +93,15 @@ function CrewCard({ row }: { row: RosterRow }) {
 
 export function CrewBoard({ rows, updatedAt }: { rows: RosterRow[]; updatedAt: string | null }) {
   return (
-    <section aria-label="Crew board" className="mt-4">
+    <section aria-label="Crew board" className="mt-6">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-foreground">Crew</h2>
-        {updatedAt && <p className="text-xs text-muted-foreground">Last updated {updatedAt}</p>}
+        {updatedAt && <p className="text-xs text-muted">Last updated {updatedAt}</p>}
       </div>
       {rows.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">No crew on this device yet.</p>
+        <p className="mt-2 text-sm text-muted">No crew on this device yet.</p>
       ) : (
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((row) => (
             <CrewCard key={row.crew_id} row={row} />
           ))}

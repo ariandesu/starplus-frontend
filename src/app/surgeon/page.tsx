@@ -4,6 +4,9 @@ import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ackReport, getCrewRoster, getReports, type RosterRow } from "@/lib/api";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
+import { Card } from "@/components/ui/card";
+import { StatCount } from "@/components/dashboard/stat-count";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { CrewBoard } from "@/components/surgeon/crew-board";
 import { ContinueAsButtons } from "@/components/continue-as";
 import { ReportsInbox, type InboxReport } from "@/components/surgeon/reports-inbox";
@@ -75,15 +78,15 @@ function SurgeonView() {
     }
   }
 
-  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted">Loading…</p>;
   if (session.state.status !== "active") {
     return <RequireSession session={session.state} heading="Flight surgeon" />;
   }
   if (!session.allowed || !session.session) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Flight surgeon</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <PageHeader title="Flight surgeon" />
+        <p className="mt-1 text-sm text-muted">
           This view needs a flight medical officer or mission control login.{" "}
           <Link href="/login" className="text-accent-strong underline">Go to login</Link>{" "}
           <Link href="/login?demo=surgeon" className="text-accent-strong underline">Try the demo</Link>
@@ -93,12 +96,34 @@ function SurgeonView() {
     );
   }
 
+  const critical = rows.filter((row) => row.overall_status === "critical").length;
+  const watch = rows.filter((row) => row.overall_status === "watch").length;
+  const openReports = rows.reduce((sum, row) => sum + row.open_reports, 0);
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Flight surgeon</h1>
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+      <PageHeader
+        eyebrow="MISSION MEDICAL"
+        title="Flight surgeon"
+        actions={updatedAt ? <p className="text-xs text-muted">Last updated {updatedAt}</p> : null}
+      />
       {error && (
         <p role="alert" className="mt-2 text-sm text-danger">{error}</p>
       )}
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card className="p-4">
+          <StatCount value={rows.length} label="Crew" />
+        </Card>
+        <Card className="p-4">
+          <StatCount value={critical} label="Critical" />
+        </Card>
+        <Card className="p-4">
+          <StatCount value={watch} label="Watch" />
+        </Card>
+        <Card className="p-4">
+          <StatCount value={openReports} label="Open reports" />
+        </Card>
+      </div>
       <CrewBoard rows={rows} updatedAt={updatedAt} />
       <ReportsInbox
         token={session.session.token}
@@ -113,7 +138,7 @@ function SurgeonView() {
 
 export default function SurgeonPage() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading…</p>}>
       <SurgeonView />
     </Suspense>
   );

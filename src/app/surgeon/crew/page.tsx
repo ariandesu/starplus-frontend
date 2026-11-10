@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ackReport, getCrewRoster, getReports, type RosterRow } from "@/lib/api";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { CrewBoard } from "@/components/surgeon/crew-board";
 import { CrewDetail, type DetailReport } from "@/components/surgeon/crew-detail";
 import { useSurgeonSession } from "@/components/surgeon/use-surgeon";
@@ -63,15 +64,15 @@ function CrewPageView() {
     await refresh();
   }
 
-  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted">Loading…</p>;
   if (session.state.status !== "active") {
     return <RequireSession session={session.state} heading="Crew" />;
   }
   if (!session.allowed || !session.session) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Crew</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <PageHeader title="Crew" />
+        <p className="mt-1 text-sm text-muted">
           This view needs a flight medical officer or mission control login.{" "}
           <Link href="/login" className="text-accent-strong underline">Go to login</Link>{" "}
           <Link href="/login?demo=surgeon" className="text-accent-strong underline">Try the demo</Link>
@@ -83,7 +84,7 @@ function CrewPageView() {
   if (crewParam) {
     const name = rows.find((row) => row.crew_id === crewParam)?.name ?? crewParam;
     return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-8">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
         <CrewDetail
           token={session.session.token}
           crewId={crewParam}
@@ -96,8 +97,12 @@ function CrewPageView() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Crew</h1>
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+      <PageHeader
+        eyebrow="MISSION MEDICAL"
+        title="Crew"
+        actions={updatedAt ? <p className="text-xs text-muted">Last updated {updatedAt}</p> : null}
+      />
       <CrewBoard rows={rows} updatedAt={updatedAt} />
     </div>
   );
@@ -105,7 +110,7 @@ function CrewPageView() {
 
 export default function SurgeonCrewPage() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading…</p>}>
       <CrewPageView />
     </Suspense>
   );

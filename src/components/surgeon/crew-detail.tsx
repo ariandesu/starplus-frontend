@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CATALOG, type Measurement, type Result } from "@starplus/core";
-import { Citation, StatusTone } from "@/components/citation";
+import { Citation } from "@/components/citation";
+import { MetricTile } from "@/components/dashboard/metric-tile";
 import { VitalChart } from "@/components/dashboard/vital-chart";
+import { Card } from "@/components/ui/card";
+import { StatusPill } from "@/components/ui/status-pill";
 import { getCrewMeasurements, getCrewResults } from "@/lib/api";
 import { getKbEntry, reasonText } from "@/lib/kb";
-import { inboxTitle } from "@/lib/report-title";
+import { inboxTitle, shortDate } from "@/lib/report-title";
 import { sortVitals } from "@/lib/vital-order";
 import { buildSeries, type MetricSeries } from "@/lib/vital-series";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
@@ -112,7 +115,7 @@ export function CrewDetail({
     };
   }, [token, crewId]);
 
-  if (!ready) return <p className="mt-4 text-sm text-muted-foreground">Loading…</p>;
+  if (!ready) return <p className="mt-4 text-sm text-muted">Loading…</p>;
 
   const latest = results.length > 0 ? results[results.length - 1] : null;
   const mine = reports.filter((report) => report.submitted_by === crewId || report.subject_crew_id === crewId);
@@ -128,61 +131,63 @@ export function CrewDetail({
 
   return (
     <div>
-      <Link href="/surgeon/crew" className="text-sm text-accent-strong underline">
+      <Link
+        href="/surgeon/crew"
+        className="inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring"
+      >
         All crew
       </Link>
-      <h1 className="mt-1 text-2xl font-bold text-foreground">{crewName}</h1>
-      {updatedAt && <p className="mt-1 text-xs text-muted-foreground">Last updated {updatedAt}</p>}
-
-      <section aria-label="Result timeline" className="mt-4">
-        <h2 className="text-lg font-semibold text-foreground">Timeline</h2>
-        {results.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">No results yet.</p>
-        ) : (
-          <ol className="mt-2 space-y-1">
-            {[...results].reverse().map((result) => (
-              <li key={result.client_id} className="flex items-center gap-2 text-sm">
-                <StatusTone status={result.overall_status} />
-                <span className="text-muted-foreground">{new Date(result.assessed_at).toLocaleString()}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <h1 className="text-[1.75rem] font-bold tracking-tight">{crewName}</h1>
+        {latest && <StatusPill status={latest.overall_status} />}
+      </div>
+      {updatedAt && <p className="mt-1 text-xs text-muted">Last updated {updatedAt}</p>}
 
       {latest && (
-        <section aria-label="Latest measures" className="mt-4">
+        <section aria-label="Latest measures" className="mt-6">
           <h2 className="text-lg font-semibold text-foreground">Latest measures</h2>
-          <ul className="mt-2 space-y-3">
+          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
             {sortVitals(latest.per_measure).map((entry) => {
               const measure = CATALOG.measures.find((m) => m.code === entry.metric);
               const kb = measure ? getKbEntry(measure.guidance_key) : null;
+              const baseline = entry.values.baseline_mean;
               return (
-                <li key={entry.metric} className="rounded-xl border border-border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-foreground">{measure?.label ?? entry.metric}</p>
-                    <StatusTone status={entry.status} />
-                  </div>
-                  <p className="mt-1 text-sm text-foreground">
-                    {String(entry.values.value)} {entry.values.unit} — {reasonText(entry.reason_code)}
-                  </p>
-                  {entry.values.baseline_mean !== null && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Baseline {entry.values.baseline_mean.toFixed(1)} (n={entry.values.baseline_n})
-                    </p>
+                <div key={entry.metric} className="flex flex-col gap-2">
+                  <MetricTile
+                    eyebrow={measure ? measure.body_system.replace(/_/g, " ") : ""}
+                    label={measure?.label ?? entry.metric}
+                    value={entry.values.value === null ? "—" : String(entry.values.value)}
+                    unit={entry.values.unit}
+                    status={entry.status}
+                    zScore={entry.values.z_score}
+                    baselineText={
+                      baseline === null
+                        ? "No baseline yet"
+                        : `Baseline ${baseline.toFixed(1)} (n=${entry.values.baseline_n})`
+                    }
+                    dateText={shortDate(latest.assessed_at)}
+                  />
+                  <p className="text-sm text-foreground">{reasonText(entry.reason_code)}</p>
+                  {kb && (
+                    <Citation
+                      source={
+                        kb.citations[0]
+                          ? `${kb.citations[0].title} — ${kb.citations[0].publisher}, ${kb.citations[0].year}`
+                          : ""
+                      }
+                    />
                   )}
-                  {kb && <Citation source={kb.citations[0] ? `${kb.citations[0].title} — ${kb.citations[0].publisher}, ${kb.citations[0].year}` : ""} className="mt-1" />}
-                </li>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </section>
       )}
 
       {series.length > 0 && (
-        <section aria-label="Trend charts" className="mt-4">
+        <section aria-label="Trend charts" className="mt-6">
           <h2 className="text-lg font-semibold text-foreground">Trends</h2>
-          <div className="mt-2 space-y-4">
+          <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
             {series.map((entry) => (
               <VitalChart
                 key={entry.code}
@@ -196,19 +201,42 @@ export function CrewDetail({
         </section>
       )}
 
-      <section aria-label="Crew reports" className="mt-4">
+      <section aria-label="Result timeline" className="mt-6">
+        <h2 className="text-lg font-semibold text-foreground">Timeline</h2>
+        <Card className="mt-3 p-4">
+          {results.length === 0 ? (
+            <p className="text-sm text-muted">No results yet.</p>
+          ) : (
+            <ol className="space-y-2">
+              {[...results].reverse().map((result) => (
+                <li
+                  key={result.client_id}
+                  className="flex min-h-11 items-center gap-3 border-b border-border pb-2 last:border-0 last:pb-0"
+                >
+                  <StatusPill status={result.overall_status} />
+                  <span className="text-sm text-muted">{new Date(result.assessed_at).toLocaleString()}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Card>
+      </section>
+
+      <section aria-label="Crew reports" className="mt-6">
         <h2 className="text-lg font-semibold text-foreground">Reports</h2>
         {mine.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">No reports for {crewName} yet.</p>
+          <Card className="mt-3 p-4">
+            <p className="text-sm text-muted">No reports for {crewName} yet.</p>
+          </Card>
         ) : (
-          <ul className="mt-2 space-y-3">
+          <div className="mt-3 space-y-3">
             {mine.map((report) => (
-              <li key={report.client_id} className="rounded-xl border border-border p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-foreground">
+              <Card key={report.client_id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-medium text-foreground">
                     {inboxTitle(report.kind, crewName, report.received_at || report.created_at)}
                   </p>
-                  <span className="text-xs text-muted-foreground">{report.status}</span>
+                  <span className="text-xs text-muted">{report.status}</span>
                 </div>
                 {report.summary_text && <p className="mt-1 text-sm text-foreground">{report.summary_text}</p>}
                 <ReportPhotos token={token} report={report} />
@@ -217,14 +245,14 @@ export function CrewDetail({
                     type="button"
                     disabled={busy === report.client_id}
                     onClick={() => void acknowledge(report.client_id)}
-                    className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                    className="mt-3 min-h-11 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
                   >
                     Acknowledge
                   </button>
                 )}
-              </li>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

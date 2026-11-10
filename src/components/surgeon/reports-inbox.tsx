@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { inboxTitle } from "@/lib/report-title";
 import { ReportPhotos } from "./report-photos";
 
@@ -45,54 +49,67 @@ export function ReportsInbox({
     <section aria-label="Reports inbox" className="mt-6">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-foreground">Reports</h2>
-        {updatedAt && <p className="text-xs text-muted-foreground">Last updated {updatedAt}</p>}
+        {updatedAt && <p className="text-xs text-muted">Last updated {updatedAt}</p>}
       </div>
-      <div className="mt-2 flex gap-2" role="group" aria-label="Report filters">
-        {(["open", "all"] as const).map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setFilter(option)}
-            aria-pressed={filter === option}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-              filter === option
-                ? "bg-primary text-primary-foreground"
-                : "border border-border text-foreground"
-            }`}
-          >
-            {option === "open" ? "Open" : "All"}
-          </button>
-        ))}
+      <div className="mt-2">
+        <SegmentedControl
+          ariaLabel="Report filters"
+          value={filter}
+          onChange={(value) => setFilter(value === "all" ? "all" : "open")}
+          options={[
+            { value: "open", label: "Open" },
+            { value: "all", label: "All" },
+          ]}
+        />
       </div>
       {visible.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted">
           {filter === "open" ? "No open reports." : "No reports delivered yet."}
         </p>
       ) : (
-        <ul className="mt-2 space-y-3">
-          {visible.map((report) => (
-            <li key={report.client_id} className="rounded-xl border border-border p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-foreground">
-                  {inboxTitle(report.kind, names.get(report.submitted_by) ?? report.submitted_by, report.received_at || report.created_at)}
-                </p>
-                <span className="text-xs text-muted-foreground">{report.status}</span>
-              </div>
-              {report.summary_text && <p className="mt-1 text-sm text-foreground">{report.summary_text}</p>}
-              <ReportPhotos token={token} report={report} />
-              {report.status !== "acknowledged" && (
-                <button
-                  type="button"
-                  disabled={busy === report.client_id}
-                  onClick={() => void acknowledge(report.client_id)}
-                  className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        <Card className="mt-3 p-0">
+          <ul className="divide-y divide-border">
+            {visible.map((report) => {
+              const emergency = report.kind === "emergency";
+              return (
+                <li
+                  key={report.client_id}
+                  className={cn("p-4", emergency && "border-l-4 border-danger")}
                 >
-                  Acknowledge
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground">
+                        {inboxTitle(
+                          report.kind,
+                          names.get(report.submitted_by) ?? report.submitted_by,
+                          report.received_at || report.created_at
+                        )}
+                      </p>
+                      {emergency && <p className="mt-1 text-sm font-semibold text-danger">Emergency</p>}
+                      {report.summary_text && (
+                        <p className="mt-1 text-sm text-foreground">{report.summary_text}</p>
+                      )}
+                      <ReportPhotos token={token} report={report} />
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <Badge>{report.status}</Badge>
+                      {report.status !== "acknowledged" && (
+                        <button
+                          type="button"
+                          disabled={busy === report.client_id}
+                          onClick={() => void acknowledge(report.client_id)}
+                          className="min-h-11 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                        >
+                          Acknowledge
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
       )}
     </section>
   );
