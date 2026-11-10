@@ -57,8 +57,8 @@ function initials(name: string): string {
 function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground">
-        <span className="text-sm font-bold text-accent">S</span>
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+        <span className="text-sm font-bold text-accent-foreground">S</span>
       </div>
       <span className="text-base font-bold tracking-tight text-foreground">STAR PLUS</span>
     </div>
