@@ -60,9 +60,18 @@ function bearer(token: string) {
   return { headers: { Authorization: `Bearer ${token}` } };
 }
 
+/** A stalled connection must not freeze the session for the rest of the visit. */
+function sessionSignal(): AbortSignal | undefined {
+  return typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+    ? AbortSignal.timeout(8000)
+    : undefined;
+}
+
 /** Reads the live session for a bearer token, renewing it when due. */
 export async function fetchServerSession(token: string): Promise<ServerSession | null> {
-  const { data, error } = await authClient.getSession({ fetchOptions: bearer(token) });
+  const { data, error } = await authClient.getSession({
+    fetchOptions: { ...bearer(token), signal: sessionSignal() },
+  });
   if (error || !data) return null;
   return toServerSession(token, data as unknown as ServerSessionBody);
 }
