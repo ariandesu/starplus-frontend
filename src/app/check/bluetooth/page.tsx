@@ -229,8 +229,8 @@ function BluetoothForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Bluetooth check</h1>
+    <div className="mx-4 my-6 w-auto max-w-2xl rounded-card border border-border bg-card p-5 shadow-card sm:mx-auto lg:p-6">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Bluetooth check</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Read a standard Bluetooth health device. Heart-rate streams keep one value per minute.
       </p>

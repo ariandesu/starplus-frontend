@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
+  Bluetooth,
+  Camera,
+  ClipboardList,
+  HeartPulse,
+  Mic,
+  Timer,
+  Upload,
+  type LucideIcon,
+} from "lucide-react";
+import {
   CATALOG,
   assess,
   loadModel,
@@ -17,10 +27,12 @@ import {
   type Phase,
   type Setting,
 } from "@starplus/core";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { MeasureForm } from "@/components/measure-form";
+import { Card } from "@/components/ui/card";
+import { RequireSession } from "@/components/require-session";
 import { deviceDb, profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { RequireSession } from "@/components/require-session";
 import { getModelDefinition, getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueMeasurement, enqueueResult } from "@/lib/outbox";
 import { getSession } from "@/lib/session";
@@ -30,6 +42,23 @@ async function getSetting(key: string, fallback: string): Promise<string> {
   const row = await db.get("settings", key);
   return row?.value ?? fallback;
 }
+
+interface Method {
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+const METHODS: Method[] = [
+  { href: "/check/bluetooth", label: "Connect a Bluetooth device", description: "Pair a device and stream readings.", icon: Bluetooth },
+  { href: "/check/camera", label: "Read a device display", description: "Read a device display with the camera.", icon: Camera },
+  { href: "/check/camera-hr", label: "Measure heart rate with the camera", description: "Estimate heart rate from a fingertip on the camera.", icon: HeartPulse },
+  { href: "/check/voice", label: "Speak a reading", description: "Say the value out loud and save it.", icon: Mic },
+  { href: "/check/reaction", label: "Take the reaction test", description: "Tap when the screen changes.", icon: Timer },
+  { href: "/check/questionnaire", label: "Answer a short questionnaire", description: "Answer a few short questions.", icon: ClipboardList },
+  { href: "/import", label: "Import a CSV or FHIR file", description: "Bring readings in from a file.", icon: Upload },
+];
 
 function CheckForm() {
   const router = useRouter();
@@ -158,108 +187,94 @@ function CheckForm() {
     }
   }
 
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!ready) return <p className="px-4 py-8 text-sm text-muted">Loading…</p>;
   if (session.status !== "active" || !crewId) {
     return <RequireSession session={session} />;
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Self-check</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
+      <PageHeader eyebrow="SELF-CHECK" title="Self-check" />
+      <p className="mt-1 text-sm text-muted">
         Setting {setting}, phase {phase}. Complete this in under a minute.
       </p>
-      <label htmlFor="measure-select" className="mt-4 block text-sm font-semibold text-foreground">
-        What are you measuring?
-      </label>
-      <select
-        id="measure-select"
-        value={code}
-        onChange={(event) => setCode(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-      >
-        {CATALOG.measures.map((m) => (
-          <option key={m.code} value={m.code}>
-            {m.label} ({m.unit || "score"})
-          </option>
-        ))}
-      </select>
-      <div className="mt-4">
-        <MeasureForm
-          measure={measure}
-          howto={kb?.text[0] ?? ""}
-          why={kb?.text[1] ?? (kb?.citations[0] ? citeLabel(kb.citations[0]) : "")}
-          onSubmit={submit}
-        />
-      </div>
-      {needsPair && (
-        <div className="mt-4 rounded-xl border border-border p-4">
-          <label htmlFor="dia-value" className="text-sm font-semibold text-foreground">
-            Diastolic (mmHg) — same cuff, same moment
-          </label>
-          <input
-            id="dia-value"
-            inputMode="decimal"
-            autoComplete="off"
-            value={diaValue}
-            onChange={(event) => setDiaValue(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
+
+      <Card className="mt-4 p-5 lg:p-6">
+        <label htmlFor="measure-select" className="block text-sm font-semibold text-foreground">
+          What are you measuring?
+        </label>
+        <select
+          id="measure-select"
+          value={code}
+          onChange={(event) => setCode(event.target.value)}
+          className="mt-1 h-11 w-full rounded-control border border-input bg-surface px-3 py-2 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          {CATALOG.measures.map((m) => (
+            <option key={m.code} value={m.code}>
+              {m.label} ({m.unit || "score"})
+            </option>
+          ))}
+        </select>
+        <div className="mt-4">
+          <MeasureForm
+            measure={measure}
+            howto={kb?.text[0] ?? ""}
+            why={kb?.text[1] ?? (kb?.citations[0] ? citeLabel(kb.citations[0]) : "")}
+            onSubmit={submit}
           />
         </div>
-      )}
-      {notice && (
-        <p role="alert" className="mt-3 text-sm text-danger">
-          {notice}
-        </p>
-      )}
-      {busy && <p className="mt-3 text-sm text-muted-foreground">Scoring…</p>}
-      <div className="mt-8 border-t border-border pt-4">
-        <h2 className="text-base font-semibold text-foreground">Other ways</h2>
-        <ul className="mt-2 space-y-1 text-sm">
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/check/questionnaire?crew=${encodeURIComponent(crewId)}` : "/check/questionnaire"}>
-              Answer a short questionnaire
-            </Link>
-          </li>
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/check/reaction?crew=${encodeURIComponent(crewId)}` : "/check/reaction"}>
-              Take the reaction test
-            </Link>
-          </li>
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/import?crew=${encodeURIComponent(crewId)}` : "/import"}>
-              Import a CSV or FHIR file
-            </Link>
-          </li>
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/check/bluetooth?crew=${encodeURIComponent(crewId)}` : "/check/bluetooth"}>
-              Connect a Bluetooth device
-            </Link>
-          </li>
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/check/voice?crew=${encodeURIComponent(crewId)}` : "/check/voice"}>
-              Speak a reading
-            </Link>
-          </li>
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/check/camera?crew=${encodeURIComponent(crewId)}` : "/check/camera"}>
-              Read a device display
-            </Link>
-          </li>
-          <li>
-            <Link className="text-accent-strong underline" href={crewId ? `/check/camera-hr?crew=${encodeURIComponent(crewId)}` : "/check/camera-hr"}>
-              Measure heart rate with the camera
-            </Link>
-          </li>
-        </ul>
-      </div>
+        {needsPair && (
+          <div className="mt-4 rounded-tile border border-border bg-surface p-4">
+            <label htmlFor="dia-value" className="text-sm font-semibold text-foreground">
+              Diastolic (mmHg) — same cuff, same moment
+            </label>
+            <input
+              id="dia-value"
+              inputMode="decimal"
+              autoComplete="off"
+              value={diaValue}
+              onChange={(event) => setDiaValue(event.target.value)}
+              className="mt-1 h-11 w-full rounded-control border border-input bg-card px-3 py-2 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            />
+          </div>
+        )}
+        {notice && (
+          <p role="alert" className="mt-3 text-sm text-danger">
+            {notice}
+          </p>
+        )}
+        {busy && <p className="mt-3 text-sm text-muted">Scoring…</p>}
+      </Card>
+
+      <section aria-label="Other ways" className="mt-6">
+        <h2 className="text-lg font-semibold text-foreground">Other ways</h2>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {METHODS.map((method) => {
+            const Icon = method.icon;
+            const href = crewId ? `${method.href}?crew=${encodeURIComponent(crewId)}` : method.href;
+            return (
+              <Link
+                key={method.href}
+                href={href}
+                className="flex min-h-11 items-start gap-3 rounded-tile border border-border bg-card p-4 shadow-card transition-colors hover:bg-surface-2 focus-ring"
+              >
+                <Icon className="mt-0.5 h-5 w-5 shrink-0 text-muted" aria-hidden />
+                <span>
+                  <span className="block text-sm font-medium text-foreground">{method.label}</span>
+                  <span className="mt-0.5 block text-xs text-muted">{method.description}</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
 
 export default function CheckPage() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading…</p>}>
       <CheckForm />
     </Suspense>
   );

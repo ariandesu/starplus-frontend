@@ -95,8 +95,8 @@ function ReactionTest() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Reaction test</h1>
+    <div className="mx-4 my-6 w-auto max-w-2xl rounded-card border border-border bg-card p-5 shadow-card sm:mx-auto lg:p-6">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Reaction test</h1>
       <p className="mt-1 text-sm text-muted-foreground">Tap as soon as you see “Tap now”. First tap is practice, then five count.</p>
       {stage === "idle" && (
         <button

@@ -142,8 +142,8 @@ function CameraHrForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Camera heart rate</h1>
+    <div className="mx-4 my-6 w-auto max-w-2xl rounded-card border border-border bg-card p-5 shadow-card sm:mx-auto lg:p-6">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Camera heart rate</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Cover the camera with your fingertip. This is always an estimate — it is never used for
         baselines.
