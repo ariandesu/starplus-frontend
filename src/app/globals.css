@@ -49,7 +49,7 @@
   --accent: #D7F43A;       /* lime: fills only, with ink text on top */
   --accent-foreground: #0F110F;
   --accent-strong: #3F6212;/* text-safe green: links, focus, chart highlight */
-  --danger: #D92D20;       /* emergency and destructive */
+  --danger: #C42318;       /* emergency and destructive */
   --danger-foreground: #FFFFFF;
 
   /* the four statuses: fixed meaning, never merged or renamed */

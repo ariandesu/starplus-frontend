@@ -40,7 +40,7 @@ function DemoAccountBanner() {
   }, [crewId, crewReady]);
   if (!show) return null;
   return (
-    <p role="status" className="bg-accent px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-accent-foreground" data-testid="demo-banner">
+    <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-bold uppercase tracking-wide text-accent-foreground" data-testid="demo-banner">
       Demo: synthetic crew data
     </p>
   );
@@ -94,30 +94,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="min-h-full">
       <OutboxSync />
-      {updated && (
-        <p role="status" className="bg-accent px-4 py-2 text-center text-sm font-semibold text-accent-foreground">
-          Updated.{" "}
-          <button type="button" onClick={() => window.location.reload()} className="underline">
-            Reload
-          </button>
-        </p>
-      )}
-      <TopBar
-        isOpen={isOpen}
-        onToggle={() => setIsOpen((prev) => !prev)}
-        trailing={<EmergencyButton />}
-        context={`${setting} · ${phase}`}
-      />
-      {demo && <DemoBanner />}
-      <Suspense>
-        <DemoAccountBanner />
-      </Suspense>
-      <MobileNav isOpen={isOpen} onClose={close} />
-      <main className="flex-1 overflow-x-hidden">
-        <CrewErrorBoundary>{children}</CrewErrorBoundary>
-      </main>
+      <MobileNav isOpen={isOpen} onClose={close} context={`${setting} · ${phase}`} />
+      <div className="flex min-h-full flex-col lg:pl-[264px]">
+        {updated && (
+          <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-semibold text-accent-foreground">
+            Updated.{" "}
+            <button type="button" onClick={() => window.location.reload()} className="underline">
+              Reload
+            </button>
+          </p>
+        )}
+        <TopBar
+          isOpen={isOpen}
+          onToggle={() => setIsOpen((prev) => !prev)}
+          trailing={<EmergencyButton />}
+        />
+        {demo && <DemoBanner />}
+        <Suspense>
+          <DemoAccountBanner />
+        </Suspense>
+        <main className="flex-1 overflow-x-hidden">
+          <CrewErrorBoundary>{children}</CrewErrorBoundary>
+        </main>
+      </div>
     </div>
   );
 }

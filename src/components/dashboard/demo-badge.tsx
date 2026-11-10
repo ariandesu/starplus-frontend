@@ -19,7 +19,7 @@ export function DemoBanner({ className }: { className?: string }) {
     <div
       role="status"
       className={cn(
-        "w-full bg-accent px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-accent-foreground",
+        "w-full bg-accent px-4 py-1.5 text-center text-xs font-bold uppercase tracking-wide text-accent-foreground",
         className
       )}
     >

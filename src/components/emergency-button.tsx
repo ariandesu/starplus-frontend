@@ -9,7 +9,7 @@ export function EmergencyButton({ className }: { className?: string }) {
       href="/emergency"
       aria-label="Emergency help"
       className={cn(
-        "inline-flex items-center justify-center rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground",
+        "inline-flex items-center justify-center rounded-full bg-danger px-4 py-2 text-sm font-bold text-danger-foreground",
         "hover:bg-danger/90 focus-ring",
         className
       )}

@@ -285,7 +285,7 @@ test("log out from the menu and settings ends the session", async ({ page }) => 
   await page.goto(`${BASE_URL}/`);
 
   const openMenu = page.getByRole("button", { name: /open menu/i });
-  await openMenu.click();
+  if ((await openMenu.count()) > 0) await openMenu.click();
   const logoutItem = page.locator('aside[aria-label="Main navigation"]').getByRole("button", { name: "Log out", exact: true });
   await expect(logoutItem).toBeVisible();
   await logoutItem.click();

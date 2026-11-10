@@ -65,7 +65,8 @@ test("offline loads never-visited query URLs from the precache", async ({ page, 
 test("offline reload after in-app navigation to the self-check page", async ({ page, context }) => {
   await page.goto(`${BASE_URL}/`);
   await expect(page.getByRole("heading", { name: /STAR PLUS self-check/i })).toBeVisible();
-  await page.getByRole("button", { name: /open menu/i }).click();
+  const openMenu = page.getByRole("button", { name: /open menu/i });
+  if ((await openMenu.count()) > 0) await openMenu.click();
   await page.getByRole("link", { name: /^self-check$/i }).click();
   await expect(page.getByText(/Go to login/i)).toBeVisible();
   await waitForPrecachedResult(page);
