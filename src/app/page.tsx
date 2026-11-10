@@ -167,7 +167,7 @@ function HomeView() {
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h1 className="text-[1.75rem] font-bold tracking-tight">Today</h1>
             <p className="text-[1.75rem] font-normal tracking-tight text-muted">
-              {`${greetingText(new Date().getHours())}, ${crew?.name ?? ""}. ${summarySentence(counts)}`}
+              {`${greetingText(new Date().getHours())}${crew?.name ? `, ${crew.name}` : ""}. ${summarySentence(counts)}`}
             </p>
           </div>
           <WaitingBanner waiting={waiting} hasSession={hasSession} />

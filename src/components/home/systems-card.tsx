@@ -14,7 +14,7 @@ export function SystemsCard({ entries }: { entries: MeasureEntry[] }) {
         className="p-0"
         title="Body systems"
         action={
-          <Link href="/body" className="text-sm font-medium text-accent-strong underline underline-offset-4">
+          <Link href="/body" className="inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring">
             Open body map
           </Link>
         }

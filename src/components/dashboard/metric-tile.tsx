@@ -31,11 +31,11 @@ export function MetricTile({
 }: MetricTileProps) {
   return (
     <Card variant="tile" className={cn("p-4", className)}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted">
+      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+        <p className="min-w-0 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted">
           {eyebrow}
         </p>
-        <StatusPill status={status} />
+        <StatusPill status={status} className="shrink-0" />
       </div>
       <p className="mt-2 text-[2rem] font-normal tabular-nums tracking-tight md:text-5xl">
         {value}

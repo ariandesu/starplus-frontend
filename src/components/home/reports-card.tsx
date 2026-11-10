@@ -10,7 +10,7 @@ import { ownReportTitle } from "@/lib/report-title";
 export function ReportsCard({ reports }: { reports: Report[] }) {
   if (reports.length === 0) return null;
   const latest = [...reports]
-    .sort((a, b) => (b.received_at || b.created_at).localeCompare(a.received_at || a.created_at))
+    .sort((a, b) => (b.received_at || b.created_at || "").localeCompare(a.received_at || a.created_at || ""))
     .slice(0, 3);
   return (
     <Card className="p-5 lg:p-6">
@@ -18,7 +18,7 @@ export function ReportsCard({ reports }: { reports: Report[] }) {
         className="p-0"
         title="Reports"
         action={
-          <Link href="/reports" className="text-sm font-medium text-accent-strong underline underline-offset-4">
+          <Link href="/reports" className="inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring">
             Reports
           </Link>
         }

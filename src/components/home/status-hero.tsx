@@ -51,8 +51,9 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref }: Statu
       <div role="status" className="mt-2 flex items-center gap-2">
         {status ? (
           <>
+            <span className="sr-only">Overall: </span>
             <Icon className="h-8 w-8 shrink-0" aria-hidden />
-            <span className="text-[2rem] font-normal capitalize tracking-tight md:text-[2.75rem]">{status}</span>
+            <span className="text-[2rem] font-normal capitalize tracking-tight md:text-[2.75rem]">{name}</span>
           </>
         ) : (
           <p className="text-[2rem] font-normal tracking-tight md:text-[2.75rem]">No check-in yet</p>

@@ -16,7 +16,7 @@ export function TrendCard({ series }: { series: MetricSeries | null }) {
         title={series.label}
         description={`Latest ${latest.value} ${series.unit}`}
         action={
-          <Link href="/history" className="text-sm font-medium text-accent-strong underline underline-offset-4">
+          <Link href="/history" className="inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring">
             History
           </Link>
         }

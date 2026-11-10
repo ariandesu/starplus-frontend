@@ -23,7 +23,7 @@ export function MeasuresCard({ entries, checkHref }: MeasuresCardProps) {
         title="Measures to watch"
         description="From your latest readings."
         action={
-          <Link href="/history" className="text-sm font-medium text-accent-strong underline underline-offset-4">
+          <Link href="/history" className="inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring">
             See all
           </Link>
         }
@@ -33,7 +33,7 @@ export function MeasuresCard({ entries, checkHref }: MeasuresCardProps) {
           <p className="text-sm text-muted">No readings yet.</p>
           <Link
             href={checkHref}
-            className="mt-2 inline-block text-sm font-medium text-accent-strong underline underline-offset-4"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring"
           >
             Start a self-check
           </Link>
@@ -53,7 +53,7 @@ export function MeasuresCard({ entries, checkHref }: MeasuresCardProps) {
                 status={entry.status}
                 zScore={entry.values.z_score}
                 baselineText={
-                  baseline === null
+                  entry.values.z_score === null || baseline === null
                     ? "No baseline yet"
                     : `Baseline ${baseline.toFixed(1)} ${entry.values.unit}`
                 }

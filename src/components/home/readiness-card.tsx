@@ -30,9 +30,9 @@ export function ReadinessCard({ measurements, results, demo }: ReadinessCardProp
     <Card className="h-full p-5 lg:p-6">
       <CardHeader
         className="p-0"
-        title="Today's readiness"
+        title="Readiness"
         action={
-          <Link href="/progress" className="text-sm font-medium text-accent-strong underline underline-offset-4">
+          <Link href="/progress" className="inline-flex min-h-11 items-center text-sm font-medium text-accent-strong underline underline-offset-4 focus-ring">
             Progress
           </Link>
         }
