@@ -7,6 +7,14 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.APP_URL ?? "http://localhost:3100";
+
+// The session layer refreshes against the server when online; these specs exercise
+// the on-device layer with no backend, so they declare the browser offline.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+  });
+});
 const ASTRONAUT = "e2e-active-astronaut";
 const SURGEON = "e2e-active-surgeon";
 
@@ -226,7 +234,7 @@ test("typed routes survive reload and work offline", async ({ page, context }) =
   await context.setOffline(false);
 });
 
-test("expired sessions fall back to logged-out views with Try the demo", async ({ page }) => {
+test("expired sessions show the ended view so the person can sign in again", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto(`${BASE_URL}/`);
   await seedCrew(page, ASTRONAUT, "astronaut");
@@ -235,12 +243,14 @@ test("expired sessions fall back to logged-out views with Try the demo", async (
 
   await expireCrew(page, ASTRONAUT);
   await page.goto(`${BASE_URL}/body`);
-  await expect(page.getByText("Try the demo", { exact: true }).first()).toBeVisible({ timeout: 15_000 });
-  expect(await activeCrewSetting(page)).toBe("");
+  await expect(page.getByTestId("session-expired")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/your session for .* ended/i).first()).toBeVisible();
+  expect(await activeCrewSetting(page)).toBe(ASTRONAUT);
 
   for (const path of ["/history", "/check", "/"]) {
     await page.goto(`${BASE_URL}${path}`);
-    await expect(page.getByText("Try the demo", { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("session-expired")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("link", { name: "Sign in again" })).toBeVisible();
   }
 });
 
@@ -280,7 +290,7 @@ test("log out from the menu and settings ends the session", async ({ page }) => 
   await expect(logoutItem).toBeVisible();
   await logoutItem.click();
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
-  await expect(page.getByText("Try the demo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /select your mission role/i })).toBeVisible({ timeout: 15_000 });
   expect(await activeCrewSetting(page)).toBe("");
 
   await seedCrew(page, ASTRONAUT, "astronaut");
@@ -288,7 +298,7 @@ test("log out from the menu and settings ends the session", async ({ page }) => 
   await expect(page.getByText(`Signed in as ${ASTRONAUT}`)).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
-  await expect(page.getByText("Try the demo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /select your mission role/i })).toBeVisible({ timeout: 15_000 });
   expect(await activeCrewSetting(page)).toBe("");
 });
 

@@ -10,7 +10,7 @@ const RUN = typeof crypto.randomUUID === "function" ? crypto.randomUUID().slice(
 
 const ROUTES: Array<{ path: string; shows: RegExp }> = [
   { path: "/", shows: /STAR PLUS self-check/ },
-  { path: "/login", shows: /Log in/ },
+  { path: "/login", shows: /Select your mission role/ },
   { path: "/check", shows: /Go to login/ },
   { path: `/check?crew=probe-${RUN}`, shows: /Go to login/ },
   { path: "/result", shows: /Go to login/ },
@@ -31,7 +31,7 @@ const ROUTES: Array<{ path: string; shows: RegExp }> = [
   { path: "/check/voice", shows: /Go to login/ },
   { path: "/check/camera", shows: /Go to login/ },
   { path: "/check/camera-hr", shows: /Go to login/ },
-  { path: "/progress", shows: /crew link/ },
+  { path: "/progress", shows: /Go to login/ },
   { path: "/medicines", shows: /Medicines/ },
   { path: "/import", shows: /Go to login/ },
 ];

@@ -11,11 +11,12 @@ import { onSynced } from "@/lib/outbox-sync";
 import { pendingEmergencyCount } from "@/lib/outbox";
 import type { Result } from "@starplus/core";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 function HomeView() {
   const router = useRouter();
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [ready, setReady] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [hasSession, setHasSession] = useState(false);
@@ -71,36 +72,14 @@ function HomeView() {
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
 
-  if (!crewId) {
+  if (session.status !== "active" || !crewId) {
     return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">STAR PLUS self-check</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Answer three questions: how am I, why, and what do I do now. Your data stays on this
-          device until a link returns.
-        </p>
-        <div className="mt-4 flex gap-3">
-          <Link
-            href="/login"
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/emergency"
-            className="rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
-          >
-            Emergency
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground"
-          >
-            Try the demo
-          </Link>
-        </div>
-        <ContinueAsButtons candidates={candidates} />
-      </div>
+      <RequireSession
+        session={session}
+        heading="STAR PLUS self-check"
+        intro="Answer three questions: how am I, why, and what do I do now. Your data stays on this device until a link returns."
+        showEmergency
+      />
     );
   }
 

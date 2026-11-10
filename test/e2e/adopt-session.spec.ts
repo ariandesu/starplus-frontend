@@ -9,6 +9,14 @@ import { expect, test, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.APP_URL ?? "http://localhost:3100";
 
+// These specs exercise the on-device session layer with no backend, so they
+// declare the browser offline (the online renewal path has its own spec).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+  });
+});
+
 interface SeedProfile {
   crewId: string;
   role?: string;

@@ -12,11 +12,12 @@ import { ReadingPreview } from "@/components/reading-preview";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 function CameraForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [photoText, setPhotoText] = useState("");
   const [typedText, setTypedText] = useState("");
   const [readings, setReadings] = useState<EditableReading[]>([]);
@@ -25,16 +26,8 @@ function CameraForm() {
   const [busy, setBusy] = useState(false);
 
   if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to read a device display. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-          <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} />;
   }
 
   function showReadings(text: string) {

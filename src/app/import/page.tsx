@@ -9,7 +9,7 @@ import { enqueueMeasurement } from "@/lib/outbox";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 type ParsedFile =
   | { kind: "csv"; headers: string[]; text: string }
@@ -45,7 +45,8 @@ function parseFile(name: string, text: string): ParsedFile | { kind: "error"; re
 }
 
 function ImportForm() {
-  const { crewId: activeCrewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId: activeCrewId, ready: crewReady } = session;
   const crewId = activeCrewId ?? "";
   const [ready, setReady] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -150,16 +151,8 @@ function ImportForm() {
   }
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-xl px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to import data. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-        <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} />;
   }
 
   return (

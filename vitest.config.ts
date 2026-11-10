@@ -15,6 +15,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["fake-indexeddb/auto"],
+    env: { NEXT_PUBLIC_DEMO_PASSWORD: "demo-password-123" },
     include: ["test/**/*.test.{ts,tsx}", "core/test/**/*.test.ts", "src/**/*.test.{ts,tsx}"],
     // explain.test.ts reads backend-only tools/eval/cases.json; backend CI runs it.
     exclude: ["core/test/explain.test.ts"],

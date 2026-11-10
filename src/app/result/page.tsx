@@ -11,7 +11,7 @@ import { enqueueResult } from "@/lib/outbox";
 import { getExplanation, getKbEntry, citeLabel, reasonText } from "@/lib/kb";
 import type { KbEntry } from "@starplus/core";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 function ExplainMore({ entry, metric }: { entry: KbEntry; metric: string }) {
   const [open, setOpen] = useState(false);
@@ -53,7 +53,8 @@ function ExplainMore({ entry, metric }: { entry: KbEntry; metric: string }) {
 function ResultView() {
   const router = useRouter();
   const params = useSearchParams();
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const resultId = params.get("result") ?? "";
   const [result, setResult] = useState<Result | null>(null);
   const [records, setRecords] = useState<Measurement[]>([]);
@@ -101,16 +102,8 @@ function ResultView() {
   }, [crewId, crewReady, resultId]);
 
   if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to see a result. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-        <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} heading="Log in to see a result" />;
   }
   if (!result) {
     if (!settled && resultId) {

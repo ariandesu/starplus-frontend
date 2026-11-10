@@ -2,51 +2,145 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getActiveCrewId, listAdoptableCrews, type AdoptableCrew } from "./session";
+import {
+  getActiveCrewId,
+  getProfile,
+  listAdoptableCrews,
+  refreshSession,
+  type AdoptableCrew,
+  type SessionInfo,
+} from "./session";
 
-export interface ActiveCrew {
-  /** The active crew id, or null once loading has finished with no valid session. */
+export type SessionStatus = "loading" | "active" | "choose" | "renewing" | "expired" | "none" | "error";
+
+export interface SessionCrew {
+  crew_id: string;
+  name: string;
+  role: string;
+  demo: boolean;
+}
+
+export interface SessionState {
+  status: SessionStatus;
+  /** The active crew id, or null until a valid session is active. */
   crewId: string | null;
-  /** False until IndexedDB has been read; pages show a loading state meanwhile. */
-  ready: boolean;
+  /** The signed-in session while active (token included for direct callers). */
+  session: SessionInfo | null;
+  crew: SessionCrew | null;
+  /** Better Auth username, used to prefill the login after a real expiry. */
+  username: string | null;
+  /** Why the session is not active (shown on the expired view). */
+  reason: string | null;
   /** Valid on-device sessions to pick from when no single crew is active. */
   candidates: AdoptableCrew[];
+  /** False until IndexedDB has been read; pages show a loading state meanwhile. */
+  ready: boolean;
   /** True when the session lookup itself failed (logged for diagnosis). */
   error: boolean;
 }
 
+const EMPTY: SessionState = {
+  status: "loading",
+  crewId: null,
+  session: null,
+  crew: null,
+  username: null,
+  reason: null,
+  candidates: [],
+  ready: false,
+  error: false,
+};
+
+function crewFromProfile(profile: { crew_id: string; display_name: string; role: string | null; demo?: boolean }): SessionCrew {
+  return {
+    crew_id: profile.crew_id,
+    name: profile.display_name,
+    role: profile.role ?? "astronaut",
+    demo: profile.demo ?? false,
+  };
+}
+
 /**
- * Single source of truth for the active crew member across pages.
- * Reads `?crew=` when it has a valid session on this device, otherwise the
- * stored active crew (set on login, cleared on logout or expiry). A single
- * stranded session is adopted; several surface as candidates for the profile
- * picker. Works offline: it only reads IndexedDB. A lookup failure throws
- * during render so the error boundary shows a reload prompt instead of a
- * logged-out view.
+ * The one session layer: resolves the active crew from `?crew=` or the device,
+ * renews the Better Auth session while in use, silently re-signs an expired
+ * demo session in, and reports expired/none/choose so `<RequireSession>` can
+ * draw the right view.
  */
-export function useActiveCrew(): ActiveCrew {
+export function useSession(): SessionState {
   const params = useSearchParams();
   const urlCrew = params.get("crew");
-  const [state, setState] = useState<ActiveCrew>({ crewId: null, ready: false, candidates: [], error: false });
+  const [state, setState] = useState<SessionState>(EMPTY);
 
   useEffect(() => {
     let cancelled = false;
-    const resolve = () => {
-      getActiveCrewId(urlCrew)
-        .then(async (crew) => {
-          if (cancelled) return;
-          if (crew === "choose") {
-            setState({ crewId: null, ready: true, candidates: await listAdoptableCrews().catch(() => []), error: false });
-          } else {
-            setState({ crewId: crew, ready: true, candidates: [], error: false });
+    const resolve = async () => {
+      try {
+        const crewId = await getActiveCrewId(urlCrew);
+        if (cancelled) return;
+        if (crewId === "choose") {
+          const candidates = await listAdoptableCrews().catch(() => []);
+          if (!cancelled) setState({ ...EMPTY, status: "choose", candidates, ready: true });
+          return;
+        }
+        if (!crewId) {
+          const candidates = await listAdoptableCrews().catch(() => []);
+          const live = candidates.length > 0;
+          if (!cancelled) {
+            setState({ ...EMPTY, status: live ? "choose" : "none", candidates, ready: true });
           }
-        })
-        .catch((unknownError: unknown) => {
-          console.error("active crew lookup failed", unknownError);
-          if (!cancelled) setState({ crewId: null, ready: true, candidates: [], error: true });
-        });
+          return;
+        }
+        const profile = await getProfile(crewId);
+        const crew = profile ? crewFromProfile(profile) : null;
+        const locallyExpired = !profile?.expires_at || Date.parse(profile.expires_at) <= Date.now();
+        if (locallyExpired && !cancelled) {
+          setState({
+            ...EMPTY,
+            status: "renewing",
+            crewId,
+            crew,
+            username: profile?.username ?? null,
+            ready: true,
+          });
+        }
+        const outcome = await refreshSession(crewId);
+        if (cancelled) return;
+        if (outcome.status === "active") {
+          setState({
+            ...EMPTY,
+            status: "active",
+            crewId: outcome.session.crew_id,
+            session: outcome.session,
+            crew: {
+              crew_id: outcome.session.crew_id,
+              name: outcome.session.name ?? outcome.session.crew_id,
+              role: outcome.session.role,
+              demo: outcome.session.demo,
+            },
+            username: outcome.session.username ?? null,
+            ready: true,
+          });
+          return;
+        }
+        if (outcome.status === "expired") {
+          setState({
+            ...EMPTY,
+            status: "expired",
+            crewId: outcome.crew_id,
+            crew: crew ?? { crew_id: outcome.crew_id, name: outcome.name, role: "astronaut", demo: outcome.demo },
+            username: outcome.username,
+            reason: `Your session for ${outcome.name} ended. Sign in again.`,
+            ready: true,
+          });
+          return;
+        }
+        setState({ ...EMPTY, status: "none", ready: true });
+      } catch (unknownError) {
+        console.error("session lookup failed", unknownError);
+        if (!cancelled) setState({ ...EMPTY, status: "error", ready: true, error: true });
+      }
     };
-    resolve();
+    void resolve();
     window.addEventListener("active-crew-changed", resolve);
     return () => {
       cancelled = true;
@@ -54,10 +148,12 @@ export function useActiveCrew(): ActiveCrew {
     };
   }, [urlCrew]);
 
-  if (state.error) {
-    throw new Error("active crew lookup failed");
-  }
   return state;
+}
+
+/** Backwards-compatible view used by the pages: the same state object. */
+export function useActiveCrew(): SessionState {
+  return useSession();
 }
 
 /**

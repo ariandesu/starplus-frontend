@@ -6,10 +6,11 @@ import type { Measurement } from "@starplus/core";
 import { BodyMap, BodySystemList, BODY_SYSTEMS } from "@/components/body-map";
 import { profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 function BodyView() {
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [records, setRecords] = useState<Measurement[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -54,16 +55,8 @@ function BodyView() {
   }, [latestByCode]);
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to see the body map. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-          <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} heading="Body map" />;
   }
 
   return (

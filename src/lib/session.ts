@@ -1,13 +1,21 @@
 import { deviceDb, profileDb, type ProfileRecord } from "./db";
 import { getSync } from "./api";
+import {
+  AuthFailure,
+  fetchServerSession,
+  passwordSignIn,
+  redeemAccessCode,
+  remoteSignOut,
+  type ServerSession,
+} from "./auth-client";
+import { DEMO_PASSWORD, demoCardForRole } from "./demo-accounts";
 import type { Measurement, Report, Result } from "@starplus/core";
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "https://starplus-backend.shareflow.workers.dev";
 
 export interface SessionInfo {
   token: string;
   crew_id: string;
   name?: string;
+  username?: string | null;
   role: string;
   expires_at: string;
   provenance: string;
@@ -48,44 +56,54 @@ export async function setSharedDevice(shared: boolean): Promise<void> {
   await db.put("settings", { key: "shared_device", value: shared ? "true" : "false" });
 }
 
-export async function login(accessCode: string): Promise<SessionInfo> {
-  const id = await deviceId();
+function toSessionInfo(session: ServerSession): SessionInfo {
+  return {
+    token: session.token,
+    crew_id: session.crew_id,
+    name: session.name,
+    username: session.username,
+    role: session.role,
+    expires_at: session.expires_at,
+    provenance: session.provenance,
+    demo: session.demo,
+  };
+}
+
+/** Writes a signed-in session into the device profile and (optionally) activates it. */
+async function saveProfile(session: ServerSession, activate = true): Promise<void> {
+  const db = await deviceDb();
+  const previous = await db.get("profiles", session.crew_id);
+  const record: ProfileRecord = {
+    crew_id: session.crew_id,
+    display_name: session.name,
+    token: session.token,
+    role: session.role,
+    expires_at: session.expires_at,
+    provenance: session.provenance,
+    device_id: previous?.device_id ?? (await deviceId()),
+    pin_hash: previous?.pin_hash ?? null,
+    shared_device: previous?.shared_device ?? false,
+    demo: session.demo,
+    username: session.username,
+  };
+  await db.put("profiles", record);
+  if (activate) await setActiveCrew(session.crew_id);
+}
+
+/** Signs in with a username and password (Better Auth), storing the bearer token. */
+export async function loginWithPassword(username: string, password: string): Promise<SessionInfo> {
   const shared = await isSharedDevice();
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/api/auth`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: accessCode, device_id: id, ...(shared ? { shared: true } : {}) }),
-    });
-  } catch {
-    throw new Error("Can't reach the server. Check the connection and try again. Your code has not been used.");
-  }
-  if (res.status === 401) throw new Error("That code did not work. Check it and try again.");
-  if (res.status === 429) throw new Error("Too many tries. Wait a minute and try again.");
-  if (!res.ok) throw new Error("Something went wrong. Try again.");
-  try {
-    const session = (await res.json()) as SessionInfo;
-    const db = await deviceDb();
-    const previous = await db.get("profiles", session.crew_id);
-    const record: ProfileRecord = {
-      crew_id: session.crew_id,
-      display_name: session.name ?? previous?.display_name ?? session.crew_id,
-      token: session.token,
-      role: session.role,
-      expires_at: session.expires_at,
-      provenance: session.provenance ?? previous?.provenance ?? null,
-      device_id: id,
-      pin_hash: previous?.pin_hash ?? null,
-      shared_device: previous?.shared_device ?? false,
-      demo: false,
-    };
-    await db.put("profiles", record);
-    await setActiveCrew(session.crew_id);
-    return { ...session, demo: false };
-  } catch {
-    throw new Error("Logged in, but this device could not save the session. Ask for a new code if it keeps happening.");
-  }
+  const { session } = await passwordSignIn(username, password, { shared });
+  await saveProfile(session);
+  return toSessionInfo(session);
+}
+
+/** Redeems an access code and signs the new username/password account in. */
+export async function redeemCode(accessCode: string, username: string, password: string): Promise<SessionInfo> {
+  const shared = await isSharedDevice();
+  const { session } = await redeemAccessCode(accessCode, username, password, { shared });
+  await saveProfile(session);
+  return toSessionInfo(session);
 }
 
 export class DemoBusyError extends Error {
@@ -97,42 +115,23 @@ export class DemoBusyError extends Error {
   }
 }
 
-export async function loginDemo(role: "astronaut" | "flight_medical_officer"): Promise<SessionInfo> {
-  const id = await deviceId();
-  let res: Response;
+/** One-tap demo sign-in with that role's shared demo credentials. */
+export async function loginDemo(
+  role: "astronaut" | "flight_medical_officer" | "mission_control"
+): Promise<SessionInfo> {
+  const card = demoCardForRole(role);
+  if (!DEMO_PASSWORD) throw new Error("Demo login is not configured in this build.");
   try {
-    res = await fetch(`${API_BASE}/api/auth/demo`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, device_id: id }),
-    });
-  } catch {
-    throw new Error("Can't reach the server. Check the connection and try the demo again.");
+    const shared = await isSharedDevice();
+    const { session } = await passwordSignIn(card.username, DEMO_PASSWORD, { shared });
+    await saveProfile(session);
+    return toSessionInfo(session);
+  } catch (error) {
+    if (error instanceof AuthFailure && error.status === 429) {
+      throw new DemoBusyError(error.retryAfterMs ?? 5000);
+    }
+    throw error;
   }
-  if (res.status === 404) throw new Error("Demo login is switched off on this server.");
-  if (res.status === 429) {
-    const retryAfter = Number(res.headers.get("Retry-After"));
-    throw new DemoBusyError(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 5000);
-  }
-  if (!res.ok) throw new Error("Something went wrong. Try again.");
-  const session = (await res.json()) as SessionInfo;
-  const db = await deviceDb();
-  const previous = await db.get("profiles", session.crew_id);
-  const record: ProfileRecord = {
-    crew_id: session.crew_id,
-    display_name: session.name ?? previous?.display_name ?? session.crew_id,
-    token: session.token,
-    role: session.role,
-    expires_at: session.expires_at,
-    provenance: session.provenance ?? "synthetic",
-    device_id: id,
-    pin_hash: previous?.pin_hash ?? null,
-    shared_device: previous?.shared_device ?? false,
-    demo: true,
-  };
-  await db.put("profiles", record);
-  await setActiveCrew(session.crew_id);
-  return { ...session, demo: true };
 }
 
 export async function pullHistory(crewId: string, token: string): Promise<void> {
@@ -164,9 +163,11 @@ function parseSyncResult(row: Record<string, unknown>): Result {
   };
 }
 
+/** Signs out on the server (best effort offline), then clears the device. */
 export async function logout(crewId: string): Promise<void> {
   const db = await deviceDb();
   const profile = await db.get("profiles", crewId);
+  if (profile?.token) await remoteSignOut(profile.token);
   if (profile) {
     await db.put("profiles", { ...profile, token: null, role: null, expires_at: null });
   }
@@ -174,13 +175,17 @@ export async function logout(crewId: string): Promise<void> {
   if (active && active.value === crewId) {
     await db.put("settings", { key: "active_crew", value: "" });
   }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("active-crew-changed"));
+  }
 }
 
 export async function setActiveCrew(crewId: string): Promise<void> {
   const db = await deviceDb();
+  const current = await db.get("settings", "active_crew");
   await db.put("settings", { key: "active_crew", value: crewId });
   await db.put("settings", { key: "last_active", value: new Date().toISOString() });
-  if (typeof window !== "undefined") {
+  if (current?.value !== crewId && typeof window !== "undefined") {
     window.dispatchEvent(new Event("active-crew-changed"));
   }
 }
@@ -248,9 +253,12 @@ export async function getActiveCrewId(urlCrew: string | null): Promise<ActiveCre
       return null;
     }
   }
+  // A stored token counts even when locally expired: the session layer renews
+  // it (demo, silently) or shows the expired view (real), both of which need
+  // the crew id. Adoption below still only takes unexpired sessions.
   if (urlCrew) {
-    const session = await getSession(urlCrew);
-    if (session) {
+    const profile = await getProfile(urlCrew);
+    if (profile?.token) {
       await setActiveCrew(urlCrew);
       return urlCrew;
     }
@@ -258,8 +266,8 @@ export async function getActiveCrewId(urlCrew: string | null): Promise<ActiveCre
   const stored = await db.get("settings", "active_crew");
   const crewId = typeof stored?.value === "string" && stored.value ? stored.value : null;
   if (crewId) {
-    const session = await getSession(crewId);
-    if (session) return crewId;
+    const profile = await getProfile(crewId);
+    if (profile?.token) return crewId;
     await db.put("settings", { key: "active_crew", value: "" });
   }
   const adoptable = await listAdoptableCrews();
@@ -278,14 +286,19 @@ export async function hasActiveSession(): Promise<boolean> {
   return false;
 }
 
-export async function getSession(crewId: string): Promise<SessionInfo | null> {
+export async function getProfile(crewId: string): Promise<ProfileRecord | null> {
   const db = await deviceDb();
-  const profile = await db.get("profiles", crewId);
-  if (!profile?.token || !profile.expires_at) return null;
+  return (await db.get("profiles", crewId)) ?? null;
+}
+
+function localSession(profile: ProfileRecord): SessionInfo | null {
+  if (!profile.token || !profile.expires_at) return null;
   if (Date.parse(profile.expires_at) <= Date.now()) return null;
   return {
     token: profile.token,
     crew_id: profile.crew_id,
+    name: profile.display_name,
+    username: profile.username ?? null,
     role: profile.role ?? "astronaut",
     expires_at: profile.expires_at,
     provenance: profile.provenance ?? "real",
@@ -293,9 +306,77 @@ export async function getSession(crewId: string): Promise<SessionInfo | null> {
   };
 }
 
+export async function getSession(crewId: string): Promise<SessionInfo | null> {
+  const profile = await getProfile(crewId);
+  return profile ? localSession(profile) : null;
+}
+
 export async function listProfiles(): Promise<ProfileRecord[]> {
   const db = await deviceDb();
   return db.getAll("profiles");
+}
+
+export type RefreshOutcome =
+  | { status: "active"; session: SessionInfo }
+  | { status: "expired"; crew_id: string; name: string; username: string | null; demo: boolean }
+  | { status: "none" };
+
+function expiredOutcome(profile: ProfileRecord): RefreshOutcome {
+  return {
+    status: "expired",
+    crew_id: profile.crew_id,
+    name: profile.display_name,
+    username: profile.username ?? null,
+    demo: profile.demo ?? false,
+  };
+}
+
+async function silentDemoReSignIn(profile: ProfileRecord): Promise<RefreshOutcome | null> {
+  if (!profile.demo || !profile.username || !DEMO_PASSWORD) return null;
+  try {
+    const { session } = await passwordSignIn(profile.username, DEMO_PASSWORD, {
+      shared: profile.shared_device,
+    });
+    await saveProfile(session, false);
+    if (session.role === "astronaut") {
+      await pullHistory(session.crew_id, session.token).catch(() => undefined);
+    }
+    return { status: "active", session: toSessionInfo(session) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * On app open: renew the session while in use. Online, the server is the
+ * source of truth (and slides the expiry). An expired or rejected demo
+ * session signs in again silently with that role's demo credentials; a real
+ * one comes back "expired" so the page can ask for a sign-in. Offline, the
+ * stored session is used until it expires.
+ */
+export async function refreshSession(crewId: string): Promise<RefreshOutcome> {
+  const profile = await getProfile(crewId);
+  if (!profile?.token) return { status: "none" };
+
+  const online = typeof navigator === "undefined" || navigator.onLine !== false;
+  if (online) {
+    try {
+      const live = await fetchServerSession(profile.token);
+      if (live) {
+        await saveProfile({ ...live, username: live.username ?? profile.username ?? null }, false);
+        return { status: "active", session: toSessionInfo(live) };
+      }
+      const renewed = await silentDemoReSignIn(profile);
+      return renewed ?? expiredOutcome(profile);
+    } catch {
+      // Network failed; fall back to the stored session below.
+    }
+  }
+
+  const local = localSession(profile);
+  if (local) return { status: "active", session: local };
+  const renewed = await silentDemoReSignIn(profile);
+  return renewed ?? expiredOutcome(profile);
 }
 
 export async function setPin(crewId: string, pin: string): Promise<void> {

@@ -7,7 +7,7 @@ import { VitalChart } from "@/components/dashboard/vital-chart";
 import { buildSeries, type MetricSeries } from "@/lib/vital-series";
 import { profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 interface MeasureFilter {
   id: string;
@@ -23,7 +23,8 @@ const MEASURE_FILTERS: MeasureFilter[] = [
 ];
 
 function HistoryView() {
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [series, setSeries] = useState<MetricSeries[]>([]);
   const [ready, setReady] = useState(false);
   const [filter, setFilter] = useState("all");
@@ -55,16 +56,8 @@ function HistoryView() {
   }, [crewId, crewReady]);
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to see history. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-          <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} heading="History" />;
   }
 
   return (

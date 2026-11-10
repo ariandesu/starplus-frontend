@@ -68,9 +68,12 @@ test("CUJ 2 self-check in under 60 seconds, CUJ 3 grey first measure, CUJ 4 esti
   test.skip(!ASTRO_CODE, "staging access code is absent");
 
   await page.goto(`${BASE_URL}/login`);
-  await page.getByLabel(/access code/i).fill(ASTRO_CODE!);
   await page.getByLabel(/shared device/i).check();
-  await page.getByRole("button", { name: /^log in$/i }).click();
+  await page.getByTestId("show-redeem").click();
+  await page.getByLabel(/^access code$/i).fill(ASTRO_CODE!);
+  await page.getByLabel(/choose a username/i).fill(`cuj_member_${Date.now()}`);
+  await page.getByLabel(/choose a password/i).fill("cuj-password-123");
+  await page.getByRole("button", { name: /redeem and sign in/i }).click();
   await expect(page).toHaveURL(new RegExp(`crew=${CREW}`));
 
   const expiresAt = await readExpiry(page, CREW);

@@ -9,8 +9,8 @@ const BASE_URL = process.env.APP_URL ?? "http://localhost:3100";
 
 async function demoAvailable(page: import("@playwright/test").Page): Promise<boolean> {
   await page.goto(`${BASE_URL}/login`);
-  await expect(page.getByRole("heading", { name: /log in/i })).toBeVisible();
-  return (await page.getByTestId("demo-astronaut").count()) > 0;
+  await expect(page.getByRole("heading", { name: /select your mission role/i })).toBeVisible();
+  return (await page.getByTestId("demo-card-astronaut").count()) > 0;
 }
 
 async function resultIdAtOffset(page: import("@playwright/test").Page, crewId: string, offsetFromLatest: number): Promise<string> {
@@ -42,7 +42,8 @@ test("demo astronaut sees pre-filled history and opens the latest result", async
   test.setTimeout(300_000);
   if (!(await demoAvailable(page))) test.skip(true, "demo login is switched off here");
 
-  await page.getByTestId("demo-astronaut").click();
+  await page.getByTestId("demo-card-astronaut").click();
+  await page.getByRole("button", { name: "Login", exact: true }).click();
   await expect(page).toHaveURL(/crew=demo-astronaut/, { timeout: 30_000 });
   await expect(page.getByTestId("demo-banner")).toBeVisible();
   await expect(page.getByText(/loading demo history/i)).toBeHidden({ timeout: 60_000 });

@@ -15,10 +15,11 @@ import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-
 import { getSession } from "@/lib/session";
 import { ReadinessRing } from "@/components/readiness-ring";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 function ProgressView() {
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [ready, setReady] = useState(false);
   const [enabled, setEnabled] = useState(() => gamificationEnabled());
   const [today, setToday] = useState<DayScore | null>(null);
@@ -67,21 +68,8 @@ function ProgressView() {
   }
 
   if (!ready) return <main className="p-6">Loading progress…</main>;
-  if (!crewId) {
-    return (
-      <main className="p-6">
-        <p>Open this page from the app with your crew link.</p>
-        <p className="mt-2">
-          <a className="underline" href="/login">
-            Go to login
-          </a>{" "}
-          <a className="underline" href="/login?demo=astronaut">
-            Try the demo
-          </a>
-        </p>
-        <ContinueAsButtons candidates={candidates} />
-      </main>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} />;
   }
 
   return (

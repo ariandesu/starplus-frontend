@@ -12,8 +12,8 @@ const BASE_URL = process.env.APP_URL ?? "http://localhost:3100";
 
 async function demoAvailable(page: import("@playwright/test").Page): Promise<boolean> {
   await page.goto(`${BASE_URL}/login`);
-  await expect(page.getByRole("heading", { name: /log in/i })).toBeVisible();
-  return (await page.getByTestId("demo-astronaut").count()) > 0;
+  await expect(page.getByRole("heading", { name: /select your mission role/i })).toBeVisible();
+  return (await page.getByTestId("demo-card-astronaut").count()) > 0;
 }
 
 async function loginSurgeon(page: import("@playwright/test").Page): Promise<void> {
@@ -58,7 +58,7 @@ test("surgeon dashboard shows four crew cards, Mia first", async ({ page }) => {
   await loginSurgeon(page);
 
   await page.goto(`${BASE_URL}/surgeon`);
-  await expect(page.getByRole("heading", { name: /flight surgeon/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /flight surgeon/i })).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-testid^="crew-card-"]')).toHaveCount(4, { timeout: 60_000 });
   for (const id of ["demo-astronaut", "demo-crew-2", "demo-crew-3", "demo-crew-4"]) {
     await expect(page.getByTestId(`crew-card-${id}`)).toBeVisible({ timeout: 60_000 });

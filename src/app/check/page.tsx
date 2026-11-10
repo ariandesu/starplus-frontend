@@ -20,10 +20,10 @@ import {
 import { MeasureForm } from "@/components/measure-form";
 import { deviceDb, profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
+import { RequireSession } from "@/components/require-session";
 import { getModelDefinition, getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueMeasurement, enqueueResult } from "@/lib/outbox";
 import { getSession } from "@/lib/session";
-import { ContinueAsButtons } from "@/components/continue-as";
 
 async function getSetting(key: string, fallback: string): Promise<string> {
   const db = await deviceDb();
@@ -33,7 +33,8 @@ async function getSetting(key: string, fallback: string): Promise<string> {
 
 function CheckForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [ready, setReady] = useState(false);
   const [setting, setSetting] = useState<Setting>("iss");
   const [phase, setPhase] = useState<Phase>("inflight");
@@ -158,24 +159,8 @@ function CheckForm() {
   }
 
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Self-check</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Log in first — your readings belong to your profile.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/login" className="inline-block rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
-            Go to login
-          </Link>
-          <Link href="/login?demo=astronaut" className="inline-block rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground">
-            Try the demo
-          </Link>
-        </div>
-        <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} />;
   }
 
   return (

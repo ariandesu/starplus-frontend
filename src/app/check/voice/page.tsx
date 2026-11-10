@@ -11,7 +11,7 @@ import { ReadingPreview } from "@/components/reading-preview";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 interface SpeechRecognitionResultItem {
   transcript: string;
@@ -44,7 +44,8 @@ const UNSUPPORTED_REASON = "This browser has no speech recognition";
 
 function VoiceForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [supported] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -57,16 +58,8 @@ function VoiceForm() {
   const [busy, setBusy] = useState(false);
 
   if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to log a voice reading. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-          <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} />;
   }
 
   function listen() {

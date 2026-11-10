@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getSession, type AdoptableCrew, type SessionInfo } from "@/lib/session";
-import { useActiveCrew } from "@/lib/use-active-crew";
+import { useSession, type SessionState } from "@/lib/use-active-crew";
+import type { AdoptableCrew, SessionInfo } from "@/lib/session";
 
 export interface SurgeonSession {
   crewReady: boolean;
@@ -10,33 +9,23 @@ export interface SurgeonSession {
   session: SessionInfo | null;
   allowed: boolean;
   candidates: AdoptableCrew[];
+  /** The full session view, for `<RequireSession>` and the role gate. */
+  state: SessionState;
 }
 
-/** Shared gate: logged-in flight surgeon or mission control with a live token. */
+/** Shared gate: a signed-in flight surgeon or mission control member. */
 export function useSurgeonSession(): SurgeonSession {
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
-  const [session, setSession] = useState<SessionInfo | null>(null);
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    if (!crewReady) return;
-    (async () => {
-      if (!crewId) {
-        setChecked(true);
-        return;
-      }
-      try {
-        const found = await getSession(crewId);
-        setSession(
-          found && (found.role === "flight_medical_officer" || found.role === "mission_control") ? found : null
-        );
-      } catch {
-        setSession(null);
-      } finally {
-        setChecked(true);
-      }
-    })().catch(() => setChecked(true));
-  }, [crewId, crewReady]);
-
-  return { crewReady: crewReady && checked, crewId, session, allowed: session !== null, candidates };
+  const state = useSession();
+  const allowed =
+    state.status === "active" &&
+    !!state.session &&
+    (state.session.role === "flight_medical_officer" || state.session.role === "mission_control");
+  return {
+    crewReady: state.ready,
+    crewId: state.crewId,
+    session: allowed ? state.session : null,
+    allowed,
+    candidates: state.candidates,
+    state,
+  };
 }

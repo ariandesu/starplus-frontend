@@ -6,6 +6,15 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const BASE_URL = process.env.APP_URL ?? "http://localhost:3100";
+
+// These specs seed a session straight into IDB and stub the API, so they run
+// without a backend: declare the browser offline so the session layer uses the
+// stored token instead of refreshing it.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+  });
+});
 const CREW = "e2e-import-crew";
 
 async function seedSession(page: Page): Promise<void> {

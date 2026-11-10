@@ -27,7 +27,7 @@ import { assessAndQueue } from "@/lib/assess-and-queue";
 import { deviceDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 interface PreviewReading {
   metric: string;
@@ -102,7 +102,8 @@ function simulateProfile(profileId: string, at: string): DataView {
 
 function BluetoothForm() {
   const router = useRouter();
-  const { crewId, ready: crewReady, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId, ready: crewReady } = session;
   const [supported] = useState(() => typeof navigator !== "undefined" && "bluetooth" in navigator);
   const [profileId, setProfileId] = useState("blood-pressure");
   const [readings, setReadings] = useState<PreviewReading[]>([]);
@@ -119,16 +120,8 @@ function BluetoothForm() {
   }, []);
 
   if (!crewReady) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!crewId) {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 py-8">
-        <p className="text-sm text-muted-foreground">
-          Log in to connect a Bluetooth device. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-          <ContinueAsButtons candidates={candidates} />
-      </div>
-    );
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} />;
   }
 
   function ingest(view: DataView, at: string) {

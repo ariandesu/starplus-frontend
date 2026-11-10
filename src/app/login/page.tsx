@@ -2,14 +2,18 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { checkPin, DemoBusyError, getSession, isSharedDevice, listProfiles, login, loginDemo, pullHistory, setActiveCrew, setSharedDevice } from "@/lib/session";
+import Link from "next/link";
+import { checkPin, getSession, isSharedDevice, listProfiles, loginWithPassword, pullHistory, redeemCode, setActiveCrew, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
+import { DEMO_CARDS, DEMO_PASSWORD, demoCardForKey, type DemoCard } from "@/lib/demo-accounts";
 import type { ProfileRecord } from "@/lib/db";
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [code, setCode] = useState("");
+  const [username, setUsername] = useState(() => params.get("username") ?? "");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [profiles, setProfiles] = useState<ProfileRecord[]>([]);
   const [pinCrew, setPinCrew] = useState<string | null>(null);
   const [pin, setPinValue] = useState("");
@@ -18,8 +22,13 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [demoState, setDemoState] = useState<string | null>(null);
-  const [demoRole, setDemoRole] = useState<"astronaut" | "flight_medical_officer">("astronaut");
   const [showRetry, setShowRetry] = useState(false);
+  const [pendingCard, setPendingCard] = useState<DemoCard | null>(null);
+  const [redeeming, setRedeeming] = useState(false);
+  const [code, setCode] = useState("");
+  const [redeemUser, setRedeemUser] = useState("");
+  const [redeemPassword, setRedeemPassword] = useState("");
+  const loginRef = useRef<HTMLButtonElement | null>(null);
   const inFlight = useRef(false);
 
   useEffect(() => {
@@ -27,7 +36,15 @@ function LoginForm() {
     isSharedDevice().then(setShared).catch(() => undefined);
   }, []);
 
-  async function enterDemo(role: "astronaut" | "flight_medical_officer", attempt = 0): Promise<void> {
+  function fillCard(card: DemoCard): void {
+    setError(null);
+    setUsername(card.username);
+    setPassword(DEMO_PASSWORD);
+    // Focus (and scroll to) the Login button so the card is one clear step.
+    requestAnimationFrame(() => loginRef.current?.focus());
+  }
+
+  async function submitCredentials(card?: DemoCard, attempt = 0): Promise<void> {
     if (attempt === 0) {
       if (inFlight.current) return;
       inFlight.current = true;
@@ -35,72 +52,93 @@ function LoginForm() {
     setBusy(true);
     setError(null);
     setShowRetry(false);
-    setDemoRole(role);
     try {
-      if (attempt === 0) {
-        const knownCrew = role === "astronaut" ? "demo-astronaut" : "demo-surgeon";
-        const existing = await getSession(knownCrew);
-        if (existing?.demo && existing.token && existing.role === role) {
-          await setActiveCrew(knownCrew);
+      const user = (card?.username ?? username).trim();
+      const secret = card ? DEMO_PASSWORD : password;
+      if (!user || !secret) {
+        setError("Enter your username and password.");
+        return;
+      }
+      if (card) {
+        const existing = await getSession(card.crew_id);
+        if (existing?.token && existing.role === card.role) {
+          await setActiveCrew(card.crew_id);
           setDone(true);
-          router.push(`/?crew=${encodeURIComponent(knownCrew)}`);
+          router.push(`/?crew=${encodeURIComponent(card.crew_id)}`);
           return;
         }
-        setDemoState(role === "astronaut" ? "Opening the demo…" : "Opening the surgeon demo…");
+        setDemoState(`Opening the ${card.title} demo…`);
       }
-      const session = await loginDemo(role);
-      setDemoState("Loading demo history…");
-      try {
-        await pullHistory(session.crew_id, session.token);
-      } catch {
-        /* offline: local data still works */
+      const session = await loginWithPassword(user, secret);
+      if (card) setDemoState("Loading demo history…");
+      if (session.role === "astronaut") {
+        try {
+          await pullHistory(session.crew_id, session.token);
+        } catch {
+          /* offline: local data still works */
+        }
       }
+      void requestOutboxSync().catch(() => undefined);
       setDone(true);
       router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
-    } catch (error) {
-      if (error instanceof DemoBusyError && attempt < 3) {
-        setDemoState(error.message);
-        await new Promise((resolve) => setTimeout(resolve, error.retryAfterMs));
-        await enterDemo(role, attempt + 1);
+    } catch (failure) {
+      const retryable = failure as { retryAfterMs?: number; message?: string; status?: number };
+      if (card && failure instanceof Error && "retryAfterMs" in failure && attempt < 3) {
+        setDemoState("Lots of people are trying the demo right now. Retrying…");
+        await new Promise((resolve) => setTimeout(resolve, retryable.retryAfterMs ?? 5000));
+        await submitCredentials(card, attempt + 1);
         return;
       }
       setDemoState(null);
-      if (error instanceof DemoBusyError) {
-        setError("The demo is still busy. Please try again in a minute.");
+      setError(failure instanceof Error ? failure.message : "Something went wrong. Try again.");
+      if (card) {
+        setPendingCard(card);
         setShowRetry(true);
-      } else {
-        setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
       }
     } finally {
       setBusy(false);
-      inFlight.current = false;
+      if (attempt === 0) inFlight.current = false;
     }
   }
 
   useEffect(() => {
     const demo = params.get("demo");
-    if (demo !== "astronaut" && demo !== "surgeon") return;
-    const role = demo === "astronaut" ? ("astronaut" as const) : ("flight_medical_officer" as const);
+    if (!demo) return;
+    const card = demoCardForKey(demo);
+    if (!card) return;
     (async () => {
-      await enterDemo(role);
+      fillCard(card);
+      await submitCredentials(card);
     })().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
-  async function submitCode(event: React.FormEvent) {
+  async function submitLogin(event: React.FormEvent) {
+    event.preventDefault();
+    await submitCredentials();
+  }
+
+  async function submitRedeem(event: React.FormEvent) {
     event.preventDefault();
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     setError(null);
     try {
-      const session = await login(code.trim());
+      const session = await redeemCode(code.trim(), redeemUser.trim(), redeemPassword);
       setCode("");
       setDone(true);
       void requestOutboxSync().catch(() => undefined);
+      if (session.role === "astronaut") {
+        try {
+          await pullHistory(session.crew_id, session.token);
+        } catch {
+          /* offline: local data still works */
+        }
+      }
       router.push(`/?crew=${encodeURIComponent(session.crew_id)}`);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Something went wrong. Try again.");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Something went wrong. Try again.");
     } finally {
       setBusy(false);
       inFlight.current = false;
@@ -125,64 +163,60 @@ function LoginForm() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Log in</h1>
-      <section aria-label="Trying the demo" className="mt-4 rounded-xl border border-border p-4">
-        <h2 className="text-sm font-semibold text-foreground">Try the demo</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          One tap, no code. A pre-filled month of crew data, ready to explore.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            data-testid="demo-astronaut"
-            onClick={() => void enterDemo("astronaut")}
-            disabled={busy}
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
-          >
-            Demo astronaut
-          </button>
-          <button
-            type="button"
-            data-testid="demo-surgeon"
-            onClick={() => void enterDemo("flight_medical_officer")}
-            disabled={busy}
-            className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
-          >
-            Demo flight surgeon
-          </button>
-        </div>
-        {demoState && <p className="mt-2 text-sm text-muted-foreground">{demoState}</p>}
-        {showRetry && (
-          <button
-            type="button"
-            data-testid="demo-retry"
-            onClick={() => void enterDemo(demoRole)}
-            disabled={busy}
-            className="mt-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
-          >
-            Try again
-          </button>
-        )}
-      </section>
-      <p className="mt-4 text-sm text-muted-foreground">
-        Enter the 8-character access code from the flight surgeon. Emergency help needs no login.
+      <h1 className="text-2xl font-bold text-foreground">Select your mission role</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        One tap fills the demo login below. Or sign in with your own username and password.
       </p>
-      <form onSubmit={submitCode} className="mt-4 rounded-xl border border-border p-4">
-        <label htmlFor="access-code" className="text-sm font-semibold text-foreground">
-          Access code
+
+      <section aria-label="Demo roles" className="mt-4 grid gap-2">
+        {DEMO_CARDS.map((card) => (
+          <button
+            key={card.key}
+            type="button"
+            data-testid={`demo-card-${card.key}`}
+            onClick={() => fillCard(card)}
+            disabled={busy}
+            className="rounded-xl border border-border p-3 text-left hover:border-foreground disabled:opacity-50"
+          >
+            <span className="block text-sm font-semibold text-foreground">{card.title}</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{card.description}</span>
+          </button>
+        ))}
+      </section>
+
+      <form onSubmit={submitLogin} className="mt-4 rounded-xl border border-border p-4">
+        <label htmlFor="username" className="text-sm font-semibold text-foreground">
+          Username
         </label>
         <input
-          id="access-code"
-          autoComplete="one-time-code"
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 uppercase text-foreground"
+          id="username"
+          autoComplete="username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
         />
-        {error && (
-          <p role="alert" className="mt-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+        <label htmlFor="password" className="mt-3 block text-sm font-semibold text-foreground">
+          Password
+        </label>
+        <div className="mt-1 flex gap-2">
+          <input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
+          />
+          <button
+            type="button"
+            data-testid="toggle-password"
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="rounded-lg border border-border px-3 text-sm text-foreground"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
         <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
@@ -197,14 +231,94 @@ function LoginForm() {
         <p className="mt-1 text-xs text-muted-foreground">
           On a shared device, sessions last 24 hours instead of 30 days.
         </p>
+        {demoState && <p className="mt-2 text-sm text-muted-foreground">{demoState}</p>}
+        {showRetry && pendingCard && (
+          <button
+            type="button"
+            data-testid="demo-retry"
+            onClick={() => void submitCredentials(pendingCard)}
+            disabled={busy}
+            className="mt-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
+          >
+            Try again
+          </button>
+        )}
+        {error && (
+          <p role="alert" className="mt-2 text-sm text-red-700">
+            {error}
+          </p>
+        )}
         <button
+          ref={loginRef}
           type="submit"
           disabled={busy || done}
-          className="mt-3 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90 disabled:opacity-50"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90 disabled:opacity-50"
         >
-          {done ? "Logged in, opening…" : "Log in"}
+          {done ? "Logged in, opening…" : "Login"}
         </button>
       </form>
+
+      <p className="mt-2 text-xs text-muted-foreground">
+        Demo environment · these accounts hold synthetic crew data.
+      </p>
+
+      <section aria-label="Access code" className="mt-4">
+        {!redeeming ? (
+          <button
+            type="button"
+            data-testid="show-redeem"
+            onClick={() => setRedeeming(true)}
+            className="text-sm text-accent underline"
+          >
+            First time? Use your access code
+          </button>
+        ) : (
+          <form onSubmit={submitRedeem} className="rounded-xl border border-border p-4">
+            <h2 className="text-sm font-semibold text-foreground">Redeem your access code</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Enter the 8-character code from the flight surgeon, then choose your username and password.
+            </p>
+            <label htmlFor="access-code" className="mt-3 block text-sm font-semibold text-foreground">
+              Access code
+            </label>
+            <input
+              id="access-code"
+              autoComplete="one-time-code"
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 uppercase text-foreground"
+            />
+            <label htmlFor="redeem-username" className="mt-3 block text-sm font-semibold text-foreground">
+              Choose a username
+            </label>
+            <input
+              id="redeem-username"
+              autoComplete="username"
+              value={redeemUser}
+              onChange={(event) => setRedeemUser(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
+            />
+            <label htmlFor="redeem-password" className="mt-3 block text-sm font-semibold text-foreground">
+              Choose a password
+            </label>
+            <input
+              id="redeem-password"
+              type="password"
+              autoComplete="new-password"
+              value={redeemPassword}
+              onChange={(event) => setRedeemPassword(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-3 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-50"
+            >
+              Redeem and sign in
+            </button>
+          </form>
+        )}
+      </section>
 
       {profiles.length > 0 && (
         <section aria-label="Unlock a profile" className="mt-6 rounded-xl border border-border p-4">
@@ -249,6 +363,13 @@ function LoginForm() {
           )}
         </section>
       )}
+
+      <p className="mt-4 text-sm text-muted-foreground">
+        Emergency help needs no login.{" "}
+        <Link href="/emergency" className="text-accent underline">
+          Open emergency
+        </Link>
+      </p>
     </div>
   );
 }

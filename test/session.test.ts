@@ -1,6 +1,22 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deviceDb, profileDb } from "../src/lib/db";
-import { checkPin, DemoBusyError, getSession, isSharedDevice, login, loginDemo, logout, pullHistory, setPin, setSharedDevice } from "../src/lib/session";
+import {
+  checkPin,
+  DemoBusyError,
+  getProfile,
+  getSession,
+  isSharedDevice,
+  loginDemo,
+  loginWithPassword,
+  logout,
+  pullHistory,
+  redeemCode,
+  refreshSession,
+  setPin,
+  setSharedDevice,
+} from "../src/lib/session";
+import { DEMO_CARDS, demoCardForKey, demoCardForUsername } from "../src/lib/demo-accounts";
 
 afterEach(async () => {
   vi.unstubAllGlobals();
@@ -9,9 +25,44 @@ afterEach(async () => {
   await db.clear("profiles");
 });
 
-function ok(body: unknown) {
-  return new Response(JSON.stringify(body), { status: 200 });
+function ok(body: unknown, headers: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { status: 200, headers });
 }
+
+function sessionBody(over: { crew_id?: string; name?: string; role?: string; demo?: boolean; expiresAt?: string; username?: string } = {}) {
+  return {
+    user: {
+      id: "user-1",
+      name: over.name ?? "Alex Rivera",
+      email: "alex@example.com",
+      emailVerified: true,
+      username: over.username ?? "astronaut01",
+      crew_id: over.crew_id ?? "demo-astronaut",
+      role: over.role ?? "astronaut",
+      provenance: over.demo === false ? "real" : "synthetic",
+      demo: over.demo ?? true,
+    },
+    session: { id: "session-1", expiresAt: over.expiresAt ?? "2030-01-01T00:00:00.000Z" },
+  };
+}
+
+function urlOf(input: RequestInfo | URL): string {
+  return typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+}
+
+function authHeader(init?: RequestInit): string {
+  return new Headers(init?.headers).get("authorization") ?? "";
+}
+
+describe("demo cards", () => {
+  it("maps the three cards to their usernames", () => {
+    expect(DEMO_CARDS.map((card) => card.username)).toEqual(["astronaut01", "fmo01", "mc01"]);
+    expect(demoCardForUsername("FMO01")?.role).toBe("flight_medical_officer");
+    expect(demoCardForKey("surgeon")?.username).toBe("fmo01");
+    expect(demoCardForKey("astronaut")?.crew_id).toBe("demo-astronaut");
+    expect(demoCardForKey("mission")?.username).toBe("mc01");
+  });
+});
 
 describe("session", () => {
   it("stores the PIN and checks it", async () => {
@@ -22,14 +73,22 @@ describe("session", () => {
     await expect(setPin("pin-crew", "12")).rejects.toThrow();
   });
 
-  it("logs in with a code and expires the session", async () => {
-    const fetchMock = vi.fn(async () =>
-      ok({ token: "tok-1", crew_id: "sess-crew", role: "astronaut", expires_at: "2030-01-01T00:00:00Z", provenance: "real" })
-    );
+  it("redeems a code and stores the bearer token", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = urlOf(input);
+      if (url.includes("/api/auth/redeem-code")) {
+        return new Response(JSON.stringify({ token: "tok-1" }), { status: 201 });
+      }
+      if (url.includes("/api/auth/get-session")) {
+        expect(authHeader(init)).toBe("Bearer tok-1");
+        return ok(sessionBody({ crew_id: "sess-crew", demo: false, username: "new_member" }));
+      }
+      throw new Error(`unexpected ${url}`);
+    });
     vi.stubGlobal("fetch", fetchMock);
-    const session = await login("ABCDEFGH");
+    const session = await redeemCode("ABCDEFGH", "new_member", "password-123");
     expect(session.crew_id).toBe("sess-crew");
-    expect(await getSession("sess-crew")).toMatchObject({ token: "tok-1", provenance: "real" });
+    expect(await getSession("sess-crew")).toMatchObject({ token: "tok-1", provenance: "real", username: "new_member" });
 
     const db = await deviceDb();
     const profile = await db.get("profiles", "sess-crew");
@@ -37,21 +96,18 @@ describe("session", () => {
     expect(await getSession("sess-crew")).toBeNull();
 
     await logout("sess-crew");
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes("/sign-out"))).toBe(true);
   });
 
-  it("throws when the code is rejected", async () => {
+  it("maps redeem failures to friendly messages", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 401 })));
-    await expect(login("ZZZZZZZZ")).rejects.toThrow("That code did not work");
-  });
-
-  it("tells a wrong code from a rate limit from a server error", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 401 })));
-    await expect(login("BADCODE1")).rejects.toThrow("That code did not work");
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("slow", { status: 429 })));
-    await expect(login("BADCODE2")).rejects.toThrow("Too many tries");
+    await expect(redeemCode("ZZZZZZZZ", "someone", "password-123")).rejects.toThrow("That code did not work");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 429 })));
+    await expect(redeemCode("BADCODE1", "someone", "password-123")).rejects.toThrow("Too many tries");
     vi.stubGlobal("fetch", vi.fn(async () => new Response("oops", { status: 500 })));
-    await expect(login("BADCODE3")).rejects.toThrow("Something went wrong");
+    await expect(redeemCode("BADCODE2", "someone", "password-123")).rejects.toThrow("Something went wrong");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: "That username is taken" }), { status: 409 })));
+    await expect(redeemCode("TAKEN123", "someone", "password-123")).rejects.toThrow("username is taken");
   });
 
   it("says the code was not used when the server cannot be reached", async () => {
@@ -61,32 +117,30 @@ describe("session", () => {
         throw new TypeError("fetch failed");
       })
     );
-    await expect(login("VALIDCD1")).rejects.toThrow("Your code has not been used");
+    await expect(redeemCode("VALIDCD1", "someone", "password-123")).rejects.toThrow("Your code has not been used");
   });
 
-  it("says the session was not saved when the device write fails", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("not-json{", { status: 200 })));
-    await expect(login("VALIDCD2")).rejects.toThrow("could not save the session");
-  });
-
-  it("sends shared:true when the device is marked shared", async () => {
-    const seen: unknown[] = [];
+  it("sends the shared-device header on sign-in", async () => {
+    const seen: Array<Record<string, string>> = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (_url: string, init: RequestInit) => {
-        seen.push(JSON.parse(init.body as string));
-        return ok({ token: "tok-shared", crew_id: "shared-crew", role: "astronaut", expires_at: "2030-01-01T00:00:00Z" });
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = urlOf(input);
+        if (url.includes("/sign-in/username")) {
+          seen.push(Object.fromEntries(new Headers(init?.headers).entries()));
+          return ok({ user: sessionBody().user }, { "set-auth-token": "tok-shared" });
+        }
+        return ok(sessionBody());
       })
     );
     await setSharedDevice(true);
     expect(await isSharedDevice()).toBe(true);
-    await login("SHAREDCD");
-    expect(seen).toEqual([
-      expect.objectContaining({ code: "SHAREDCD", shared: true }),
-    ]);
+    await loginWithPassword("astronaut01", "password-123");
+    expect(seen.at(-1)?.["x-shared-device"]).toBe("1");
+
     await setSharedDevice(false);
-    await login("NORMALCD");
-    expect(seen[1]).toEqual(expect.not.objectContaining({ shared: true }));
+    await loginWithPassword("astronaut01", "password-123");
+    expect(seen.at(-1)?.["x-shared-device"]).toBeUndefined();
   });
 
   it("salts the PIN hash per device", async () => {
@@ -157,7 +211,7 @@ describe("session", () => {
     expect(await getActiveCrewId(null)).toBe("stored-crew");
   });
 
-  it("clears an expired stored crew and returns none", async () => {
+  it("keeps an expired stored crew so the expired view can name it", async () => {
     const db = await deviceDb();
     await db.put("profiles", {
       crew_id: "old-crew",
@@ -172,8 +226,8 @@ describe("session", () => {
     });
     await db.put("settings", { key: "active_crew", value: "old-crew" });
     const { getActiveCrewId } = await import("../src/lib/session");
-    expect(await getActiveCrewId(null)).toBeNull();
-    expect((await db.get("settings", "active_crew"))?.value).toBe("");
+    expect(await getActiveCrewId(null)).toBe("old-crew");
+    expect((await db.get("settings", "active_crew"))?.value).toBe("old-crew");
   });
 
   it("clears the active crew on logout", async () => {
@@ -348,12 +402,16 @@ describe("session", () => {
     expect(await getActiveCrewId(null)).toBeNull();
   });
 
-  it("logs in to the demo crew and marks the session", async () => {
+  it("signs in to a demo role and marks the session", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        ok({ token: "tok-demo", crew_id: "demo-astronaut", role: "astronaut", expires_at: "2030-01-01T00:00:00Z", provenance: "synthetic", demo: true })
-      )
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = urlOf(input);
+        if (url.includes("/sign-in/username")) {
+          return ok({ user: sessionBody().user }, { "set-auth-token": "tok-demo" });
+        }
+        return ok(sessionBody());
+      })
     );
     const session = await loginDemo("astronaut");
     expect(session).toMatchObject({ crew_id: "demo-astronaut", demo: true });
@@ -376,6 +434,114 @@ describe("session", () => {
     const busy = await loginDemo("astronaut").catch((error: unknown) => error);
     expect(busy).toBeInstanceOf(DemoBusyError);
     expect((busy as DemoBusyError).retryAfterMs).toBe(5000);
+  });
+
+  it("silently re-signs an expired demo session in", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "demo-astronaut",
+      display_name: "Alex Rivera",
+      token: "tok-expired",
+      role: "astronaut",
+      expires_at: "2020-01-01T00:00:00Z",
+      provenance: "synthetic",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+      demo: true,
+      username: "astronaut01",
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = urlOf(input);
+      if (url.includes("/sign-in/username")) {
+        return ok({ user: sessionBody().user }, { "set-auth-token": "tok-renewed" });
+      }
+      if (url.includes("/api/sync")) {
+        return ok({ measurements: [], results: [], reports: [], reports_status: [], measurements_cursor: null, results_cursor: null });
+      }
+      if (authHeader(init) === "Bearer tok-expired") return ok(null);
+      return ok(sessionBody());
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const outcome = await refreshSession("demo-astronaut");
+    expect(outcome.status).toBe("active");
+    if (outcome.status === "active") expect(outcome.session.token).toBe("tok-renewed");
+    expect((await getProfile("demo-astronaut"))?.token).toBe("tok-renewed");
+    expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes("/sign-in/username"))).toBe(true);
+  });
+
+  it("reports a real expired session without signing in again", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "real-crew",
+      display_name: "Real Crew",
+      token: "tok-real-expired",
+      role: "astronaut",
+      expires_at: "2020-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+      demo: false,
+      username: "real_member",
+    });
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => ok(null));
+    vi.stubGlobal("fetch", fetchMock);
+    const outcome = await refreshSession("real-crew");
+    expect(outcome).toEqual({
+      status: "expired",
+      crew_id: "real-crew",
+      name: "Real Crew",
+      username: "real_member",
+      demo: false,
+    });
+    expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes("/sign-in/username"))).toBe(false);
+  });
+
+  it("uses the stored session offline until it expires", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "offline-crew",
+      display_name: "Offline Crew",
+      token: "tok-offline",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+    const fetchMock = vi.fn(async () => {
+      throw new TypeError("offline");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const outcome = await refreshSession("offline-crew");
+      expect(outcome.status).toBe("active");
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+    }
+  });
+
+  it("renews a live session and stores the slid expiry", async () => {
+    const db = await deviceDb();
+    await db.put("profiles", {
+      crew_id: "renew-crew",
+      display_name: "Renew Crew",
+      token: "tok-renew",
+      role: "astronaut",
+      expires_at: "2030-01-01T00:00:00Z",
+      provenance: "real",
+      device_id: "d",
+      pin_hash: null,
+      shared_device: false,
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => ok(sessionBody({ crew_id: "renew-crew", demo: false, expiresAt: "2031-02-02T00:00:00.000Z" }))));
+    const outcome = await refreshSession("renew-crew");
+    expect(outcome.status).toBe("active");
+    expect((await getProfile("renew-crew"))?.expires_at).toBe("2031-02-02T00:00:00.000Z");
   });
 
   it("pulls history pages with per-table cursors", async () => {

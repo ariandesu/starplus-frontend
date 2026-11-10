@@ -8,6 +8,7 @@ import { CrewBoard } from "@/components/surgeon/crew-board";
 import { ContinueAsButtons } from "@/components/continue-as";
 import { ReportsInbox, type InboxReport } from "@/components/surgeon/reports-inbox";
 import { useSurgeonSession } from "@/components/surgeon/use-surgeon";
+import { RequireSession } from "@/components/require-session";
 
 function SurgeonView() {
   const session = useSurgeonSession();
@@ -75,7 +76,10 @@ function SurgeonView() {
   }
 
   if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!session.crewId || !session.allowed || !session.session) {
+  if (session.state.status !== "active") {
+    return <RequireSession session={session.state} heading="Flight surgeon" />;
+  }
+  if (!session.allowed || !session.session) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground">Flight surgeon</h1>

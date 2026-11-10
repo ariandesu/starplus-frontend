@@ -6,6 +6,7 @@ import { ackReport, getCrewRoster, getReports } from "@/lib/api";
 import { readSurgeonCache, writeSurgeonCache } from "@/lib/surgeon-cache";
 import { ReportsInbox, type InboxReport } from "@/components/surgeon/reports-inbox";
 import { useSurgeonSession } from "@/components/surgeon/use-surgeon";
+import { RequireSession } from "@/components/require-session";
 
 function SurgeonReportsView() {
   const session = useSurgeonSession();
@@ -67,7 +68,10 @@ function SurgeonReportsView() {
   }
 
   if (!crewReady || !ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
-  if (!session.crewId || !session.allowed || !session.session) {
+  if (session.state.status !== "active") {
+    return <RequireSession session={session.state} heading="Reports inbox" />;
+  }
+  if (!session.allowed || !session.session) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground">Reports inbox</h1>

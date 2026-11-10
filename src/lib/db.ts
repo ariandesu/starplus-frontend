@@ -23,6 +23,8 @@ export interface ProfileRecord {
   pin_hash: string | null;
   shared_device: boolean;
   demo?: boolean;
+  /** Better Auth username, kept so an expired real session can prefill the login. */
+  username?: string | null;
 }
 
 export interface SettingRecord {

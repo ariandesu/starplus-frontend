@@ -9,7 +9,7 @@ import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
 import { ownReportTitle } from "@/lib/report-title";
 import { hasActiveSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { ContinueAsButtons } from "@/components/continue-as";
+import { RequireSession } from "@/components/require-session";
 
 async function loadView(crewId: string) {
   const db = await deviceDb();
@@ -32,7 +32,8 @@ async function loadView(crewId: string) {
 }
 
 function ReportsView() {
-  const { crewId, candidates } = useActiveCrew();
+  const session = useActiveCrew();
+  const { crewId } = session;
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
@@ -83,16 +84,13 @@ function ReportsView() {
     }
   }
 
+  if (session.status !== "active" || !crewId) {
+    return <RequireSession session={session} heading="Reports" intro="Log in to send reports." />;
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-      {checked && !hasSession && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          Log in to send reports. <Link href="/login" className="text-accent underline">Go to login</Link>{" "}
-          <Link href="/login?demo=astronaut" className="text-accent underline">Try the demo</Link>
-        </p>
-      )}
-      {checked && !hasSession && <ContinueAsButtons candidates={candidates} />}
       {emergencyWaiting > 0 && (
         <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {hasSession
