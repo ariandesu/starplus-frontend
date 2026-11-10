@@ -7,15 +7,15 @@ const entries = (formulary as { entries: FormularyEntry[] }).entries;
 
 export default function MedicinesPage() {
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-6">
-      <h1 className="text-2xl font-bold">Medicines</h1>
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Medicines</h1>
       <p className="text-sm text-muted">
         Onboard formulary. Doses follow the flight surgeon or mission protocol unless a quoted
         source states otherwise. This list works offline.
       </p>
       <ul className="space-y-4">
         {entries.map((entry) => (
-          <li key={entry.id} className="rounded-lg border border-border p-4">
+          <li key={entry.id} className="rounded-tile border border-border bg-card p-4 shadow-card">
             <h2 className="text-lg font-semibold">{entry.name}</h2>
             <p className="mt-1 text-sm text-foreground">{entry.purpose}</p>
             <dl className="mt-2 space-y-1 text-sm">
@@ -47,6 +47,6 @@ export default function MedicinesPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   );
 }

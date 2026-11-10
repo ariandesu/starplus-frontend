@@ -60,8 +60,8 @@ export default function DemoPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Demo mode</h1>
+    <div className="mx-auto w-full max-w-md px-4 py-6">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Demo mode</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Loads a demo crew with 30 days of history into a separate on-device store. The
         outbox is disabled: nothing is ever sent. For judges trying the app.
@@ -78,14 +78,14 @@ export default function DemoPage() {
         <button
           type="button"
           onClick={exit}
-          className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground"
+          className="min-h-11 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground"
         >
           Exit demo mode
         </button>
         <button
           type="button"
           onClick={exportDemo}
-          className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground"
+          className="min-h-11 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground"
         >
           Export (watermarked SYNTHETIC)
         </button>

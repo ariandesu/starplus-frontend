@@ -70,10 +70,10 @@ export default function SettingsPage() {
   if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Settings</h1>
       <div className="mt-4 space-y-4">
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <label htmlFor="setting" className="text-sm font-semibold text-foreground">Setting</label>
           <select
             id="setting"
@@ -86,7 +86,7 @@ export default function SettingsPage() {
             ))}
           </select>
         </div>
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <label htmlFor="phase" className="text-sm font-semibold text-foreground">Phase</label>
           <select
             id="phase"
@@ -99,7 +99,7 @@ export default function SettingsPage() {
             ))}
           </select>
         </div>
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <label htmlFor="mission-start" className="text-sm font-semibold text-foreground">Mission start date</label>
           <input
             id="mission-start"
@@ -110,7 +110,7 @@ export default function SettingsPage() {
           />
           <p className="mt-1 text-xs text-muted-foreground">Used to count the mission day for each record.</p>
         </div>
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <p className="text-sm font-semibold text-foreground">Comms-link simulation</p>
           <p className="mt-1 text-sm text-muted-foreground">{commsSummary(setting, blackout)}</p>
           <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
@@ -125,7 +125,7 @@ export default function SettingsPage() {
             Simulate a blackout
           </label>
         </div>
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <p className="text-sm font-semibold text-foreground">Gamification</p>
           <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
             <input
@@ -140,7 +140,7 @@ export default function SettingsPage() {
           </label>
         </div>
         {crewId && (
-          <div className="rounded-xl border border-border p-4">
+          <div className="rounded-tile border border-border bg-card p-4 shadow-card">
             <p className="text-sm font-semibold text-foreground">Signed in as {crewId}</p>
             <button
               type="button"
@@ -151,7 +151,7 @@ export default function SettingsPage() {
             </button>
           </div>
         )}
-        <div className="rounded-xl border border-border p-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <h2 className="text-sm font-semibold text-foreground">Data notice</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Measurements are scored on this device first and copied to the server when a link

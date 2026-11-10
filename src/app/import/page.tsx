@@ -156,8 +156,8 @@ function ImportForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">Import data</h1>
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
+      <h1 className="text-[1.75rem] font-bold tracking-tight">Import data</h1>
       <p className="mt-1 text-sm text-muted-foreground">CSV files and FHIR observations import here. Everything stays on this device until a link returns.</p>
       <label htmlFor="import-file" className="mt-4 block text-sm font-semibold text-foreground">
         File (.csv or .json)
@@ -177,7 +177,7 @@ function ImportForm() {
         </p>
       )}
       {headers && (
-        <div className="mt-4 rounded-xl border border-border p-4">
+        <div className="mt-4 rounded-tile border border-border bg-card p-4 shadow-card">
           <h2 className="text-sm font-semibold text-foreground">Column mapping</h2>
           {headers.map((header, index) => (
             <div key={header} className="mt-2 flex items-center gap-2">
@@ -210,7 +210,7 @@ function ImportForm() {
         </div>
       )}
       {preview && "accepted" in preview && (
-        <div className="mt-4 rounded-xl border border-border p-4">
+        <div className="mt-4 rounded-tile border border-border bg-card p-4 shadow-card">
           <h2 className="text-sm font-semibold text-foreground">Preview</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {preview.accepted} accepted

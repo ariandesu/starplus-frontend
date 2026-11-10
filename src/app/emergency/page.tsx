@@ -149,7 +149,7 @@ export default function EmergencyPage() {
   if (discarded) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Report discarded</h1>
+        <h1 className="text-[1.75rem] font-bold tracking-tight">Report discarded</h1>
         <Link href="/" className="mt-4 inline-block text-sm font-medium text-accent-strong underline">
           Back home
         </Link>
@@ -160,7 +160,7 @@ export default function EmergencyPage() {
   if (queued) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">{waiting ? "Report queued" : "Report sent"}</h1>
+        <h1 className="text-[1.75rem] font-bold tracking-tight">{waiting ? "Report queued" : "Report sent"}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {waiting
             ? hasSession
@@ -178,7 +178,7 @@ export default function EmergencyPage() {
   if (scenarioId === null) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-danger">Emergency — no login needed, works offline</h1>
+        <h1 className="text-[1.75rem] font-bold tracking-tight text-danger">Emergency — no login needed, works offline</h1>
         <p className="mt-1 text-sm text-muted-foreground">Who needs help?</p>
         <div className="mt-4 space-y-2">
           {SCENARIOS.map((scenario) => (
@@ -191,7 +191,7 @@ export default function EmergencyPage() {
                 setTaken([]);
                 setReview(false);
               }}
-              className="block w-full rounded-xl border border-border px-4 py-3 text-left text-base font-semibold text-foreground hover:bg-muted"
+              className="block min-h-11 w-full rounded-tile border border-border bg-card px-4 py-3 text-left text-base font-semibold text-foreground shadow-card hover:bg-surface-2"
             >
               {scenario.label}
             </button>
@@ -204,7 +204,7 @@ export default function EmergencyPage() {
   if (review || done) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Review the report</h1>
+        <h1 className="text-[1.75rem] font-bold tracking-tight">Review the report</h1>
         <ol className="mt-3 space-y-2">
           {taken.map((step, i) => (
             <li key={i} className="rounded-lg bg-muted/40 p-3 text-sm text-foreground">
@@ -260,7 +260,7 @@ export default function EmergencyPage() {
           <button
             type="button"
             onClick={queueReport}
-            className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground"
+            className="min-h-13 rounded-full bg-danger px-4 py-2 text-sm font-bold text-danger-foreground"
           >
             Queue report
           </button>
@@ -295,7 +295,7 @@ export default function EmergencyPage() {
         <button
           type="button"
           onClick={takeStep}
-          className="flex-1 rounded-xl bg-danger px-4 py-3 text-base font-bold text-danger-foreground"
+          className="min-h-13 flex-1 rounded-full bg-danger px-4 py-3 text-base font-bold text-danger-foreground"
         >
           Done, next step
         </button>
