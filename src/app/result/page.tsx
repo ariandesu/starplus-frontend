@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { CATALOG, assess, type Measurement, type Result } from "@starplus/core";
 import { Citation, StatusTone } from "@/components/citation";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { Card } from "@/components/ui/card";
 import { ModelView } from "@/components/model-view";
 import { profileDb } from "@/lib/db";
 import { enqueueResult } from "@/lib/outbox";
@@ -124,17 +126,22 @@ function ResultView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-foreground">Your result</h1>
-        <StatusTone status={result.overall_status} />
-      </div>
+      <PageHeader eyebrow="RESULT" title="Your result" />
+      <Card variant="hero" glow={result.overall_status} className="mt-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">
+            Overall status
+          </p>
+          <StatusTone status={result.overall_status} />
+        </div>
+      </Card>
       <div className="mt-4 space-y-4">
         {result.per_measure.map((entry) => {
           const measure = CATALOG.measures.find((m) => m.code === entry.metric);
           const kb = measure ? getKbEntry(measure.guidance_key) : null;
           const record = records.find((r) => r.client_id === entry.values.client_id);
           return (
-            <article key={`${entry.metric}-${entry.values.client_id}`} className="rounded-xl border border-border p-4">
+            <article key={`${entry.metric}-${entry.values.client_id}`} className="rounded-tile border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-semibold text-foreground">{measure?.label ?? entry.metric}</h2>
                 <StatusTone status={entry.status} />

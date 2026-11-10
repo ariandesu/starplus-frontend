@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { adoptCrew, checkPin, isSharedDevice, type AdoptableCrew } from "@/lib/session";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 /**
  * Profile picker for stranded sessions: "Continue as <name>" buttons above
@@ -54,45 +57,38 @@ export function ContinueAsButtons({ candidates }: { candidates: AdoptableCrew[] 
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-border p-4">
+    <Card className="mt-4 p-4">
       <p className="text-sm font-semibold text-foreground">Continue as</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {candidates.map((candidate) => (
-          <button
+          <Button
             key={candidate.crew_id}
             type="button"
+            variant="outline"
             disabled={busy}
             onClick={() => void pick(candidate.crew_id)}
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             Continue as {candidate.display_name} · {roleLabel(candidate.role)}
-          </button>
+          </Button>
         ))}
       </div>
       {pinFor && (
         <form onSubmit={unlock} className="mt-3">
-          <label htmlFor="continue-pin" className="text-sm font-semibold text-foreground">
-            4-digit PIN
-          </label>
-          <input
+          <Input
             id="continue-pin"
+            label="4-digit PIN"
             type="password"
             inputMode="numeric"
             autoComplete="off"
             value={pin}
             onChange={(event) => setPin(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
           />
-          <button
-            type="submit"
-            disabled={busy}
-            className="mt-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
-          >
+          <Button type="submit" disabled={busy} className="mt-2">
             Unlock
-          </button>
+          </Button>
         </form>
       )}
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
-    </div>
+    </Card>
   );
 }

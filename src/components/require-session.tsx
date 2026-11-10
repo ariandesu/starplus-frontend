@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { ContinueAsButtons } from "@/components/continue-as";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { SessionState } from "@/lib/use-active-crew";
 
 export interface RequireSessionProps {
@@ -24,7 +26,7 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
 
   if (session.status === "loading" || session.status === "renewing") {
     return (
-      <p className="px-4 py-8 text-sm text-muted-foreground">
+      <p className="px-4 py-8 text-sm text-muted">
         {session.status === "renewing" ? "Renewing your session…" : "Loading…"}
       </p>
     );
@@ -32,7 +34,7 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
 
   if (session.status === "error") {
     return (
-      <p role="alert" className="px-4 py-8 text-sm text-muted-foreground">
+      <p role="alert" className="px-4 py-8 text-sm text-muted">
         Something went wrong loading your session.{" "}
         <button type="button" onClick={() => window.location.reload()} className="text-accent-strong underline">
           Reload
@@ -44,43 +46,46 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
   if (session.status === "expired") {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-8" data-testid="session-expired">
-        <p role="alert" className="text-sm text-foreground">
-          {session.reason ?? "Your session ended. Sign in again."}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">Your readings are still on this device.</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            href={session.username ? `/login?username=${encodeURIComponent(session.username)}` : "/login"}
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-          >
-            Sign in again
-          </Link>
-          <Link href="/login?demo=astronaut" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground">
-            Try the demo
-          </Link>
-        </div>
+        <Card className="p-5 lg:p-6">
+          <p role="alert" className="text-sm text-foreground">
+            {session.reason ?? "Your session ended. Sign in again."}
+          </p>
+          <p className="mt-1 text-sm text-muted">Your readings are still on this device.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href={session.username ? `/login?username=${encodeURIComponent(session.username)}` : "/login"}>
+                Sign in again
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/login?demo=astronaut">Try the demo</Link>
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">{heading ?? "Log in to continue"}</h1>
-      {intro && <p className="mt-1 text-sm text-muted-foreground">{intro}</p>}
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Link href="/login" className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-          Go to login
-        </Link>
-        {showEmergency && (
-          <Link href="/emergency" className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground">
-            Emergency
-          </Link>
-        )}
-        <Link href="/login?demo=astronaut" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground">
-          Try the demo
-        </Link>
-      </div>
-      <ContinueAsButtons candidates={session.candidates} />
+      <Card className="p-5 lg:p-6">
+        <h1 className="text-[1.75rem] font-bold tracking-tight">{heading ?? "Log in to continue"}</h1>
+        {intro && <p className="mt-1 text-sm text-muted">{intro}</p>}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button asChild>
+            <Link href="/login">Go to login</Link>
+          </Button>
+          {showEmergency && (
+            <Button asChild variant="destructive">
+              <Link href="/emergency">Emergency</Link>
+            </Button>
+          )}
+          <Button asChild variant="outline">
+            <Link href="/login?demo=astronaut">Try the demo</Link>
+          </Button>
+        </div>
+        <ContinueAsButtons candidates={session.candidates} />
+      </Card>
     </div>
   );
 }

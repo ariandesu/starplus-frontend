@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { CATALOG } from "@starplus/core";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { VitalChart } from "@/components/dashboard/vital-chart";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { buildSeries, type MetricSeries } from "@/lib/vital-series";
 import { profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
@@ -55,38 +56,35 @@ function HistoryView() {
     })().catch(() => setReady(true));
   }, [crewId, crewReady]);
 
-  if (!ready) return <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>;
+  if (!ready) return <p className="px-4 py-8 text-sm text-muted">Loading…</p>;
   if (session.status !== "active" || !crewId) {
     return <RequireSession session={session} heading="History" />;
   }
 
+  const active = MEASURE_FILTERS.find((item) => item.id === filter);
+  const codes = active?.codes;
+  const visible = !codes ? series : series.filter((entry) => codes.has(entry.code));
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">History</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+      <PageHeader eyebrow="HISTORY" title="History" />
+      <p className="mt-1 text-sm text-muted">
         Each chart shows the baseline band beside recent readings. Typical ranges from the
         catalog appear in the self-check form.
       </p>
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Measure filter">
-        {MEASURE_FILTERS.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            aria-pressed={filter === entry.id}
-            onClick={() => setFilter(entry.id)}
-            className={`rounded-full border px-3 py-1 text-sm ${filter === entry.id ? "border-foreground font-semibold text-foreground" : "border-border text-muted-foreground"}`}
-          >
-            {entry.label}
-          </button>
-        ))}
+      <div className="mt-4">
+        <SegmentedControl
+          ariaLabel="Measure filter"
+          value={filter}
+          onChange={setFilter}
+          options={MEASURE_FILTERS.map((entry) => ({ value: entry.id, label: entry.label }))}
+        />
       </div>
-      <div className="mt-4 space-y-4">
-        {(() => {
-          const active = MEASURE_FILTERS.find((item) => item.id === filter);
-          const codes = active?.codes;
-          const visible = !codes ? series : series.filter((entry) => codes.has(entry.code));
-          if (visible.length === 0) return <p className="text-sm text-muted-foreground">No readings yet.</p>;
-          return visible.map((entry) => (
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {visible.length === 0 ? (
+          <p className="text-sm text-muted">No readings yet.</p>
+        ) : (
+          visible.map((entry) => (
             <VitalChart
               key={entry.code}
               title={entry.label}
@@ -94,11 +92,11 @@ function HistoryView() {
               unit={entry.unit}
               baselineLabel={entry.baselineLabel}
             />
-          ));
-        })()}
+          ))
+        )}
       </div>
       {CATALOG.measures.length > 0 && (
-        <p className="mt-4 text-xs text-muted-foreground">
+        <p className="mt-4 text-xs text-muted">
           Measures without enough history show the catalog typical range instead.
         </p>
       )}
@@ -108,7 +106,7 @@ function HistoryView() {
 
 export default function HistoryPage() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading…</p>}>
       <HistoryView />
     </Suspense>
   );

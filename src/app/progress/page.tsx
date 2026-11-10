@@ -16,6 +16,10 @@ import { getSession } from "@/lib/session";
 import { ReadinessRing } from "@/components/readiness-ring";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { RequireSession } from "@/components/require-session";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 function ProgressView() {
   const session = useActiveCrew();
@@ -67,68 +71,91 @@ function ProgressView() {
     setGamificationEnabled(next);
   }
 
-  if (!ready) return <main className="p-6">Loading progress…</main>;
+  if (!ready) return <p className="px-4 py-8 text-sm text-muted">Loading progress…</p>;
   if (session.status !== "active" || !crewId) {
     return <RequireSession session={session} />;
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Progress</h1>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input type="checkbox" checked={enabled} onChange={(event) => toggle(event.target.checked)} />
-          Gamification
-        </label>
-      </div>
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
+      <PageHeader
+        eyebrow="PROGRESS"
+        title="Progress"
+        actions={
+          <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
+            <input type="checkbox" checked={enabled} onChange={(event) => toggle(event.target.checked)} />
+            Gamification
+          </label>
+        }
+      />
+      {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+
       {enabled ? (
         <>
-          <section aria-label="Daily readiness">
-            <h2 className="mb-2 text-lg font-semibold">Today&apos;s readiness</h2>
-            <ReadinessRing
-              checkIn={today?.checkIn ?? false}
-              exercise={today?.exercise ?? false}
-              sleep={today?.sleep ?? false}
-              hydration={today?.hydration ?? false}
-            />
-          </section>
-          <section aria-label="Streak">
-            <h2 className="mb-2 text-lg font-semibold">Streak</h2>
-            <p className="text-sm text-foreground">
-              {streak} {streak === 1 ? "day" : "days"} in a row (one rest day a week is allowed).
-            </p>
-            {patches.length > 0 ? (
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {patches.map((patch) => (
-                  <li key={patch.id} className="rounded-full bg-accent/20 px-3 py-1 text-sm text-foreground">
-                    {patch.name}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-muted">Log every day for a week to earn your first patch.</p>
-            )}
-          </section>
+          <Card className="mt-4 p-5 lg:p-6">
+            <section aria-label="Daily readiness">
+              <h2 className="text-lg font-semibold text-foreground">Today&apos;s readiness</h2>
+              <div className="mt-3">
+                <ReadinessRing
+                  checkIn={today?.checkIn ?? false}
+                  exercise={today?.exercise ?? false}
+                  sleep={today?.sleep ?? false}
+                  hydration={today?.hydration ?? false}
+                />
+              </div>
+            </section>
+          </Card>
+
+          <Card className="mt-4 p-5 lg:p-6">
+            <section aria-label="Streak">
+              <h2 className="text-lg font-semibold text-foreground">Streak</h2>
+              <p className="mt-2 text-sm text-foreground">
+                {streak} {streak === 1 ? "day" : "days"} in a row (one rest day a week is allowed).
+              </p>
+              {patches.length > 0 ? (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {patches.map((patch) => (
+                    <li key={patch.id}>
+                      <Badge>{patch.name}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-muted">Log every day for a week to earn your first patch.</p>
+              )}
+            </section>
+          </Card>
         </>
       ) : (
-        <p className="text-sm text-muted">Gamification is switched off on this device.</p>
+        <Card className="mt-4 p-5">
+          <p className="text-sm text-muted">Gamification is switched off on this device.</p>
+        </Card>
       )}
-      <section aria-label="Crew progress">
-        <h2 className="mb-2 text-lg font-semibold">Crew progress</h2>
-        <p className="text-sm text-foreground">
-          {crewPct === null
-            ? "Crew progress is available when the link is up."
-            : `${crewPct}% of expected check-ins over the last 7 days (crew-wide, excluding watch and critical).`}
-        </p>
-      </section>
-    </main>
+
+      <Card className="mt-4 p-5 lg:p-6">
+        <section aria-label="Crew progress">
+          <h2 className="text-lg font-semibold text-foreground">Crew progress</h2>
+          {crewPct === null ? (
+            <p className="mt-2 text-sm text-muted">Crew progress is available when the link is up.</p>
+          ) : (
+            <>
+              <div className="mt-3">
+                <ProgressBar value={crewPct} max={100} label="Crew progress" />
+              </div>
+              <p className="mt-2 text-sm text-foreground">
+                {`${crewPct}% of expected check-ins over the last 7 days (crew-wide, excluding watch and critical).`}
+              </p>
+            </>
+          )}
+        </section>
+      </Card>
+    </div>
   );
 }
 
 export default function ProgressPage() {
   return (
-    <Suspense fallback={<main className="p-6">Loading progress…</main>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading progress…</p>}>
       <ProgressView />
     </Suspense>
   );
