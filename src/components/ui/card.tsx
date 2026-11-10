@@ -34,17 +34,31 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 );
 Card.displayName = "Card";
 
-interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   className?: string;
+  title?: React.ReactNode;
+  description?: string;
+  action?: React.ReactNode;
 }
 
 const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
-  ({ className, ...props }, ref) => (
+  ({ className, title, description, action, children, ...props }, ref) => (
     <div
       ref={ref}
       className={cn("flex flex-col space-y-1.5 p-6", className)}
       {...props}
-    />
+    >
+      {(title || description || action) && (
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {title && <h2 className="text-lg font-medium tracking-tight">{title}</h2>}
+            {description && <p className="text-sm text-muted">{description}</p>}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
+        </div>
+      )}
+      {children}
+    </div>
   )
 );
 CardHeader.displayName = "CardHeader";

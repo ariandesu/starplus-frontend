@@ -96,7 +96,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full">
       <OutboxSync />
-      <MobileNav isOpen={isOpen} onClose={close} context={`${setting} · ${phase}`} />
       <div className="flex min-h-full flex-col lg:pl-[264px]">
         {updated && (
           <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-semibold text-accent-foreground">
@@ -115,6 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Suspense>
           <DemoAccountBanner />
         </Suspense>
+        <MobileNav isOpen={isOpen} onClose={close} context={`${setting} · ${phase}`} />
         <main className="flex-1 overflow-x-hidden">
           <CrewErrorBoundary>{children}</CrewErrorBoundary>
         </main>

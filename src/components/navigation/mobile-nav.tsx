@@ -10,7 +10,7 @@ import { deviceDb } from "@/lib/db";
 import { logout } from "@/lib/session";
 import { navItemsForRole } from "@/lib/nav-items";
 import { activeHref, groupNav } from "./nav-groups";
-import { useIsDesktop } from "./use-is-desktop";
+import { useIsDesktop, useIsMobileChrome } from "./use-is-desktop";
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -69,6 +69,7 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const isDesktop = useIsDesktop();
+  const isMobile = useIsMobileChrome();
   const [crewId, setCrewId] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ name: string; role: string | null } | null>(null);
 
@@ -90,7 +91,7 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
   }, [isOpen, isDesktop, pathname]);
 
   useEffect(() => {
-    if (!isOpen || isDesktop) return;
+    if (!isOpen || !isMobile) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -98,7 +99,7 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [isOpen, isDesktop, onClose]);
+  }, [isOpen, isMobile, onClose]);
 
   async function signOut() {
     if (crewId) await logout(crewId).catch(() => undefined);
@@ -113,12 +114,12 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
 
   return (
     <>
-      {!isDesktop && (
+      {isMobile && (
         <div
           aria-hidden
           onClick={onClose}
           className={cn(
-            "fixed inset-0 z-40 bg-foreground/30 transition-opacity duration-300",
+            "fixed inset-0 z-40 bg-foreground/30 transition-opacity duration-300 motion-reduce:transition-none",
             isOpen ? "opacity-100" : "pointer-events-none opacity-0"
           )}
         />
@@ -126,12 +127,12 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
       <aside
         id="site-nav"
         aria-label="Main navigation"
-        aria-hidden={(!isOpen && !isDesktop) || undefined}
-        inert={!isOpen && !isDesktop}
+        aria-hidden={(isMobile && !isOpen) || undefined}
+        inert={isMobile && !isOpen}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-full flex-col border-r border-border bg-background transition-transform duration-300 ease-in-out sm:w-80",
+          "fixed inset-y-0 left-0 z-50 flex w-full flex-col border-r border-border bg-background transition-transform duration-300 ease-in-out motion-reduce:transition-none sm:w-80",
           "lg:z-30 lg:w-[264px] lg:translate-x-0",
-          isDesktop ? "" : "shadow-xl",
+          isMobile ? "shadow-xl" : "",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -139,7 +140,7 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
           <Link href="/" className="focus-ring rounded-lg">
             <Logo />
           </Link>
-          {!isDesktop && (
+          {isMobile && (
             <button
               type="button"
               onClick={onClose}
@@ -176,7 +177,7 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
                         onClick={onClose}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "flex items-center gap-3 rounded-tile px-3 py-2 text-sm font-medium transition-colors focus-ring",
+                          "flex min-h-11 items-center gap-3 rounded-tile px-3 py-2 text-sm font-medium transition-colors focus-ring",
                           active
                             ? "bg-card text-foreground shadow-card"
                             : "text-muted hover:bg-surface-2 hover:text-foreground"
@@ -233,23 +234,23 @@ export function TopBar({
   onToggle: () => void;
   trailing?: React.ReactNode;
 }) {
-  const isDesktop = useIsDesktop();
+  const isMobile = useIsMobileChrome();
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
       <div
         className={cn(
           "mx-auto flex max-w-6xl items-center gap-3 px-4 py-2",
-          isDesktop ? "justify-end" : "justify-between"
+          isMobile ? "justify-between" : "justify-end"
         )}
       >
-        {!isDesktop && (
+        {isMobile && (
           <Link href="/" className="focus-ring rounded-lg">
             <Logo />
           </Link>
         )}
         <div className="flex items-center gap-2">
           {trailing}
-          {!isDesktop && (
+          {isMobile && (
             <button
               type="button"
               onClick={onToggle}
