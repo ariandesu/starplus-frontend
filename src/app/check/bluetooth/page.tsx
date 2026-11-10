@@ -305,7 +305,7 @@ function BluetoothForm() {
           </button>
         </form>
       ) : null}
-      {notice ? <p className="mt-3 text-sm text-red-700">{notice}</p> : null}
+      {notice ? <p className="mt-3 text-sm text-danger">{notice}</p> : null}
     </div>
   );
 }

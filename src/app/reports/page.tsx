@@ -92,7 +92,7 @@ function ReportsView() {
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Reports</h1>
       {emergencyWaiting > 0 && (
-        <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p role="status" className="mt-2 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
           {hasSession
             ? "1 emergency report waiting — sending when the link is up."
             : "1 emergency report waiting — log in to send it."}
@@ -121,7 +121,7 @@ function ReportsView() {
           {pending.map((item) => (
             <li key={item.client_id} className="rounded-xl border border-border p-3 text-sm">
               <span className="font-semibold">{item.kind}</span> · {item.state}
-              {item.error && <span className="text-red-700"> · {item.error}</span>}
+              {item.error && <span className="text-danger"> · {item.error}</span>}
               <span className="block text-xs text-muted-foreground">{item.client_id.slice(0, 8)}</span>
             </li>
           ))}

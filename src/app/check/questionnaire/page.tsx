@@ -104,7 +104,7 @@ function QuestionnaireForm() {
         </button>
       </form>
       {notice && (
-        <p role="alert" className="mt-3 text-sm text-red-700">
+        <p role="alert" className="mt-3 text-sm text-danger">
           {notice}
         </p>
       )}

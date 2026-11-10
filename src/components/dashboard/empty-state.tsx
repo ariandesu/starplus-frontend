@@ -13,9 +13,9 @@ interface EmptyStateProps {
 
 const TONES = {
   normal: { icon: CheckCircle2, wrap: "bg-status-nominal-bg text-status-nominal-fg" },
-  watch: { icon: AlertCircle, wrap: "bg-amber-100 text-amber-700" },
-  critical: { icon: AlertTriangle, wrap: "bg-red-100 text-red-700" },
-  insufficient: { icon: HelpCircle, wrap: "bg-muted text-white" },
+  watch: { icon: AlertCircle, wrap: "bg-status-watch-bg text-status-watch-fg" },
+  critical: { icon: AlertTriangle, wrap: "bg-status-critical-bg text-status-critical-fg" },
+  insufficient: { icon: HelpCircle, wrap: "bg-status-insufficient-bg text-status-insufficient-fg" },
 } as const;
 
 export function EmptyState({ title, description, tone = "normal", action, className }: EmptyStateProps) {

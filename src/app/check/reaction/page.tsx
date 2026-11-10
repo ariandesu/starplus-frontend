@@ -114,7 +114,7 @@ function ReactionTest() {
         <button
           type="button"
           onClick={tap}
-          className="mt-4 w-full rounded-xl bg-red-700 px-4 py-10 text-2xl font-bold text-white"
+          className="mt-4 w-full rounded-xl bg-danger px-4 py-10 text-2xl font-bold text-danger-foreground"
         >
           Tap now! ({Math.max(0, 6 - taps.length)} left)
         </button>
@@ -140,7 +140,7 @@ function ReactionTest() {
         </div>
       )}
       {notice && (
-        <p role="alert" className="mt-3 text-sm text-red-700">
+        <p role="alert" className="mt-3 text-sm text-danger">
           {notice}
         </p>
       )}

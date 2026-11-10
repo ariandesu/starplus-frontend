@@ -9,31 +9,31 @@ export default function MedicinesPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <h1 className="text-2xl font-bold">Medicines</h1>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         Onboard formulary. Doses follow the flight surgeon or mission protocol unless a quoted
         source states otherwise. This list works offline.
       </p>
       <ul className="space-y-4">
         {entries.map((entry) => (
-          <li key={entry.id} className="rounded-lg border border-slate-200 p-4">
+          <li key={entry.id} className="rounded-lg border border-border p-4">
             <h2 className="text-lg font-semibold">{entry.name}</h2>
-            <p className="mt-1 text-sm text-slate-700">{entry.purpose}</p>
+            <p className="mt-1 text-sm text-foreground">{entry.purpose}</p>
             <dl className="mt-2 space-y-1 text-sm">
               <div>
                 <dt className="inline font-medium">Side effects: </dt>
-                <dd className="inline text-slate-700">{entry.side_effects}</dd>
+                <dd className="inline text-foreground">{entry.side_effects}</dd>
               </div>
               <div>
                 <dt className="inline font-medium">Interactions: </dt>
-                <dd className="inline text-slate-700">{entry.interactions}</dd>
+                <dd className="inline text-foreground">{entry.interactions}</dd>
               </div>
               <div>
                 <dt className="inline font-medium">Dose: </dt>
-                <dd className="inline text-slate-700">{entry.dose}</dd>
+                <dd className="inline text-foreground">{entry.dose}</dd>
               </div>
             </dl>
             {entry.citations.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-xs text-slate-500">
+              <ul className="mt-2 space-y-1 text-xs text-muted">
                 {entry.citations.map((citation) => (
                   <li key={citation.url}>
                     Source: {citation.publisher}, {citation.year} —{" "}

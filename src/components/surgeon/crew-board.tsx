@@ -47,7 +47,7 @@ function CrewCard({ row }: { row: RosterRow }) {
       <p className="mt-1 text-sm text-muted-foreground">
         {row.checkin_days_7d} check-in {row.checkin_days_7d === 1 ? "day" : "days"} in the last 7
         {row.open_reports > 0 && (
-          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+          <span className="ml-2 rounded-full bg-status-watch-bg px-2 py-0.5 text-xs font-semibold text-status-watch-fg">
             {row.open_reports} open {row.open_reports === 1 ? "report" : "reports"}
           </span>
         )}

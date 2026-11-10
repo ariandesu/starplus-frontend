@@ -72,7 +72,7 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
           Go to login
         </Link>
         {showEmergency && (
-          <Link href="/emergency" className="rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white">
+          <Link href="/emergency" className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground">
             Emergency
           </Link>
         )}

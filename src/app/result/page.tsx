@@ -144,7 +144,7 @@ function ResultView() {
               </p>
               <Citation source={measure?.limit_source ?? ""} className="mt-1" />
               {entry.values.confirm_required && (
-                <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <div className="mt-2 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
                   <p>
                     Estimated and abnormal: re-measure with a device, or confirm it stands and tell
                     the crew medical officer.
@@ -153,7 +153,7 @@ function ResultView() {
                     type="button"
                     disabled={confirming === entry.values.client_id}
                     onClick={() => confirmEstimate(entry.values.client_id, record?.phase ?? "inflight")}
-                    className="mt-2 rounded-lg bg-amber-700 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                    className="mt-2 rounded-lg bg-status-watch-fg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
                   >
                     Confirm reading stands
                   </button>
@@ -189,7 +189,7 @@ function ResultView() {
         </Link>
         <Link
           href="/emergency"
-          className="rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+          className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground"
         >
           Emergency
         </Link>

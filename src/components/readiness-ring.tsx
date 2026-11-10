@@ -1,7 +1,6 @@
 interface Segment {
   label: string;
   done: boolean;
-  color: string;
 }
 
 export function ReadinessRing({
@@ -16,10 +15,10 @@ export function ReadinessRing({
   hydration: boolean;
 }) {
   const segments: Segment[] = [
-    { label: "Check-in", done: checkIn, color: "#2563eb" },
-    { label: "Exercise", done: exercise, color: "#16a34a" },
-    { label: "Sleep", done: sleep, color: "#7c3aed" },
-    { label: "Hydration", done: hydration, color: "#0891b2" },
+    { label: "Check-in", done: checkIn },
+    { label: "Exercise", done: exercise },
+    { label: "Sleep", done: sleep },
+    { label: "Hydration", done: hydration },
   ];
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
@@ -29,7 +28,7 @@ export function ReadinessRing({
   return (
     <div className="flex items-center gap-4">
       <svg width="132" height="132" viewBox="0 0 132 132" role="img" aria-label={`${done} of 4 daily goals done`}>
-        <circle cx="66" cy="66" r={radius} fill="none" strokeWidth="12" className="stroke-slate-200" />
+        <circle cx="66" cy="66" r={radius} fill="none" strokeWidth="12" stroke="var(--surface-2)" />
         {segments.map((segment, index) => (
           <circle
             key={segment.label}
@@ -37,7 +36,7 @@ export function ReadinessRing({
             cy="66"
             r={radius}
             fill="none"
-            stroke={segment.done ? segment.color : "transparent"}
+            stroke={segment.done ? "var(--foreground)" : "transparent"}
             strokeWidth="12"
             strokeDasharray={`${arc - 4} ${circumference - arc + 4}`}
             strokeDashoffset={-index * arc + circumference / 4}
@@ -45,10 +44,10 @@ export function ReadinessRing({
             transform="rotate(-90 66 66)"
           />
         ))}
-        <text x="66" y="62" textAnchor="middle" className="fill-slate-900 text-xl font-bold">
+        <text x="66" y="62" textAnchor="middle" fill="var(--foreground)" className="text-xl font-bold">
           {done}/4
         </text>
-        <text x="66" y="80" textAnchor="middle" className="fill-slate-500 text-xs">
+        <text x="66" y="80" textAnchor="middle" fill="var(--muted)" className="text-xs">
           today
         </text>
       </svg>
@@ -56,10 +55,13 @@ export function ReadinessRing({
         {segments.map((segment) => (
           <li key={segment.label} className="flex items-center gap-2">
             <span
-              className="inline-block h-3 w-3 rounded-full"
-              style={{ backgroundColor: segment.done ? segment.color : "#cbd5e1" }}
+              className={
+                segment.done
+                  ? "inline-block h-3 w-3 rounded-full bg-foreground"
+                  : "inline-block h-3 w-3 rounded-full bg-surface-2"
+              }
             />
-            <span className={segment.done ? "text-slate-900" : "text-slate-500"}>
+            <span className={segment.done ? "text-foreground" : "text-muted"}>
               {segment.label}
               {segment.done ? " ✓" : ""}
             </span>

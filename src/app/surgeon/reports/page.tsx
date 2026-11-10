@@ -88,7 +88,7 @@ function SurgeonReportsView() {
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold text-foreground">Reports inbox</h1>
       {error && (
-        <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>
+        <p role="alert" className="mt-2 text-sm text-danger">{error}</p>
       )}
       <ReportsInbox
         token={session.session.token}

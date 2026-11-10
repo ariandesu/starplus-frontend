@@ -178,7 +178,7 @@ export default function EmergencyPage() {
   if (scenarioId === null) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
-        <h1 className="text-2xl font-bold text-red-700">Emergency — no login needed, works offline</h1>
+        <h1 className="text-2xl font-bold text-danger">Emergency — no login needed, works offline</h1>
         <p className="mt-1 text-sm text-muted-foreground">Who needs help?</p>
         <div className="mt-4 space-y-2">
           {SCENARIOS.map((scenario) => (
@@ -255,12 +255,12 @@ export default function EmergencyPage() {
             Photo attached ({Math.round(photo.size / 1024)} KB). It uploads when the report sends.
           </p>
         ) : null}
-        {photoError ? <p className="mt-1 text-sm text-red-700">{photoError}</p> : null}
+        {photoError ? <p className="mt-1 text-sm text-danger">{photoError}</p> : null}
         <div className="mt-4 flex gap-3">
           <button
             type="button"
             onClick={queueReport}
-            className="rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+            className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground"
           >
             Queue report
           </button>
@@ -295,7 +295,7 @@ export default function EmergencyPage() {
         <button
           type="button"
           onClick={takeStep}
-          className="flex-1 rounded-xl bg-red-700 px-4 py-3 text-base font-bold text-white"
+          className="flex-1 rounded-xl bg-danger px-4 py-3 text-base font-bold text-danger-foreground"
         >
           Done, next step
         </button>

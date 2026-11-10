@@ -76,12 +76,12 @@ function ProgressView() {
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Progress</h1>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 text-sm text-muted">
           <input type="checkbox" checked={enabled} onChange={(event) => toggle(event.target.checked)} />
           Gamification
         </label>
       </div>
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
       {enabled ? (
         <>
           <section aria-label="Daily readiness">
@@ -95,28 +95,28 @@ function ProgressView() {
           </section>
           <section aria-label="Streak">
             <h2 className="mb-2 text-lg font-semibold">Streak</h2>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-foreground">
               {streak} {streak === 1 ? "day" : "days"} in a row (one rest day a week is allowed).
             </p>
             {patches.length > 0 ? (
               <ul className="mt-2 flex flex-wrap gap-2">
                 {patches.map((patch) => (
-                  <li key={patch.id} className="rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-900">
+                  <li key={patch.id} className="rounded-full bg-accent/20 px-3 py-1 text-sm text-foreground">
                     {patch.name}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-sm text-slate-500">Log every day for a week to earn your first patch.</p>
+              <p className="mt-2 text-sm text-muted">Log every day for a week to earn your first patch.</p>
             )}
           </section>
         </>
       ) : (
-        <p className="text-sm text-slate-500">Gamification is switched off on this device.</p>
+        <p className="text-sm text-muted">Gamification is switched off on this device.</p>
       )}
       <section aria-label="Crew progress">
         <h2 className="mb-2 text-lg font-semibold">Crew progress</h2>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-foreground">
           {crewPct === null
             ? "Crew progress is available when the link is up."
             : `${crewPct}% of expected check-ins over the last 7 days (crew-wide, excluding watch and critical).`}

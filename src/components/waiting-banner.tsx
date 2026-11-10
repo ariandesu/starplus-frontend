@@ -11,7 +11,7 @@ export function WaitingBanner({ waiting, hasSession }: { waiting: boolean; hasSe
   const text = waitingBannerText(waiting, hasSession);
   if (!text) return null;
   return (
-    <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+    <p role="status" className="mt-2 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
       {text}
     </p>
   );

@@ -172,7 +172,7 @@ function ImportForm() {
         className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
       />
       {parsed && parsed.kind === "error" && (
-        <p role="alert" className="mt-3 text-sm text-red-700">
+        <p role="alert" className="mt-3 text-sm text-danger">
           {parsed.reason}
         </p>
       )}
@@ -234,7 +234,7 @@ function ImportForm() {
         </div>
       )}
       {imported !== null && (
-        <p role="status" className="mt-3 text-sm text-green-700">
+        <p role="status" className="mt-3 text-sm text-status-nominal-fg">
           Imported {imported} readings. They will sync when a link is available.{" "}
           <Link href={`/reports?crew=${encodeURIComponent(crewId)}`} className="underline">
             View reports
@@ -242,7 +242,7 @@ function ImportForm() {
         </p>
       )}
       {notice && (
-        <p role="alert" className="mt-3 text-sm text-red-700">
+        <p role="alert" className="mt-3 text-sm text-danger">
           {notice}
         </p>
       )}

@@ -92,7 +92,7 @@ export function ContinueAsButtons({ candidates }: { candidates: AdoptableCrew[] 
           </button>
         </form>
       )}
-      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   );
 }

@@ -1,11 +1,5 @@
 import { cn } from "@/lib/utils";
-
-const TONES: Record<string, string> = {
-  nominal: "bg-status-nominal-bg text-status-nominal-fg",
-  watch: "bg-amber-100 text-amber-700",
-  critical: "bg-red-100 text-red-700",
-  insufficient: "bg-muted text-white",
-};
+import { StatusPill } from "@/components/ui/status-pill";
 
 export function Citation({ source, className }: { source: string; className?: string }) {
   if (!source) return null;
@@ -13,15 +7,5 @@ export function Citation({ source, className }: { source: string; className?: st
 }
 
 export function StatusTone({ status, className }: { status: string; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        TONES[status] ?? TONES.insufficient,
-        className
-      )}
-    >
-      {status}
-    </span>
-  );
+  return <StatusPill status={status} className={className} />;
 }
