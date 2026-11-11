@@ -4,22 +4,29 @@ import * as React from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const WIDTH = 1120;
-const HEIGHT = 640;
+const WIDTH = 1280;
+const HEIGHT = 730;
+const FLIGHT_MS = 16_000;
+const START_YAW = -Math.PI / 2;
+const TILT = -38;
 
-export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
   const host = React.useRef<HTMLDivElement>(null);
-  const ready = React.useRef(onReady);
+  const done = React.useRef(onDone);
 
   React.useEffect(() => {
-    ready.current = onReady;
-  }, [onReady]);
+    done.current = onDone;
+  }, [onDone]);
 
   React.useEffect(() => {
     const element = host.current;
     if (!element) return;
 
     let cancelled = false;
+    let frame = 0;
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(30, WIDTH / HEIGHT, 0.01, 200);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -46,7 +53,6 @@ export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
       (gltf) => {
         if (cancelled) return;
         const root = gltf.scene;
-        root.rotation.y = -Math.PI / 2;
         scene.add(root);
 
         const box = new THREE.Box3().setFromObject(root);
@@ -55,25 +61,61 @@ export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
         box.getSize(size);
         box.getCenter(centre);
         const longest = Math.max(size.x, size.y, size.z);
-        const distance = (longest * 1.1) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+        const distance = (longest * 1.06) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
         camera.position.copy(centre).addScaledVector(new THREE.Vector3(0.02, 0.26, 1).normalize(), distance);
         camera.lookAt(centre);
 
-        renderer.render(scene, camera);
-        ready.current();
+        const started = performance.now();
+
+        const tick = (now: number) => {
+          const t = Math.min(1, (now - started) / FLIGHT_MS);
+          const eased = easeInOut(t);
+
+          root.rotation.y = START_YAW + eased * Math.PI * 2;
+
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const width = element.offsetWidth;
+          const height = element.offsetHeight;
+          const x = (-0.15 + eased * 1.3) * vw - width / 2;
+          const y = (1.15 - eased * 1.3) * vh - height / 2;
+
+          const fade = t < 0.1 ? t / 0.1 : t > 0.88 ? Math.max(0, (1 - t) / 0.12) : 1;
+          element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) rotate(${TILT}deg)`;
+          element.style.opacity = (0.85 * Math.min(1, fade)).toFixed(3);
+
+          renderer.render(scene, camera);
+
+          if (t < 1) {
+            frame = window.requestAnimationFrame(tick);
+          } else {
+            done.current();
+          }
+        };
+
+        frame = window.requestAnimationFrame(tick);
       },
       undefined,
       () => {
-        // Decoration only: if the model cannot be fetched the page is unchanged.
+        // Decoration only: if the model cannot be fetched nothing is shown.
+        done.current();
       }
     );
 
     return () => {
       cancelled = true;
+      window.cancelAnimationFrame(frame);
       renderer.dispose();
       element.replaceChildren();
     };
   }, []);
 
-  return <div ref={host} className="w-full" />;
+  return (
+    <div
+      ref={host}
+      aria-hidden="true"
+      className="pointer-events-none fixed left-0 top-0 z-[15] w-[120vw] select-none opacity-0 will-change-transform"
+      style={{ filter: "drop-shadow(0 18px 40px rgb(10 16 30 / 0.35))" }}
+    />
+  );
 }

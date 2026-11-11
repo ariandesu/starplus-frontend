@@ -101,7 +101,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full">
       <OutboxSync />
-      <SpaceShip />
+      <Suspense>
+        <SpaceShip />
+      </Suspense>
       <div className={cn("relative z-10 flex min-h-full flex-col", !bare && "lg:pl-[264px]")}>
         {updated && (
           <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-semibold text-accent-foreground">

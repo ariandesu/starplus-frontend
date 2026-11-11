@@ -202,19 +202,3 @@ section[id] {
   }
 }
 
-/* The shuttle is decoration: a fixed layer behind the app, flown along a curve
-   by `space-ship.tsx` and parked for readers who ask for reduced motion. */
-.ship-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 80vw;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-  will-change: transform;
-  filter: drop-shadow(0 10px 26px rgb(10 16 30 / 0.32)) drop-shadow(0 0 22px rgb(157 180 255 / 0.25));
-}
-
-.ship-track.ship-visible {
-  opacity: 0.3;
-}
