@@ -20,7 +20,7 @@ const Button = React.forwardRef<
     variant: {
       default: "bg-primary text-primary-foreground hover:bg-primary/90",
       accent: "bg-accent text-accent-foreground hover:bg-accent/90",
-      destructive: "bg-danger text-danger-foreground hover:bg-danger/90",
+      destructive: "bg-danger-fill text-danger-foreground hover:bg-danger-fill/90",
       outline: "border border-border bg-card text-foreground hover:bg-surface-2",
       ghost: "text-foreground hover:bg-surface-2",
       link: "text-accent-strong underline-offset-4 hover:underline",

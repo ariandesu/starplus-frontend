@@ -38,13 +38,21 @@ interface StatusHeroProps {
   assessedAt: string | null;
   checkHref: string;
   reportsHref: string;
+  setting?: string;
 }
 
-export function StatusHero({ status, assessedAt, checkHref, reportsHref }: StatusHeroProps) {
+function galaxyClass(setting?: string): string {
+  if (setting === "moon_base") return "galaxy-moon";
+  if (setting === "mars_transit") return "galaxy-mars";
+  return "galaxy-iss";
+}
+
+export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting }: StatusHeroProps) {
   const name = toStatus(status);
   const Icon = ICONS[name];
   return (
-    <Card variant="hero" glow={name} className="p-5 lg:p-6">
+    <Card variant="hero" glow={name} hud className="relative overflow-hidden p-5 lg:p-6">
+      <span aria-hidden="true" className={`hero-galaxy ${galaxyClass(setting)}`} />
       <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">
         Overall status
       </p>

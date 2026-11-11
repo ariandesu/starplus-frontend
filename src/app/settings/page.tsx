@@ -7,6 +7,8 @@ import { commsSummary } from "@/lib/comms-link";
 import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-settings";
 import { API_BASE } from "@/lib/api";
 import { getSession, logout } from "@/lib/session";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { setThemeChoice, useThemeChoice, type ThemeChoice } from "@/components/theme/use-theme";
 
 const SETTINGS = [
   { value: "iss", label: "ISS" },
@@ -33,6 +35,7 @@ async function setSetting(key: string, value: string): Promise<void> {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const theme = useThemeChoice();
   const [setting, setSettingValue] = useState("iss");
   const [phase, setPhase] = useState("inflight");
   const [missionStart, setMissionStart] = useState("");
@@ -73,6 +76,24 @@ export default function SettingsPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
       <h1 className="text-[1.75rem] font-bold tracking-tight">Settings</h1>
       <div className="mt-4 space-y-4">
+        <div className="rounded-tile border border-border bg-card p-4 shadow-card">
+          <span className="text-sm font-semibold text-foreground">Appearance</span>
+          <p className="mt-1 text-xs text-muted">
+            Lunar light for daylight, Lunar night for the starfield. System follows this device.
+          </p>
+          <div className="mt-3">
+            <SegmentedControl
+              ariaLabel="Appearance"
+              value={theme}
+              onChange={(value) => setThemeChoice(value as ThemeChoice)}
+              options={[
+                { value: "light", label: "Light" },
+                { value: "dark", label: "Dark" },
+                { value: "system", label: "System" },
+              ]}
+            />
+          </div>
+        </div>
         <div className="rounded-tile border border-border bg-card p-4 shadow-card">
           <label htmlFor="setting" className="text-sm font-semibold text-foreground">Setting</label>
           <select

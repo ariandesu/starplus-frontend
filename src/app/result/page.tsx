@@ -196,7 +196,7 @@ function ResultView() {
         </Link>
         <Link
           href="/emergency"
-          className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-danger-foreground"
+          className="rounded-xl bg-danger-fill px-4 py-2 text-sm font-bold text-danger-foreground"
         >
           Emergency
         </Link>

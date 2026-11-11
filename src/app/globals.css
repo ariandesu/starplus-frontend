@@ -31,49 +31,112 @@
    critical, insufficient. Never merge, rename or recolour them. */
 
 :root {
+  color-scheme: dark;
+
   /* surfaces */
-  --background: #EFEFEE;   /* page */
-  --card: #FFFFFF;         /* cards */
-  --surface: #F6F6F5;      /* tiles inside cards, inputs */
-  --surface-2: #E7E7E4;    /* tracks, hover, skeleton */
-  --border: #E2E2DF;
+  --background: #060A13;   /* page */
+  --card: #0D1422;         /* cards */
+  --surface: #121B2C;      /* tiles inside cards, inputs */
+  --surface-2: #1A2438;    /* tracks, hover, skeleton */
+  --border: #22304A;
+  --input: #5A6C93;        /* form-field and control borders */
 
   /* ink */
-  --foreground: #0F110F;
-  --muted: #5E5E5A;        /* secondary text; AA on page and card */
-  --faint: #8A8A85;        /* ticks and decoration only, never text */
+  --foreground: #E7EEFA;
+  --muted: #9AA8C2;        /* secondary text; AA on page and card */
+  --faint: #56647F;        /* ticks and decoration only, never text */
 
   /* actions */
-  --primary: #0F110F;      /* main buttons: ink pill, white text */
-  --primary-foreground: #FFFFFF;
-  --accent: #D7F43A;       /* lime: fills only, with ink text on top */
-  --accent-foreground: #0F110F;
-  --accent-strong: #3F6212;/* text-safe green: links, focus, chart highlight */
-  --danger: #C42318;       /* emergency and destructive */
+  --primary: #E7EEFA;      /* main buttons: starlight pill, ink text */
+  --primary-foreground: #060A13;
+  --accent: #9DB4FF;       /* Earth blue: fills only, with ink text on top */
+  --accent-foreground: #0A1430;
+  --accent-strong: #A9BEFF;/* text-safe blue: links, focus, chart highlight */
+  --danger: #FF8A80;       /* error text */
+  --danger-fill: #D92D20;  /* Emergency and destructive fills, white text */
   --danger-foreground: #FFFFFF;
+  --on-status-dot: #060A13;
 
   /* the four statuses: fixed meaning, never merged or renamed */
-  --status-nominal-bg: #E6F5B0;
-  --status-nominal-fg: #2F4A0B;
-  --status-nominal-dot: #4F8A1A;
-  --status-watch-bg: #F6E7A8;
-  --status-watch-fg: #6B4A00;
-  --status-watch-dot: #A86F00;
-  --status-critical-bg: #F9D5CF;
-  --status-critical-fg: #8A1C12;
-  --status-critical-dot: #D92D20;
-  --status-insufficient-bg: #E7E7E4;
-  --status-insufficient-fg: #4A4A47;
-  --status-insufficient-dot: #77776F;
+  --status-nominal-bg: #10301F;
+  --status-nominal-fg: #7EE2A8;
+  --status-nominal-dot: #3DD68C;
+  --status-watch-bg: #33270B;
+  --status-watch-fg: #FFCB6B;
+  --status-watch-dot: #F5A524;
+  --status-critical-bg: #3A1414;
+  --status-critical-fg: #FF9A8F;
+  --status-critical-dot: #FF5A4E;
+  --status-insufficient-bg: #1E2738;
+  --status-insufficient-fg: #B4BED0;
+  --status-insufficient-dot: #8792A8;
 
-  /* hero card glow, one per status */
-  --hero-glow-nominal: #9DBF3A;
-  --hero-glow-watch: #C9972B;
+  /* hero card: a dark space window in both themes */
+  --hero-base: #0A1020;
+  --hero-glow-nominal: #1F8F5A;
+  --hero-glow-watch: #A86F00;
   --hero-glow-critical: #B4382D;
-  --hero-glow-insufficient: #6B6B68;
+  --hero-glow-insufficient: #3B4A66;
+
+  /* starfield and HUD decoration */
+  --deco-line: rgb(157 180 255 / 0.55);
+  --deco-glow: rgb(157 180 255 / 0.12);
+  --deco-grid: rgb(157 180 255 / 0.05);
+  --deco-speck: rgb(255 255 255 / 0.30);
+  --deco-band: rgb(62 123 255 / 0.18);
 
   --font-sans: "Satoshi", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #E9EAEC;
+  --card: #FFFFFF;
+  --surface: #F3F4F6;
+  --surface-2: #E2E4E8;
+  --border: #D3D6DC;
+  --input: #777D88;
+
+  --foreground: #1C1F24;
+  --muted: #5A606B;
+  --faint: #8A909B;
+
+  --primary: #1F3A93;
+  --primary-foreground: #FFFFFF;
+  --accent: #C9D6FF;
+  --accent-foreground: #10204F;
+  --accent-strong: #1F3A93;
+  --danger: #B42318;
+  --danger-fill: #C42318;
+  --danger-foreground: #FFFFFF;
+  --on-status-dot: #FFFFFF;
+
+  --status-nominal-bg: #DDF3E4;
+  --status-nominal-fg: #1E5631;
+  --status-nominal-dot: #2F8F4E;
+  --status-watch-bg: #FDEFC7;
+  --status-watch-fg: #6B4A00;
+  --status-watch-dot: #A86F00;
+  --status-critical-bg: #FBDAD6;
+  --status-critical-fg: #8A1C12;
+  --status-critical-dot: #C42318;
+  --status-insufficient-bg: #E4E6EA;
+  --status-insufficient-fg: #474C55;
+  --status-insufficient-dot: #707784;
+
+  --hero-base: #0B1530;
+  --hero-glow-nominal: #2F8F4E;
+  --hero-glow-watch: #A86F00;
+  --hero-glow-critical: #B4382D;
+  --hero-glow-insufficient: #4A5675;
+
+  --deco-line: rgb(31 58 147 / 0.45);
+  --deco-glow: rgb(70 110 230 / 0.14);
+  --deco-grid: rgb(31 58 147 / 0.05);
+  --deco-speck: rgb(28 31 36 / 0.10);
+  --deco-band: rgb(70 110 230 / 0.10);
 }
 
 @theme inline {
@@ -83,18 +146,20 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-muted: var(--muted);
-  --color-muted-foreground: #4A4A47;
+  --color-muted-foreground: var(--muted);
   --color-faint: var(--faint);
   --color-border: var(--border);
-  --color-input: var(--border);
-  --color-ring: var(--foreground);
+  --color-input: var(--input);
+  --color-ring: var(--accent-strong);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-strong: var(--accent-strong);
   --color-danger: var(--danger);
+  --color-danger-fill: var(--danger-fill);
   --color-danger-foreground: var(--danger-foreground);
+  --color-on-status-dot: var(--on-status-dot);
 
   --color-status-nominal-bg: var(--status-nominal-bg);
   --color-status-nominal-fg: var(--status-nominal-fg);
@@ -120,7 +185,16 @@
 
 body {
   background-color: var(--background);
-  background-image: radial-gradient(60% 50% at 100% 0%, rgb(215 244 58 / 0.18), transparent 70%);
+  background-image:
+    radial-gradient(52% 42% at 88% -6%, var(--deco-band), transparent 70%),
+    radial-gradient(40% 34% at 4% 8%, var(--deco-glow), transparent 72%),
+    radial-gradient(1px 1px at 37px 61px, var(--deco-speck) 50%, transparent 51%),
+    radial-gradient(1px 1px at 151px 19px, var(--deco-speck) 50%, transparent 51%),
+    radial-gradient(1px 1px at 203px 177px, var(--deco-speck) 50%, transparent 51%),
+    radial-gradient(1px 1px at 89px 131px, var(--deco-speck) 50%, transparent 51%),
+    radial-gradient(1px 1px at 61px 23px, var(--deco-speck) 50%, transparent 51%),
+    radial-gradient(1px 1px at 131px 101px, var(--deco-speck) 50%, transparent 51%);
+  background-size: auto, auto, 240px 240px, 240px 240px, 240px 240px, 173px 173px, 173px 173px, 173px 173px;
   background-attachment: fixed;
   background-repeat: no-repeat;
   color: var(--foreground);
@@ -133,7 +207,7 @@ body {
 .hero-surface {
   background:
     radial-gradient(120% 140% at 85% 60%, var(--hero-glow, var(--hero-glow-nominal)) 0%, transparent 60%),
-    #0F110F;
+    var(--hero-base);
   color: #FFFFFF;
 }
 
@@ -186,6 +260,120 @@ body {
    font-size rules here would sit outside Tailwind's layers and override them. */
 h1, h2 {
   letter-spacing: -0.02em;
+}
+
+/* HUD corner brackets on the three key panels. */
+.hud-surface {
+  position: relative;
+}
+
+.hud-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--deco-line);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hud-tl { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.hud-tr { top: 8px; right: 8px; border-left: 0; border-bottom: 0; }
+.hud-bl { bottom: 8px; left: 8px; border-right: 0; border-top: 0; }
+.hud-br { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+
+/* Overall card: a galaxy that changes with the mission setting. */
+.hero-surface > :not(.hero-galaxy):not(.hud-corner) {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-galaxy {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.hero-galaxy::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+
+.galaxy-iss {
+  background-image:
+    radial-gradient(64% 120% at 92% 156%, rgb(61 123 255 / 0.55) 0%, rgb(23 57 127 / 0.35) 34%, transparent 64%),
+    radial-gradient(44% 70% at 66% 4%, rgb(130 175 255 / 0.42), transparent 70%),
+    radial-gradient(1px 1px at 24px 33px, rgb(255 255 255 / 0.85) 50%, transparent 51%),
+    radial-gradient(1px 1px at 89px 12px, rgb(255 255 255 / 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 57px 71px, rgb(255 255 255 / 0.7) 50%, transparent 51%);
+  background-size: auto, auto, 180px 180px, 150px 150px, 260px 260px;
+}
+
+.galaxy-iss::after {
+  right: -12%;
+  bottom: -62%;
+  width: 62%;
+  height: 88%;
+  background: radial-gradient(circle at 34% 26%, #8fc0ff, #2c63c8 46%, #0b1f49 78%);
+  box-shadow: 0 0 60px rgb(80 140 255 / 0.35);
+}
+
+.galaxy-moon {
+  background-image:
+    radial-gradient(70% 110% at 18% 158%, rgb(122 130 150 / 0.5) 0%, rgb(59 65 82 / 0.35) 36%, transparent 66%),
+    radial-gradient(52% 70% at 34% 0%, rgb(190 170 255 / 0.3), transparent 70%),
+    radial-gradient(1px 1px at 31px 21px, rgb(255 255 255 / 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 97px 63px, rgb(255 255 255 / 0.55) 50%, transparent 51%);
+  background-size: auto, auto, 170px 170px, 210px 210px;
+}
+
+.galaxy-moon::after {
+  left: -10%;
+  bottom: -66%;
+  width: 52%;
+  height: 80%;
+  background: radial-gradient(circle at 62% 26%, #c9cedb, #6e7686 52%, #2a2f3c 84%);
+  box-shadow: 0 0 46px rgb(190 200 230 / 0.22);
+}
+
+.galaxy-mars {
+  background-image:
+    radial-gradient(66% 120% at 12% 158%, rgb(180 80 31 / 0.5) 0%, rgb(94 42 18 / 0.38) 38%, transparent 68%),
+    radial-gradient(52% 80% at 86% 4%, rgb(255 150 90 / 0.34), transparent 72%),
+    radial-gradient(1px 1px at 41px 27px, rgb(255 217 194 / 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 71px 91px, rgb(255 217 194 / 0.6) 50%, transparent 51%);
+  background-size: auto, auto, 190px 190px, 240px 240px;
+}
+
+.galaxy-mars::after {
+  left: 14%;
+  bottom: -68%;
+  width: 58%;
+  height: 84%;
+  background: radial-gradient(circle at 56% 24%, #e08a5a, #9c3f19 50%, #3d1408 84%);
+  box-shadow: 0 0 50px rgb(255 120 70 / 0.28);
+}
+
+/* A planet limb under the login role cards. */
+.login-horizon {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 34vh;
+  pointer-events: none;
+  background: radial-gradient(120% 62% at 50% 118%, var(--deco-band), transparent 62%);
+}
+
+/* Body viewer: HUD grid and glow. */
+.viewer-grid {
+  background-image:
+    linear-gradient(var(--deco-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--deco-grid) 1px, transparent 1px),
+    radial-gradient(60% 50% at 50% 85%, var(--deco-glow), transparent 70%);
+  background-size: 24px 24px, 24px 24px, auto;
 }
 
 section[id] {

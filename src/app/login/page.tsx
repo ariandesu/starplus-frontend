@@ -176,6 +176,7 @@ function LoginForm() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-8">
+      <div className="login-horizon" aria-hidden="true" />
       <h1 className="text-[1.75rem] font-bold tracking-tight">Select your mission role</h1>
       <p className="mt-1 text-sm text-muted">
         One tap fills the demo login below. Or sign in with your own username and password.

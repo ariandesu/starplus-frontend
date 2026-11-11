@@ -10,6 +10,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   variant?: CardVariant;
   glow?: HeroGlow;
+  hud?: boolean;
 }
 
 const VARIANTS: Record<CardVariant, string> = {
@@ -19,17 +20,27 @@ const VARIANTS: Record<CardVariant, string> = {
 };
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant = "default", glow = "nominal", style, ...props }, ref) => (
+  ({ className, variant = "default", glow = "nominal", hud = false, style, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(VARIANTS[variant], className)}
+      className={cn(VARIANTS[variant], hud && "hud-surface", className)}
       style={
         variant === "hero"
           ? ({ ...style, "--hero-glow": `var(--hero-glow-${glow})` } as React.CSSProperties)
           : style
       }
       {...props}
-    />
+    >
+      {hud && (
+        <>
+          <span aria-hidden="true" className="hud-corner hud-tl" />
+          <span aria-hidden="true" className="hud-corner hud-tr" />
+          <span aria-hidden="true" className="hud-corner hud-bl" />
+          <span aria-hidden="true" className="hud-corner hud-br" />
+        </>
+      )}
+      {children}
+    </div>
   )
 );
 Card.displayName = "Card";

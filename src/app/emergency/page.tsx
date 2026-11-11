@@ -260,7 +260,7 @@ export default function EmergencyPage() {
           <button
             type="button"
             onClick={queueReport}
-            className="min-h-13 rounded-full bg-danger px-4 py-2 text-sm font-bold text-danger-foreground"
+            className="min-h-13 rounded-full bg-danger-fill px-4 py-2 text-sm font-bold text-danger-foreground"
           >
             Queue report
           </button>
@@ -295,7 +295,7 @@ export default function EmergencyPage() {
         <button
           type="button"
           onClick={takeStep}
-          className="min-h-13 flex-1 rounded-full bg-danger px-4 py-3 text-base font-bold text-danger-foreground"
+          className="min-h-13 flex-1 rounded-full bg-danger-fill px-4 py-3 text-base font-bold text-danger-foreground"
         >
           Done, next step
         </button>

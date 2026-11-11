@@ -179,6 +179,7 @@ function HomeView() {
             assessedAt={latestResult?.assessed_at ?? null}
             checkHref={checkHref}
             reportsHref={reportsHref}
+            setting={setting}
           />
           <div className="grid grid-cols-2 gap-4">
             <StatCount value={counts.nominal} label="Nominal" status="nominal" />

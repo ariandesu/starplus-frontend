@@ -12,7 +12,7 @@ export function Badge({ className, variant = "default", ...props }: BadgeProps) 
   const variants = {
     default: "border-transparent bg-surface-2 text-foreground",
     secondary: "border-transparent bg-surface text-muted",
-    destructive: "border-transparent bg-danger text-danger-foreground",
+    destructive: "border-transparent bg-danger-fill text-danger-foreground",
     outline: "border-border bg-transparent text-foreground",
   };
 
