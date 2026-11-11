@@ -77,7 +77,7 @@ export function SpaceShip() {
   if (!mount) return null;
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 select-none overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[15] select-none overflow-hidden">
       <div ref={track} className={cn("ship-track", ready && "ship-visible")}>
         <SpaceShipScene onReady={() => setReady(true)} />
       </div>

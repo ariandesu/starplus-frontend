@@ -208,7 +208,7 @@ section[id] {
   position: absolute;
   top: 0;
   left: 0;
-  width: clamp(320px, 56vw, 700px);
+  width: 80vw;
   opacity: 0;
   transition: opacity 0.8s ease;
   will-change: transform;
@@ -216,5 +216,5 @@ section[id] {
 }
 
 .ship-track.ship-visible {
-  opacity: 0.62;
+  opacity: 0.3;
 }

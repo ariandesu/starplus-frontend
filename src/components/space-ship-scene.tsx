@@ -4,8 +4,8 @@ import * as React from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const WIDTH = 900;
-const HEIGHT = 512;
+const WIDTH = 1120;
+const HEIGHT = 640;
 
 export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
   const host = React.useRef<HTMLDivElement>(null);
