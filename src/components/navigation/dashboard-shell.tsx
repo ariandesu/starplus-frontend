@@ -5,7 +5,6 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
-import { DemoBanner } from "../dashboard/demo-badge";
 import { OutboxSync } from "../outbox-sync";
 import { SpaceShip } from "../space-ship";
 import { deviceDb } from "@/lib/db";
@@ -43,7 +42,11 @@ function DemoAccountBanner() {
   }, [crewId, crewReady]);
   if (!show) return null;
   return (
-    <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-bold uppercase tracking-wide text-accent-foreground" data-testid="demo-banner">
+    <p
+      role="status"
+      data-testid="demo-banner"
+      className="border-b border-border px-4 py-1 text-center text-[11px] font-medium text-muted"
+    >
       Demo: synthetic crew data
     </p>
   );
@@ -54,7 +57,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const close = useCallback(() => setIsOpen(false), []);
   const pathname = usePathname() ?? "";
   const bare = pathname === "/login";
-  const [demo, setDemo] = useState(false);
   const [updated, setUpdated] = useState(false);
   const setting = useSetting("setting", "iss");
   const phase = useSetting("phase", "inflight");
@@ -65,10 +67,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const db = await deviceDb();
       if (params.get("demo") === "1") {
         await db.put("settings", { key: "demo_mode", value: "true" });
-        setDemo(true);
       } else {
-        const row = await db.get("settings", "demo_mode");
-        if (row?.value === "true") setDemo(true);
+        await db.get("settings", "demo_mode");
       }
     })().catch(() => undefined);
   }, []);
@@ -119,7 +119,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           trailing={<EmergencyButton />}
           bare={bare}
         />
-        {demo && <DemoBanner />}
         <Suspense>
           <DemoAccountBanner />
         </Suspense>

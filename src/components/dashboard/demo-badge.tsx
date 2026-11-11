@@ -13,17 +13,3 @@ export function DemoBadge({ className }: { className?: string }) {
     </span>
   );
 }
-
-export function DemoBanner({ className }: { className?: string }) {
-  return (
-    <div
-      role="status"
-      className={cn(
-        "w-full bg-accent px-4 py-1.5 text-center text-xs font-bold uppercase tracking-wide text-accent-foreground",
-        className
-      )}
-    >
-      Demo: synthetic crew data
-    </div>
-  );
-}
