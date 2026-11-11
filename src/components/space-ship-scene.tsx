@@ -53,17 +53,26 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
       (gltf) => {
         if (cancelled) return;
         const root = gltf.scene;
-        scene.add(root);
+        root.rotation.y = START_YAW;
+        root.updateMatrixWorld(true);
 
         const box = new THREE.Box3().setFromObject(root);
         const size = new THREE.Vector3();
         const centre = new THREE.Vector3();
         box.getSize(size);
         box.getCenter(centre);
+
+        // Centre the mesh on its own spin axis, so a roll turns it in place
+        // instead of swinging it around the scene origin.
+        root.position.sub(centre);
+        const pivot = new THREE.Group();
+        pivot.add(root);
+        scene.add(pivot);
+
         const longest = Math.max(size.x, size.y, size.z);
         const distance = (longest * 1.06) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
-        camera.position.copy(centre).addScaledVector(new THREE.Vector3(0.02, 0.26, 1).normalize(), distance);
-        camera.lookAt(centre);
+        camera.position.addScaledVector(new THREE.Vector3(0.02, 0.26, 1).normalize(), distance);
+        camera.lookAt(0, 0, 0);
 
         const started = performance.now();
 
@@ -71,7 +80,7 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
           const t = Math.min(1, (now - started) / FLIGHT_MS);
           const eased = easeInOut(t);
 
-          root.rotation.y = START_YAW + eased * Math.PI * 2;
+          pivot.rotation.z = eased * Math.PI * 2;
 
           const vw = window.innerWidth;
           const vh = window.innerHeight;
