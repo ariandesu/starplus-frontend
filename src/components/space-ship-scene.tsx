@@ -80,7 +80,7 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
           const t = Math.min(1, (now - started) / FLIGHT_MS);
           const eased = easeInOut(t);
 
-          pivot.rotation.z = eased * Math.PI * 2;
+          pivot.rotation.x = eased * Math.PI * 2;
 
           const vw = window.innerWidth;
           const vh = window.innerHeight;
