@@ -4,8 +4,8 @@ import * as React from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const WIDTH = 440;
-const HEIGHT = 250;
+const WIDTH = 900;
+const HEIGHT = 512;
 
 export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
   const host = React.useRef<HTMLDivElement>(null);
@@ -29,6 +29,8 @@ export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     renderer.domElement.style.display = "block";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "auto";
     element.appendChild(renderer.domElement);
 
     scene.add(new THREE.HemisphereLight(0xcfe0ff, 0x101828, 1.4));
@@ -73,5 +75,5 @@ export default function SpaceShipScene({ onReady }: { onReady: () => void }) {
     };
   }, []);
 
-  return <div ref={host} className="h-[250px] w-[440px]" />;
+  return <div ref={host} className="w-full" />;
 }
