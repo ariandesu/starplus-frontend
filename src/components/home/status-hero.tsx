@@ -39,6 +39,8 @@ interface StatusHeroProps {
   checkHref: string;
   reportsHref: string;
   setting?: string;
+  dailyDone?: number;
+  dailyTotal?: number;
 }
 
 function galaxyClass(setting?: string): string {
@@ -47,7 +49,7 @@ function galaxyClass(setting?: string): string {
   return "galaxy-iss";
 }
 
-export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting }: StatusHeroProps) {
+export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting, dailyDone, dailyTotal }: StatusHeroProps) {
   const name = toStatus(status);
   const Icon = ICONS[name];
   return (
@@ -72,13 +74,29 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting
           ? `Last assessed ${assessedLabel(assessedAt)}`
           : "Your first self-check starts your personal baseline."}
       </p>
-      <p className="mt-4 text-sm text-white/70">
-        Reminder: take today&apos;s check-in — two measures, under a minute.
-      </p>
+      {typeof dailyTotal === "number" && dailyTotal > 0 ? (
+        <p className="mt-4 text-sm text-white/80" data-testid="daily-count">
+          {typeof dailyDone === "number" && dailyDone >= dailyTotal
+            ? "Today's check complete ✓"
+            : `Today's check: ${dailyDone ?? 0} of ${dailyTotal}`}
+          {typeof dailyDone === "number" && dailyDone < dailyTotal ? ", about 2 minutes" : ""}
+        </p>
+      ) : (
+        <p className="mt-4 text-sm text-white/70">
+          Reminder: take today&apos;s check-in — two measures, under a minute.
+        </p>
+      )}
       <div className="mt-5 flex flex-wrap gap-2">
         <Button asChild variant="accent">
           <Link href={checkHref}>Start self-check</Link>
         </Button>
+        {typeof dailyTotal === "number" && dailyTotal > 0 && (
+          <Button asChild variant="outline" className="border-white/40 text-white hover:bg-white/10">
+            <Link href="/check/daily">
+              {typeof dailyDone === "number" && dailyDone > 0 ? "Continue today's check" : "Start today's check"}
+            </Link>
+          </Button>
+        )}
         <Link
           href={reportsHref}
           className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 focus-ring"

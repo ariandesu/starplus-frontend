@@ -8,6 +8,7 @@ import { MeasuresCard } from "@/components/home/measures-card";
 import { ReadinessCard } from "@/components/home/readiness-card";
 import { ReportsCard } from "@/components/home/reports-card";
 import { StatusHero } from "@/components/home/status-hero";
+import { useDailyPlan } from "@/lib/daily-plan";
 import { SystemsCard } from "@/components/home/systems-card";
 import { TrendCard } from "@/components/home/trend-card";
 import { RequireSession } from "@/components/require-session";
@@ -65,6 +66,7 @@ function HomeSkeleton() {
 function HomeView() {
   const router = useRouter();
   const session = useActiveCrew();
+  const daily = useDailyPlan(session.status === "active" ? session.crewId : null);
   const { crewId, crew, ready: crewReady } = session;
   const summary = useHealthSummary(crewId);
   const [ready, setReady] = useState(false);
@@ -185,6 +187,8 @@ function HomeView() {
             checkHref={checkHref}
             reportsHref={reportsHref}
             setting={setting}
+            dailyDone={daily?.done}
+            dailyTotal={daily?.total}
           />
           <div className="grid grid-cols-2 gap-4">
             <StatCount value={counts.nominal} label="Nominal" status="nominal" />
