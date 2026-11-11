@@ -5,11 +5,20 @@
 | `body-male.glb` | `GEO-body_male_realistic` + its two eye meshes | 30,000 | 7,102 | 721,680 bytes | 1.690 m |
 | `body-female.glb` | `GEO-body_female_realistic` + its two eye meshes | 30,000 | 14,417 | 885,896 bytes | 1.639 m |
 
-## `space-shuttle-nasa.glb` (background decoration)
+## `space-shuttle-d*.glb` (background decoration)
 
-Space Shuttle (A), NASA 3D Resources (github.com/nasa/NASA-3D-Resources), public domain
-(NASA; free and without copyright), used unmodified. 1,194,068 bytes, SHA-256
-`f5b079bce9c4e9012b8d3aaa4a1e30b1450dab2d17c134131d308693d3242253`.
+"Space Shuttle (D)", "Space Shuttle (D) eng", "door-prt" and "door-stb", NASA 3D Resources
+(github.com/nasa/NASA-3D-Resources), NASA, free and without copyright; used unmodified.
+
+| File | Bytes | SHA-256 |
+|---|---|---|
+| `space-shuttle-d.glb` | 2,471,932 | `d0015681ff092d36062fdfed78e2bd1ca0f86e90862840d25bae11c686ce3549` |
+| `space-shuttle-d-engine.glb` | 480,216 | `e31cfb57e3365f036d40cee79ac9e2f8b5f4c48849f6aa9e19aee4075846a0bc` |
+| `space-shuttle-d-door-prt.glb` | 36,044 | `cd8e84f3b108137f573ef260b5be8c35816fbb89e273b4648b20e35aee1ed419` |
+| `space-shuttle-d-door-stb.glb` | 36,024 | `f48cf6e5f11ec13f28b143526cdd27751a5fe7117b45472b5d49b185c9ac45dc` |
+
+The model shows the NASA insignia and the US flag as part of NASA's own model; their
+appearance does not imply NASA endorsement of STAR PLUS.
 
 Draco decoder (`public/draco/draco_decoder.wasm`, `draco_wasm_wrapper.js`), Google,
 Apache-2.0, copied unmodified from three.js 0.187.0 (`examples/jsm/libs/draco/gltf/`).

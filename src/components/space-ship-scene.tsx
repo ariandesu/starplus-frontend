@@ -8,7 +8,6 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 const WIDTH = 1280;
 const HEIGHT = 730;
 const FLIGHT_MS = 16_000;
-const START_YAW = -Math.PI / 2;
 const TILT = -38;
 const PEAK_OPACITY = 0.15;
 
@@ -55,15 +54,43 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
     const loader = new GLTFLoader();
     loader.setDRACOLoader(draco);
 
-    loader.load(
-      "/models/space-shuttle-nasa.glb",
-      (gltf) => {
+    const load = (url: string) =>
+      new Promise<THREE.Group>((resolve, reject) =>
+        loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject)
+      );
+
+    Promise.all([
+      load("/models/space-shuttle-d.glb"),
+      load("/models/space-shuttle-d-engine.glb"),
+      load("/models/space-shuttle-d-door-prt.glb"),
+      load("/models/space-shuttle-d-door-stb.glb"),
+    ])
+      .then(([shuttle, engine, doorPort, doorStarboard]) => {
         if (cancelled) return;
-        const root = gltf.scene;
-        root.rotation.y = START_YAW;
+        const root = shuttle;
+
+        // The orbiter ships with an open payload bay and no main engines.
+        root.add(doorPort, doorStarboard);
+        for (const [x, y, z] of [
+          [-538, 0, 50],
+          [-538, 53, -51],
+          [-538, -53, -51],
+        ]) {
+          const bell = engine.clone(true);
+          bell.position.set(x, y, z);
+          root.add(bell);
+        }
+
+        root.rotation.set(-Math.PI / 2, 0, 0);
         root.updateMatrixWorld(true);
 
-        const box = new THREE.Box3().setFromObject(root);
+        let box = new THREE.Box3().setFromObject(root);
+        const raw = new THREE.Vector3();
+        box.getSize(raw);
+        root.scale.setScalar(3.0 / Math.max(raw.x, raw.y, raw.z));
+        root.updateMatrixWorld(true);
+
+        box = new THREE.Box3().setFromObject(root);
         const size = new THREE.Vector3();
         const centre = new THREE.Vector3();
         box.getSize(size);
@@ -76,12 +103,11 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
         pivot.add(root);
         scene.add(pivot);
 
-        // Exhaust plume: two cones based at the tail, stretching backwards (-X).
         const plume = (radius: number, colour: number, opacity: number) => {
-          const geometry = new THREE.ConeGeometry(radius, 14, 28, 1, true);
+          const geometry = new THREE.ConeGeometry(radius, 1, 28, 1, true);
           geometry.rotateZ(Math.PI / 2);
-          geometry.translate(-7, 0, 0);
-          const mesh = new THREE.Mesh(
+          geometry.translate(-0.5, 0, 0);
+          return new THREE.Mesh(
             geometry,
             new THREE.MeshBasicMaterial({
               color: colour,
@@ -91,23 +117,18 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
               depthWrite: false,
             })
           );
-          return mesh;
         };
 
-        // Measured off the model with an orthographic tail view: the two lower
-        // bells and the centre one that sits just below the mid line.
-        // The booster tails sit further back than the orbiter, so the orbiter's
-        // three main engines are measured off the tail, not at box.min.x.
-        const nozzleX = box.min.x - centre.x + 0.078 * size.x;
+        const nozzleX = box.min.x - centre.x + 0.0517 * size.x;
         const layout = [
-          { y: 0.001 * size.y, z: -0.06 * size.z },
-          { y: 0.001 * size.y, z: 0.069 * size.z },
-          { y: 0.083 * size.y, z: 0.004 * size.z },
+          { y: -0.159 * size.y, z: 0 },
+          { y: -0.341 * size.y, z: -0.057 * size.z },
+          { y: -0.341 * size.y, z: 0.057 * size.z },
         ];
 
         const engines = layout.map((offset, index) => {
-          const core = plume(0.5, 0x4d8dff, 0.75);
-          const halo = plume(0.9, 0xa8ccff, 0.3);
+          const core = plume(0.085, 0x4d8dff, 0.75);
+          const halo = plume(0.15, 0xa8ccff, 0.3);
           core.position.set(nozzleX, offset.y, offset.z);
           halo.position.set(nozzleX, offset.y, offset.z);
           core.scale.x = 1.05;
@@ -159,13 +180,12 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
         };
 
         frame = window.requestAnimationFrame(tick);
-      },
-      undefined,
-      () => {
-        // Decoration only: if the model cannot be fetched nothing is shown.
+        draco.dispose();
+      })
+      .catch(() => {
+        // Decoration only: if the models cannot be fetched nothing is shown.
         done.current();
-      }
-    );
+      });
 
     return () => {
       cancelled = true;
@@ -180,7 +200,7 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
     <div
       ref={host}
       aria-hidden="true"
-      className="pointer-events-none fixed left-0 top-0 z-[15] w-[120vw] select-none opacity-0 will-change-transform"
+      className="pointer-events-none fixed left-0 top-0 z-0 w-[120vw] select-none opacity-0 will-change-transform"
       style={{ filter: "drop-shadow(0 18px 40px rgb(10 16 30 / 0.35))" }}
     />
   );
