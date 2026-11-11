@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored, unmodified assets: the Draco decoder and the shuttle model.
+    "public/**",
     // Generated service worker (Serwist writes it on build).
     "public/sw.js",
   ]),

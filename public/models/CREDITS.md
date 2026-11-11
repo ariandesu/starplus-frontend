@@ -5,6 +5,15 @@
 | `body-male.glb` | `GEO-body_male_realistic` + its two eye meshes | 30,000 | 7,102 | 721,680 bytes | 1.690 m |
 | `body-female.glb` | `GEO-body_female_realistic` + its two eye meshes | 30,000 | 14,417 | 885,896 bytes | 1.639 m |
 
+## `space-shuttle-nasa.glb` (background decoration)
+
+Space Shuttle (A), NASA 3D Resources (github.com/nasa/NASA-3D-Resources), public domain
+(NASA; free and without copyright), used unmodified. 1,194,068 bytes, SHA-256
+`f5b079bce9c4e9012b8d3aaa4a1e30b1450dab2d17c134131d308693d3242253`.
+
+Draco decoder (`public/draco/draco_decoder.wasm`, `draco_wasm_wrapper.js`), Google,
+Apache-2.0, copied unmodified from three.js 0.187.0 (`examples/jsm/libs/draco/gltf/`).
+
 ## Source
 
 *   **Human Base Meshes, asset bundle v1.4.1**, by Blender Studio and community
