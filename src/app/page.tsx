@@ -103,6 +103,11 @@ function HomeView() {
     (async () => {
       if (!crewReady) return;
       if (!crewId) {
+        if (session.status === "none" || session.status === "expired") {
+          // A visitor with no profile starts at the login, not at an empty Today.
+          router.replace("/login");
+          return;
+        }
         if (!cancelled) setReady(true);
         return;
       }
@@ -121,7 +126,7 @@ function HomeView() {
     return () => {
       cancelled = true;
     };
-  }, [crewId, crewReady, router]);
+  }, [crewId, crewReady, router, session.status]);
 
   useEffect(() => {
     deviceDb()
