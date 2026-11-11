@@ -5,24 +5,6 @@
 | `body-male.glb` | `GEO-body_male_realistic` + its two eye meshes | 30,000 | 7,102 | 721,680 bytes | 1.690 m |
 | `body-female.glb` | `GEO-body_female_realistic` + its two eye meshes | 30,000 | 14,417 | 885,896 bytes | 1.639 m |
 
-## `space-shuttle.glb` (background decoration)
-
-Space Shuttle *Discovery*: 5 meshes, 12 textures, 18,468,656 bytes, SHA-256
-`6cfe7b8540bccb24075752de97f457658137b3241f3864272ccc009651d9153b`.
-
-*   **Taken from** `public/models/space_shuttle_discovery.glb` in
-    <https://github.com/ariandesu/star-plus> (MIT repository), commit on `main`,
-    downloaded 2026-11-11. The file is byte-identical to the copy there; it is not
-    re-exported, decimated or retextured.
-*   **Upstream author and licence: not documented.** That repository credits its
-    anatomy models in `HRA_ATTRIBUTION.md` but says nothing about this one. The
-    author approved shipping it as-is for the hackathon; **before any public
-    release, record the original author and licence here.**
-*   Rendered at 440 × 250 with three.js, from the same material set the file
-    ships with. It is decoration only: `aria-hidden`, `pointer-events: none`,
-    behind the content, and not mounted for reduced-motion readers or automated
-    browsers.
-
 ## Source
 
 *   **Human Base Meshes, asset bundle v1.4.1**, by Blender Studio and community
