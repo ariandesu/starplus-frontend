@@ -89,14 +89,25 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
         };
 
         const tailX = box.min.x - centre.x;
-        const engineY = size.y * 0.02;
-        const core = plume(0.17, 0x4d8dff, 0.75);
-        const halo = plume(0.3, 0xa8ccff, 0.3);
-        core.scale.x = 1.15;
-        halo.scale.x = 1.6;
-        core.position.set(tailX, engineY, 0);
-        halo.position.set(tailX, engineY, 0);
-        pivot.add(core, halo);
+
+        // Three main engines in the shuttle's usual triangle: two low and
+        // outboard, one high on the centreline.
+        const layout = [
+          { y: -0.03 * size.y, z: -0.085 * size.z },
+          { y: -0.03 * size.y, z: 0.085 * size.z },
+          { y: 0.09 * size.y, z: 0 },
+        ];
+
+        const engines = layout.map((offset, index) => {
+          const core = plume(0.085, 0x4d8dff, 0.75);
+          const halo = plume(0.15, 0xa8ccff, 0.3);
+          core.position.set(tailX, offset.y, offset.z);
+          halo.position.set(tailX, offset.y, offset.z);
+          core.scale.x = 1.05;
+          halo.scale.x = 1.5;
+          pivot.add(core, halo);
+          return { core, halo, phase: index * 2.1 };
+        });
 
         const longest = Math.max(size.x, size.y, size.z);
         const distance = (longest * 1.06) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
@@ -111,11 +122,14 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
 
           pivot.rotation.x = eased * Math.PI * 2;
 
-          const flicker = 0.82 + Math.random() * 0.36;
-          core.scale.x = 1.15 * flicker;
-          halo.scale.x = 1.6 * (0.9 + Math.random() * 0.25);
-          core.material.opacity = 0.55 + Math.random() * 0.35;
-          halo.material.opacity = 0.2 + Math.random() * 0.18;
+          for (const engine of engines) {
+            const wave = 0.86 + 0.14 * Math.sin(now * 0.018 + engine.phase);
+            const flicker = wave * (0.92 + Math.random() * 0.18);
+            engine.core.scale.x = 1.05 * flicker;
+            engine.halo.scale.x = 1.5 * flicker;
+            engine.core.material.opacity = 0.55 + Math.random() * 0.3;
+            engine.halo.material.opacity = 0.18 + Math.random() * 0.14;
+          }
 
           const vw = window.innerWidth;
           const vh = window.innerHeight;
