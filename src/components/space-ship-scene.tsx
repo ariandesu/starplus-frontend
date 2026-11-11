@@ -70,6 +70,34 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
         pivot.add(root);
         scene.add(pivot);
 
+        // Exhaust plume: two cones based at the tail, stretching backwards (-X).
+        const plume = (radius: number, colour: number, opacity: number) => {
+          const geometry = new THREE.ConeGeometry(radius, 1, 28, 1, true);
+          geometry.rotateZ(Math.PI / 2);
+          geometry.translate(-0.5, 0, 0);
+          const mesh = new THREE.Mesh(
+            geometry,
+            new THREE.MeshBasicMaterial({
+              color: colour,
+              transparent: true,
+              opacity,
+              side: THREE.DoubleSide,
+              depthWrite: false,
+            })
+          );
+          return mesh;
+        };
+
+        const tailX = box.min.x - centre.x;
+        const engineY = size.y * 0.02;
+        const core = plume(0.17, 0x4d8dff, 0.75);
+        const halo = plume(0.3, 0xa8ccff, 0.3);
+        core.scale.x = 1.15;
+        halo.scale.x = 1.6;
+        core.position.set(tailX, engineY, 0);
+        halo.position.set(tailX, engineY, 0);
+        pivot.add(core, halo);
+
         const longest = Math.max(size.x, size.y, size.z);
         const distance = (longest * 1.06) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
         camera.position.addScaledVector(new THREE.Vector3(0.02, 0.26, 1).normalize(), distance);
@@ -82,6 +110,12 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
           const eased = easeInOut(t);
 
           pivot.rotation.x = eased * Math.PI * 2;
+
+          const flicker = 0.82 + Math.random() * 0.36;
+          core.scale.x = 1.15 * flicker;
+          halo.scale.x = 1.6 * (0.9 + Math.random() * 0.25);
+          core.material.opacity = 0.55 + Math.random() * 0.35;
+          halo.material.opacity = 0.2 + Math.random() * 0.18;
 
           const vw = window.innerWidth;
           const vh = window.innerHeight;
