@@ -8,11 +8,13 @@ export function ReadinessRing({
   exercise,
   sleep,
   hydration,
+  legend = true,
 }: {
   checkIn: boolean;
   exercise: boolean;
   sleep: boolean;
   hydration: boolean;
+  legend?: boolean;
 }) {
   const segments: Segment[] = [
     { label: "Check-in", done: checkIn },
@@ -51,23 +53,25 @@ export function ReadinessRing({
           today
         </text>
       </svg>
-      <ul className="space-y-1 text-sm">
-        {segments.map((segment) => (
-          <li key={segment.label} className="flex items-center gap-2">
-            <span
-              className={
-                segment.done
-                  ? "inline-block h-3 w-3 rounded-full bg-foreground"
-                  : "inline-block h-3 w-3 rounded-full bg-surface-2"
-              }
-            />
-            <span className={segment.done ? "text-foreground" : "text-muted"}>
-              {segment.label}
-              {segment.done ? " ✓" : ""}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {legend && (
+        <ul className="space-y-1 text-sm">
+          {segments.map((segment) => (
+            <li key={segment.label} className="flex items-center gap-2">
+              <span
+                className={
+                  segment.done
+                    ? "inline-block h-3 w-3 rounded-full bg-foreground"
+                    : "inline-block h-3 w-3 rounded-full bg-surface-2"
+                }
+              />
+              <span className={segment.done ? "text-foreground" : "text-muted"}>
+                {segment.label}
+                {segment.done ? " ✓" : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

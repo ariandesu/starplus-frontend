@@ -91,12 +91,11 @@ function CrewCard({ row }: { row: RosterRow }) {
   );
 }
 
-export function CrewBoard({ rows, updatedAt }: { rows: RosterRow[]; updatedAt: string | null }) {
+export function CrewBoard({ rows }: { rows: RosterRow[] }) {
   return (
     <section aria-label="Crew board" className="mt-6">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-foreground">Crew</h2>
-        {updatedAt && <p className="text-xs text-muted">Last updated {updatedAt}</p>}
       </div>
       {rows.length === 0 ? (
         <p className="mt-2 text-sm text-muted">No crew on this device yet.</p>

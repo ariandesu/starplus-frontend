@@ -99,7 +99,6 @@ function SurgeonReportsView() {
         token={session.session.token}
         reports={reports}
         names={names}
-        updatedAt={updatedAt}
         onAcknowledge={acknowledge}
       />
     </div>

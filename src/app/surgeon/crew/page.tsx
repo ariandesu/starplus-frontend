@@ -103,7 +103,7 @@ function CrewPageView() {
         title="Crew"
         actions={updatedAt ? <p className="text-xs text-muted">Last updated {updatedAt}</p> : null}
       />
-      <CrewBoard rows={rows} updatedAt={updatedAt} />
+      <CrewBoard rows={rows} />
     </div>
   );
 }

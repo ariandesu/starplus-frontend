@@ -37,12 +37,13 @@ export function ReadinessCard({ measurements, results, demo }: ReadinessCardProp
           </Link>
         }
       />
-      <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+      <div className="mt-4 flex flex-col items-center gap-4">
         <ReadinessRing
           checkIn={today?.checkIn ?? false}
           exercise={today?.exercise ?? false}
           sleep={today?.sleep ?? false}
           hydration={today?.hydration ?? false}
+          legend={false}
         />
         <div className="w-full flex-1 space-y-2">
           <ChecklistRow label="Check-in" done={today?.checkIn ?? false} />

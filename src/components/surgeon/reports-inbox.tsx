@@ -23,13 +23,11 @@ export function ReportsInbox({
   token,
   reports,
   names,
-  updatedAt,
   onAcknowledge,
 }: {
   token: string;
   reports: InboxReport[];
   names: Map<string, string>;
-  updatedAt: string | null;
   onAcknowledge: (clientId: string) => Promise<void> | void;
 }) {
   const [filter, setFilter] = useState<"open" | "all">("open");
@@ -49,7 +47,6 @@ export function ReportsInbox({
     <section aria-label="Reports inbox" className="mt-6">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-foreground">Reports</h2>
-        {updatedAt && <p className="text-xs text-muted">Last updated {updatedAt}</p>}
       </div>
       <div className="mt-2">
         <SegmentedControl

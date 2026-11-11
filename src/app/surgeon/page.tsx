@@ -124,12 +124,11 @@ function SurgeonView() {
           <StatCount value={openReports} label="Open reports" />
         </Card>
       </div>
-      <CrewBoard rows={rows} updatedAt={updatedAt} />
+      <CrewBoard rows={rows} />
       <ReportsInbox
         token={session.session.token}
         reports={reports}
         names={names}
-        updatedAt={updatedAt}
         onAcknowledge={acknowledge}
       />
     </div>
