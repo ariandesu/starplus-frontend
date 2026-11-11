@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { ContinueAsButtons } from "@/components/continue-as";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,9 +27,10 @@ export function RequireSession({ session, children, heading, intro, showEmergenc
 
   if (session.status === "loading" || session.status === "renewing") {
     return (
-      <p className="px-4 py-8 text-sm text-muted">
-        {session.status === "renewing" ? "Renewing your session…" : "Loading…"}
-      </p>
+      <div role="status" className="flex items-center justify-center gap-2 px-4 py-12 text-sm text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        <span>{session.status === "renewing" ? "Renewing your session…" : "Loading…"}</span>
+      </div>
     );
   }
 

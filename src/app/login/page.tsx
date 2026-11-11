@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, type ElementType } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PersonStanding, Stethoscope, Users } from "lucide-react";
+import { Loader2, PersonStanding, Stethoscope, Users } from "lucide-react";
 import { checkPin, getSession, isSharedDevice, listProfiles, loginWithPassword, pullHistory, redeemCode, setActiveCrew, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
 import { DEMO_CARDS, DEMO_PASSWORD, demoCardForKey, type DemoCard } from "@/lib/demo-accounts";
@@ -275,7 +275,8 @@ function LoginForm() {
             </p>
           )}
           <Button ref={loginRef} type="submit" disabled={busy || done} className="mt-3 w-full">
-            {done ? "Logged in, opening…" : "Login"}
+            {(busy || done) && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+            {done ? "Logged in, opening…" : busy ? "Signing in…" : "Login"}
           </Button>
         </Card>
       </form>
