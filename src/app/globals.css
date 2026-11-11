@@ -200,4 +200,31 @@ section[id] {
   html {
     scroll-behavior: smooth;
   }
+
+  .ship-track {
+    animation: ship-drift 84s linear infinite;
+    animation-delay: -30s;
+  }
+}
+
+/* The shuttle is decoration: a fixed layer behind the app, parked when the
+   reader asks for reduced motion. */
+.ship-track {
+  width: 440px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  filter: drop-shadow(0 0 18px rgb(157 180 255 / 0.18));
+}
+
+.ship-track.ship-visible {
+  opacity: 0.7;
+}
+
+@keyframes ship-drift {
+  from {
+    transform: translateX(-30vw);
+  }
+  to {
+    transform: translateX(130vw);
+  }
 }

@@ -38,6 +38,7 @@ const withSerwist = withSerwistInit({
     asset("/fonts/satoshi-700.woff2"),
     asset("/models/body-female.glb"),
     asset("/models/body-male.glb"),
+    asset("/models/space-shuttle.glb"),
   ],
   disable: process.env.NODE_ENV === "development",
 });

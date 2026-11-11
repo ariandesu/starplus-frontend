@@ -7,6 +7,7 @@ import { TopBar, MobileNav } from "./mobile-nav";
 import { EmergencyButton } from "../emergency-button";
 import { DemoBanner } from "../dashboard/demo-badge";
 import { OutboxSync } from "../outbox-sync";
+import { SpaceShip } from "../space-ship";
 import { deviceDb } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { getSession, touchActivity } from "@/lib/session";
@@ -100,7 +101,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full">
       <OutboxSync />
-      <div className={cn("flex min-h-full flex-col", !bare && "lg:pl-[264px]")}>
+      <SpaceShip />
+      <div className={cn("relative z-10 flex min-h-full flex-col", !bare && "lg:pl-[264px]")}>
         {updated && (
           <p role="status" className="bg-accent px-4 py-1.5 text-center text-xs font-semibold text-accent-foreground">
             Updated.{" "}
