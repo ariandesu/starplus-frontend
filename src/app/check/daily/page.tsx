@@ -23,7 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { deviceDb, profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
-import { useDailyPlan, type DailyStep } from "@/lib/daily-plan";
+import { finishOutcome, useDailyPlan, type DailyStep } from "@/lib/daily-plan";
 import { getKbEntry } from "@/lib/kb";
 import { getSession } from "@/lib/session";
 import { assessAndQueue } from "@/lib/assess-run";
@@ -178,10 +178,17 @@ function DailyRun({ crewId }: { crewId: string }) {
       const device = await deviceDb();
       const setting = (await device.get("settings", "setting"))?.value ?? "iss";
       const phase = ((await device.get("settings", "phase"))?.value ?? "inflight") as Phase;
-      const assessed = await assessAndQueue(crewId, [], { setting, phase });
-      setResult(assessed);
-
       const db = await profileDb(crewId);
+      const existing = await db.getAll("results");
+      const latest =
+        [...existing].sort((a, b) => Date.parse(a.assessed_at) - Date.parse(b.assessed_at)).pop() ?? null;
+      const outcome = finishOutcome(recorded.length, latest ?? null);
+      if (outcome.assess) {
+        setResult(await assessAndQueue(crewId, [], { setting, phase }));
+      } else {
+        setResult(outcome.resultId ? latest : null);
+      }
+
       const [measurements, results, sessionRow] = await Promise.all([
         db.getAll("measurements"),
         db.getAll("results"),
@@ -234,11 +241,13 @@ function DailyRun({ crewId }: { crewId: string }) {
             </p>
           )}
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button asChild>
-              <Link href={`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result?.client_id ?? "")}`}>
-                See your result
-              </Link>
-            </Button>
+            {result && (
+              <Button asChild>
+                <Link href={`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result.client_id)}`}>
+                  See your result
+                </Link>
+              </Button>
+            )}
             <Button asChild variant="outline">
               <Link href="/">Back to Today</Link>
             </Button>

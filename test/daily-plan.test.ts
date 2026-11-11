@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDailyPlan } from "../src/lib/daily-plan";
+import { buildDailyPlan, finishOutcome } from "../src/lib/daily-plan";
 import type { Measurement, Result } from "@starplus/core";
 
 type Overrides = Partial<Measurement>;
@@ -127,10 +127,18 @@ describe("buildDailyPlan", () => {
     expect(buildDailyPlan(late, null, { timeZone: "Asia/Dhaka", now: NOON }).done).toBe(1);
   });
 
-  it("counts only this device's readings in a demo session", () => {
-    const seeded = [reading("heart_rate", "2026-11-12T08:00:00.000Z", { device_id: "seed" })];
+  it("counts only this device's synthetic readings in a demo session", () => {
+    const seeded = [
+      reading("heart_rate", "2026-11-12T08:00:00.000Z", { provenance: "synthetic", device_id: "seed" }),
+    ];
     expect(buildDailyPlan(seeded, null, { timeZone: "UTC", now: NOON, demo: true, deviceId: "device-1" }).done).toBe(0);
     expect(buildDailyPlan(seeded, null, { timeZone: "UTC", now: NOON, demo: true, deviceId: "seed" }).done).toBe(1);
+    expect(buildDailyPlan(seeded, null, { timeZone: "UTC", now: NOON, demo: false }).done).toBe(0);
+  });
+
+  it("counts a real reading from any device, demo or not", () => {
+    const real = [reading("heart_rate", "2026-11-12T08:00:00.000Z", { device_id: "phone" })];
+    expect(buildDailyPlan(real, null, { timeZone: "UTC", now: NOON, demo: true, deviceId: "device-1" }).done).toBe(1);
   });
 
   it("counts real readings from any device outside demo", () => {
@@ -148,5 +156,21 @@ describe("buildDailyPlan", () => {
       { timeZone: "UTC", now: NOON }
     );
     expect(plan.done).toBe(0);
+  });
+});
+
+describe("finishOutcome", () => {
+  const latest = result([{ metric: "heart_rate", status: "nominal" }]);
+
+  it("assesses after at least one reading", () => {
+    expect(finishOutcome(1, latest)).toEqual({ assess: true, resultId: null });
+  });
+
+  it("does not assess with nothing recorded, and points at the latest result", () => {
+    expect(finishOutcome(0, latest)).toEqual({ assess: false, resultId: "result-1" });
+  });
+
+  it("has no link when there is no earlier result", () => {
+    expect(finishOutcome(0, null)).toEqual({ assess: false, resultId: null });
   });
 });

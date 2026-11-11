@@ -54,15 +54,16 @@ export function buildDailyPlan(
   const { timeZone, demo = false, deviceId = null, now = Date.now() } = options;
   const today = todayLocal(timeZone, now);
 
-  const done = (metrics: string[]) =>
-    measurements.some(
-      (m) =>
-        m.voided === 0 &&
-        m.provenance === "real" &&
-        metrics.includes(m.metric) &&
-        (!demo || m.device_id === deviceId) &&
-        localDay(m.measured_at, timeZone) === today
-    );
+  // Real readings from any device count. A demo session also counts its own
+  // synthetic seed, but only from this device, so a judge starts at 0 of 8.
+  const counts = (m: Measurement) =>
+    m.voided === 0 &&
+    localDay(m.measured_at, timeZone) === today &&
+    (demo
+      ? m.provenance === "real" || (m.provenance === "synthetic" && m.device_id === deviceId)
+      : m.provenance === "real");
+
+  const done = (metrics: string[]) => measurements.some((m) => counts(m) && metrics.includes(m.metric));
 
   const steps: DailyStep[] = BASE_STEPS.map((step) => ({ ...step, done: done(step.metrics) }));
 
@@ -80,6 +81,20 @@ export function buildDailyPlan(
   }
 
   return { steps, done: steps.filter((step) => step.done).length, total: steps.length };
+}
+
+export interface FinishOutcome {
+  assess: boolean;
+  resultId: string | null;
+}
+
+/**
+ * Finishing with nothing recorded must not assess: a result built from older
+ * readings would award today's check-in through scoreDays.
+ */
+export function finishOutcome(recordedThisRun: number, latest: Result | null): FinishOutcome {
+  if (recordedThisRun > 0) return { assess: true, resultId: null };
+  return { assess: false, resultId: latest?.client_id ?? null };
 }
 
 /** Reads the device's own history the way the Progress page does. */
