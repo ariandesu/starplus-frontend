@@ -9,6 +9,7 @@ const HEIGHT = 730;
 const FLIGHT_MS = 16_000;
 const START_YAW = -Math.PI / 2;
 const TILT = -38;
+const PEAK_OPACITY = 0.15;
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -91,7 +92,7 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
 
           const fade = t < 0.1 ? t / 0.1 : t > 0.88 ? Math.max(0, (1 - t) / 0.12) : 1;
           element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) rotate(${TILT}deg)`;
-          element.style.opacity = (0.85 * Math.min(1, fade)).toFixed(3);
+          element.style.opacity = (PEAK_OPACITY * Math.min(1, fade)).toFixed(3);
 
           renderer.render(scene, camera);
 
