@@ -6,7 +6,7 @@ describe("navItemsForRole", () => {
     const labels = navItemsForRole("astronaut").map((item) => item.label);
     expect(labels).toEqual([
       "Home", "Self-check", "History", "Body", "Progress", "Medicines",
-      "Emergency", "Reports", "Surgeon", "Settings", "Demo", "Login",
+      "Emergency", "Reports", "Settings", "Demo", "Login",
     ]);
   });
 
@@ -30,6 +30,6 @@ describe("navItemsForRole", () => {
 
   it("shows the full menu while logged out", () => {
     expect(navItemsForRole(null).map((item) => item.label)).toContain("Login");
-    expect(navItemsForRole(null)).toHaveLength(12);
+    expect(navItemsForRole(null)).toHaveLength(11);
   });
 });

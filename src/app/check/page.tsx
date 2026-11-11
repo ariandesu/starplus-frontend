@@ -196,7 +196,7 @@ function CheckForm() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
       <PageHeader eyebrow="SELF-CHECK" title="Self-check" />
       <p className="mt-1 text-sm text-muted">
-        Setting {setting}, phase {phase}. Complete this in under a minute.
+        {SETTING_LABELS[setting] ?? setting} · {PHASE_LABELS[phase] ?? phase}. Complete this in under a minute.
       </p>
 
       <Card className="mt-4 p-5 lg:p-6">
@@ -271,6 +271,20 @@ function CheckForm() {
     </div>
   );
 }
+
+const SETTING_LABELS: Record<string, string> = {
+  iss: "ISS",
+  mars_transit: "Mars transit",
+  moon_base: "Moon base",
+  rover: "Surface rover",
+};
+
+const PHASE_LABELS: Record<string, string> = {
+  preflight: "Pre-flight",
+  inflight: "In flight",
+  surface: "Surface",
+  postflight: "Post-flight",
+};
 
 export default function CheckPage() {
   return (
