@@ -1,6 +1,8 @@
 // Authenticated data access for the STAR PLUS backend (Cloudflare Workers + D1).
 // Errors throw ApiError (status 0 means the network itself failed) so callers
 // can surface them to the outbox instead of treating them as empty data.
+// Requests time out (10 s reads, 45 s writes, 30 s attachments) and a timeout
+// throws ApiError with status 0.
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "https://starplus-backend.shareflow.workers.dev";
@@ -13,11 +15,23 @@ export class ApiError extends Error {
   }
 }
 
+/** Reads fail fast; writes get longer because a report can carry photos. */
+export function requestTimeoutMs(method: string | undefined): number {
+  return method === undefined || method.toUpperCase() === "GET" ? 10_000 : 45_000;
+}
+
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  return typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+    ? AbortSignal.timeout(ms)
+    : undefined;
+}
+
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...init,
+      signal: init?.signal ?? timeoutSignal(requestTimeoutMs(init?.method)),
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init?.headers ?? {}) },
     });
   } catch (error) {
@@ -117,6 +131,7 @@ export async function getAttachment(token: string, id: string): Promise<Blob> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE}/api/attachments/${encodeURIComponent(id)}`, {
+      signal: timeoutSignal(30_000),
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch (error) {
