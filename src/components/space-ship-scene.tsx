@@ -88,21 +88,20 @@ export default function SpaceShipScene({ onDone }: { onDone: () => void }) {
           return mesh;
         };
 
-        const tailX = box.min.x - centre.x;
-
-        // Three main engines in the shuttle's usual triangle: two low and
-        // outboard, one high on the centreline.
+        // Measured off the model with an orthographic tail view: the two lower
+        // bells and the centre one that sits just below the mid line.
+        const nozzleX = box.min.x - centre.x + 0.015;
         const layout = [
-          { y: -0.03 * size.y, z: -0.085 * size.z },
-          { y: -0.03 * size.y, z: 0.085 * size.z },
-          { y: 0.09 * size.y, z: 0 },
+          { y: -0.305 * size.y, z: -0.07 * size.z },
+          { y: -0.305 * size.y, z: 0.07 * size.z },
+          { y: -0.09 * size.y, z: 0 },
         ];
 
         const engines = layout.map((offset, index) => {
           const core = plume(0.085, 0x4d8dff, 0.75);
           const halo = plume(0.15, 0xa8ccff, 0.3);
-          core.position.set(tailX, offset.y, offset.z);
-          halo.position.set(tailX, offset.y, offset.z);
+          core.position.set(nozzleX, offset.y, offset.z);
+          halo.position.set(nozzleX, offset.y, offset.z);
           core.scale.x = 1.05;
           halo.scale.x = 1.5;
           pivot.add(core, halo);
