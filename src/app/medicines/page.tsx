@@ -2,10 +2,14 @@
 
 import formulary from "@starplus/core/content/formulary.json" with { type: "json" };
 import type { FormularyEntry } from "@starplus/core";
+import { MedicineExplainer } from "@/components/medicine-explainer";
+import { useActiveCrew } from "@/lib/use-active-crew";
 
 const entries = (formulary as { entries: FormularyEntry[] }).entries;
 
 export default function MedicinesPage() {
+  const session = useActiveCrew();
+  const crewId = session.status === "active" ? session.crewId : null;
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
       <h1 className="text-[1.75rem] font-bold tracking-tight">Medicines</h1>
@@ -44,6 +48,7 @@ export default function MedicinesPage() {
                 ))}
               </ul>
             ) : null}
+            {crewId && <MedicineExplainer crewId={crewId} medicineId={entry.id} />}
           </li>
         ))}
       </ul>
