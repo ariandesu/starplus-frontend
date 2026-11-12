@@ -93,6 +93,7 @@ function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | n
   const [result, setResult] = React.useState<Result | null>(null);
   const [streak, setStreak] = React.useState<{ days: number; patches: number } | null>(null);
   const [gain, setGain] = React.useState<number | null>(null);
+  const [gainKey, setGainKey] = React.useState(0);
   const [justDone, setJustDone] = React.useState<string | null>(null);
   const [runGain, setRunGain] = React.useState(0);
   const [runFull, setRunFull] = React.useState(false);
@@ -180,6 +181,8 @@ function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | n
       setRecorded((prev) => [...prev, current.key]);
       // Every plan step earns the same +10 XP for being completed; the value
       // is never consulted. The full-check bonus is shown on the finish screen.
+      // Each gain gets its own key so a new chip replaces the old one.
+      setGainKey((k) => k + 1);
       setGain(10);
       setJustDone(current.key);
       refresh();
@@ -315,7 +318,7 @@ function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | n
 
       <XpHeaderBar xp={xp} />
       <div className="mt-2 flex min-h-9 items-center" aria-hidden={gain === null}>
-        {gain !== null && <XpGainChip amount={gain} />}
+        {gain !== null && <XpGainChip key={gainKey} amount={gain} />}
       </div>
 
       <div className="mt-4" data-testid="daily-progress">

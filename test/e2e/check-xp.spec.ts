@@ -35,17 +35,19 @@ test("mission card, tile deep-link and +10 XP moments", async ({ page }) => {
   await expect(page).toHaveURL(/\/check\/daily.*step=heart_rate/);
   await expect(page.getByRole("heading", { name: "Heart rate" })).toBeVisible({ timeout: 15_000 });
 
-  // 3. Record it, then see xp-gain with "+10 XP".
+  // 3. Record it, wait for the run to advance, then see xp-gain with "+10 XP".
   await page.locator('input[inputmode="decimal"]').first().fill("62");
   await page.getByRole("button", { name: "Record and next" }).click();
+  await expect(page.getByTestId("daily-progress")).toContainText("Step 2 of 8");
   await expect(page.getByTestId("xp-gain")).toContainText("+10 XP");
 
-  // 4. Record blood pressure.
+  // 4. Record blood pressure, and again wait for the advance past the chip alone.
   await expect(page.getByRole("heading", { name: "Blood pressure" })).toBeVisible({ timeout: 15_000 });
   const inputs = page.locator('input[inputmode="decimal"]');
   await inputs.nth(0).fill("118");
   await inputs.nth(1).fill("76");
   await page.getByRole("button", { name: "Record and next" }).click();
+  await expect(page.getByTestId("daily-progress")).toContainText("Step 3 of 8");
   await expect(page.getByTestId("xp-gain")).toContainText("+10 XP");
 
   // 5. Back on /check: 20 XP, and those two tiles are done.
