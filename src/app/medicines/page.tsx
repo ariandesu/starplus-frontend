@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import formulary from "@starplus/core/content/formulary.json" with { type: "json" };
 import type { FormularyEntry } from "@starplus/core";
 import { MedicineExplainer } from "@/components/medicine-explainer";
@@ -7,7 +8,7 @@ import { useActiveCrew } from "@/lib/use-active-crew";
 
 const entries = (formulary as { entries: FormularyEntry[] }).entries;
 
-export default function MedicinesPage() {
+function MedicinesView() {
   const session = useActiveCrew();
   const crewId = session.status === "active" ? session.crewId : null;
   return (
@@ -53,5 +54,13 @@ export default function MedicinesPage() {
         ))}
       </ul>
     </div>
+  );
+}
+
+export default function MedicinesPage() {
+  return (
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-muted">Loading medicines…</p>}>
+      <MedicinesView />
+    </Suspense>
   );
 }
