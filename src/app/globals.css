@@ -563,6 +563,14 @@ section[id] {
 }
 
 
+/* Login cupola photo: dark scrim so the overlay caption stays readable. */
+.login-cupola-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgb(6 10 19 / 0.72) 0%, transparent 55%);
+}
+
 /* Sidebar Earth photo: full-bleed at the nav base, fading upward into the
    sidebar background. Desktop only; dimmed in dark mode. */
 .sidebar-photo {

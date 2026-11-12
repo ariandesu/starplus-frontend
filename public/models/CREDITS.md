@@ -36,6 +36,17 @@ base on wide screens.
 Source and licence: supplied by the author; licence line pending. Both files
 are precached by the service worker (`next.config.ts`).
 
+
+`public/login-cupola.jpg`: astronaut at a station cupola, used as the login
+page side panel with a caption above it.
+
+| File | Bytes | SHA-256 |
+|---|---|---|
+| `login-cupola.jpg` | 274,241 | `135c49c5f734be9f43f373e6e425c16950ff3c7183a30395a7ef6e5b3cec99e8` |
+
+Source and licence: supplied by the author; licence line pending. Precached
+by the service worker (`next.config.ts`).
+
 ## `space-shuttle-d*.glb` (background decoration)
 
 "Space Shuttle (D)", "Space Shuttle (D) eng", "door-prt" and "door-stb", NASA 3D Resources

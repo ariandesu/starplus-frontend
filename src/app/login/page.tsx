@@ -175,7 +175,27 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-8">
+      <div aria-hidden className="relative hidden overflow-hidden rounded-card lg:block">
+        <img
+          src="/login-cupola.jpg"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <span aria-hidden className="login-cupola-shade" />
+        <div className="relative flex h-full min-h-[540px] flex-col justify-end p-8">
+          <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">
+            Star Plus
+          </p>
+          <p className="mt-2 text-3xl font-bold tracking-tight text-white">
+            Astronaut Health Monitoring System
+          </p>
+          <p className="mt-2 max-w-sm text-sm text-white/80">
+            Real-time health tracking, medical insights, and mission support for astronauts.
+          </p>
+        </div>
+      </div>
+      <div className="mx-auto w-full max-w-md">
       <div className="login-horizon" aria-hidden="true" />
       <h1 className="text-[1.75rem] font-bold tracking-tight">Select your mission role</h1>
       <p className="mt-1 text-sm text-muted">
@@ -385,6 +405,7 @@ function LoginForm() {
           Open emergency
         </Link>
       </p>
+      </div>
     </div>
   );
 }

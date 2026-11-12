@@ -38,6 +38,7 @@ const withSerwist = withSerwistInit({
     asset("/fonts/satoshi-700.woff2"),
     asset("/hero-iss.jpg"),
     asset("/sidebar-earth.jpg"),
+    asset("/login-cupola.jpg"),
     asset("/models/body-female.glb"),
     asset("/models/body-male.glb"),
     asset("/models/space-shuttle-d.glb"),
