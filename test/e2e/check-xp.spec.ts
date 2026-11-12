@@ -9,6 +9,8 @@ const BASE_URL = process.env.APP_URL ?? "http://localhost:3100";
 
 async function loginDemoAstronaut(page: Page) {
   await page.goto(`${BASE_URL}/login`);
+  // Wait for the role cards to render before deciding demo login is off.
+  await expect(page.getByRole("heading", { name: "Select your mission role" })).toBeVisible({ timeout: 30_000 });
   if ((await page.getByTestId("demo-card-astronaut").count()) === 0) {
     test.skip(true, "demo login is switched off here");
   }
