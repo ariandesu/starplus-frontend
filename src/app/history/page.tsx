@@ -1,7 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { CATALOG } from "@starplus/core";
+import Link from "next/link";
+import { CATALOG, type Result } from "@starplus/core";
+import { StatusTone } from "@/components/citation";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { VitalChart } from "@/components/dashboard/vital-chart";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -27,6 +29,7 @@ function HistoryView() {
   const session = useActiveCrew();
   const { crewId, ready: crewReady } = session;
   const [series, setSeries] = useState<MetricSeries[]>([]);
+  const [pastResults, setPastResults] = useState<Result[]>([]);
   const [ready, setReady] = useState(false);
   const [filter, setFilter] = useState("all");
 
@@ -40,6 +43,9 @@ function HistoryView() {
       try {
         const db = await profileDb(crewId);
         const records = await db.getAll("measurements");
+        const stored = await db.getAll("results");
+        stored.sort((a, b) => Date.parse(b.assessed_at) - Date.parse(a.assessed_at));
+        setPastResults(stored);
         const now = Date.now();
         const codes = [...new Set(records.map((r) => r.metric))];
         const built: MetricSeries[] = [];
@@ -100,6 +106,28 @@ function HistoryView() {
           Measures without enough history show the catalog typical range instead.
         </p>
       )}
+      <section aria-label="Past results" className="mt-8">
+        <h2 className="text-lg font-semibold text-foreground">Past results</h2>
+        {pastResults.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">No results yet. Finish a self-check to see one here.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {pastResults.map((result) => (
+              <li key={result.client_id}>
+                <Link
+                  href={`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result.client_id)}`}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-tile border border-border bg-card px-4 py-2 focus-ring"
+                >
+                  <span className="text-sm text-foreground">
+                    {new Date(result.assessed_at).toLocaleString()}
+                  </span>
+                  <StatusTone status={result.overall_status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
