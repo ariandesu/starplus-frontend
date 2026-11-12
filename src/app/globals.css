@@ -34,11 +34,11 @@
   color-scheme: dark;
 
   /* surfaces */
-  --background: #060A13;   /* page */
-  --card: #0D1422;         /* cards */
-  --surface: #121B2C;      /* tiles inside cards, inputs */
-  --surface-2: #1A2438;    /* tracks, hover, skeleton */
-  --border: #22304A;
+  --background: #0A1326;   /* page, blue-washed like light mode */
+  --card: #0D1729;         /* cards */
+  --surface: #131E33;      /* tiles inside cards, inputs */
+  --surface-2: #1B2742;    /* tracks, hover, skeleton */
+  --border: #25365A;
   --input: #5A6C93;        /* form-field and control borders */
 
   /* ink */
@@ -560,7 +560,7 @@ section[id] {
 
 
 /* Sidebar Earth photo: full-bleed at the nav base, fading upward into the
-   sidebar background. Light theme on desktop only. */
+   sidebar background. Desktop only; dimmed in dark mode. */
 .sidebar-photo {
   display: none;
   -webkit-mask-image: linear-gradient(to top, black 55%, transparent 98%);
@@ -570,6 +570,14 @@ section[id] {
 @media (min-width: 1024px) {
   :root[data-theme="light"] .sidebar-photo {
     display: block;
+  }
+
+  :root[data-theme="dark"] .sidebar-photo {
+    display: block;
+  }
+
+  :root[data-theme="dark"] .sidebar-photo img {
+    filter: brightness(0.5) saturate(0.85);
   }
 
   #site-nav > :not(.sidebar-photo) {
