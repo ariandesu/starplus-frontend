@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
+import Link from "next/link";
 import { lookupMeasure, type Measurement } from "@starplus/core";
 import { BODY_SYSTEMS, BodySystemList } from "@/components/body-map";
 import { BodyViewer } from "@/components/body/body-viewer";
@@ -107,6 +108,36 @@ function BodyView() {
               statusFor={statusFor}
             />
           </Card>
+          <p className="mt-2 text-xs text-muted">
+            3D people:{" "}
+            <Link
+              href="https://sketchfab.com/3d-models/eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f"
+              target="_blank"
+              rel="noreferrer"
+              className="underline text-accent-strong focus-ring"
+            >
+              Eric Rigged 001
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="https://sketchfab.com/3d-models/claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92"
+              target="_blank"
+              rel="noreferrer"
+              className="underline text-accent-strong focus-ring"
+            >
+              Claudia Rigged 002
+            </Link>{" "}
+            by Renderpeople,{" "}
+            <Link
+              href="https://creativecommons.org/licenses/by/4.0/"
+              target="_blank"
+              rel="noreferrer"
+              className="underline text-accent-strong focus-ring"
+            >
+              CC BY 4.0
+            </Link>
+            , modified.
+          </p>
         </div>
         <div className="lg:col-span-5">
           <BodySystemList

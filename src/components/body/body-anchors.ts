@@ -1,7 +1,6 @@
 /**
- * Marker positions after normalising the model: origin between the feet, Y up,
- * +Z in front, body 1.75 units tall. They sit about 1.5 cm outside the surface
- * of both shipped models.
+ * Marker positions for the Renderpeople models (Eric and Claudia): origin
+ * between the feet, Y up, +Z in front, body 1.75 units tall.
  */
 export interface BodyAnchor {
   x: number;
@@ -10,7 +9,7 @@ export interface BodyAnchor {
 }
 
 export const BODY_ANCHORS: Record<string, BodyAnchor> = {
-  mind: { x: 0.0, y: 1.67, z: 0.14 },
+  mind: { x: 0.0, y: 1.67, z: 0.11 },
   cardio: { x: 0.045, y: 1.33, z: 0.13 },
   lungs: { x: -0.1, y: 1.39, z: 0.07 },
   fuel: { x: 0.0, y: 1.1, z: 0.14 },
