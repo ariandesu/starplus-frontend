@@ -20,6 +20,22 @@ a plain GLB by `tools/build-renderpeople-body.py`.
 
 The scan geometry was not edited.
 
+
+## Dashboard photos (author-supplied)
+
+`public/hero-iss.jpg`: International Space Station above Earth, used as the
+overall-status card background with all text and buttons above it.
+`public/sidebar-earth.jpg`: light Earth-horizon gradient, used at the sidebar
+base on wide screens.
+
+| File | Bytes | SHA-256 |
+|---|---|---|
+| `hero-iss.jpg` | 214,555 | `21ded4f454445ce246749c389a5c4daec7e2402bf3dea016324482e632a8f166` |
+| `sidebar-earth.jpg` | 15,806 | `2cc0a7bb6ee85e2732e50403422c0f63e1e5660a2c7e4a32602f89961c9e1ddb` |
+
+Source and licence: supplied by the author; licence line pending. Both files
+are precached by the service worker (`next.config.ts`).
+
 ## `space-shuttle-d*.glb` (background decoration)
 
 "Space Shuttle (D)", "Space Shuttle (D) eng", "door-prt" and "door-stb", NASA 3D Resources

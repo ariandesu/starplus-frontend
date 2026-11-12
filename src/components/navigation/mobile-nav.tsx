@@ -10,7 +10,6 @@ import { deviceDb } from "@/lib/db";
 import { logout } from "@/lib/session";
 import { navItemsForRole } from "@/lib/nav-items";
 import { activeHref, groupNav } from "./nav-groups";
-import { ShuttleSketch } from "@/components/space-art";
 import { useIsDesktop, useIsMobileChrome } from "./use-is-desktop";
 
 interface MobileNavProps {
@@ -195,8 +194,12 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
           ))}
         </nav>
 
-        <div aria-hidden className="hidden shrink-0 px-6 pb-1 text-faint lg:block">
-          <ShuttleSketch className="h-auto w-full opacity-80" />
+        <div aria-hidden className="hidden shrink-0 px-4 pb-2 lg:block">
+          <img
+            src="/sidebar-earth.jpg"
+            alt=""
+            className="h-28 w-full rounded-tile border border-border object-cover object-bottom"
+          />
         </div>
 
         {crewId && (
