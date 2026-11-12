@@ -558,3 +558,22 @@ section[id] {
   }
 }
 
+
+/* Sidebar Earth photo: full-bleed at the nav base, fading upward into the
+   sidebar background. Light theme on desktop only. */
+.sidebar-photo {
+  display: none;
+  -webkit-mask-image: linear-gradient(to top, black 55%, transparent 98%);
+  mask-image: linear-gradient(to top, black 55%, transparent 98%);
+}
+
+@media (min-width: 1024px) {
+  :root[data-theme="light"] .sidebar-photo {
+    display: block;
+  }
+
+  #site-nav > :not(.sidebar-photo) {
+    position: relative;
+    z-index: 1;
+  }
+}

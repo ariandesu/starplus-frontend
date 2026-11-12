@@ -95,7 +95,7 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting
           <Link href={checkHref}>Start self-check</Link>
         </Button>
         {typeof dailyTotal === "number" && dailyTotal > 0 && (
-          <Button asChild variant="outline" className="bg-transparent border-white/40 text-white hover:bg-white/10">
+          <Button asChild variant="outline" className="bg-black/40 border-white/40 text-white hover:bg-black/55 focus-ring">
             <Link href="/check/daily">
               {typeof dailyDone === "number" && dailyDone > 0 ? "Continue today's check" : "Start today's check"}
             </Link>
@@ -103,7 +103,7 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting
         )}
         <Link
           href={reportsHref}
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 focus-ring"
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 bg-black/40 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-black/55 focus-ring"
         >
           Reports
         </Link>

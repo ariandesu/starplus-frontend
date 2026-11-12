@@ -194,11 +194,11 @@ export function MobileNav({ isOpen, onClose, context }: MobileNavProps) {
           ))}
         </nav>
 
-        <div aria-hidden className="hidden shrink-0 px-4 pb-2 lg:block">
+        <div aria-hidden className="sidebar-photo pointer-events-none absolute inset-x-0 bottom-0">
           <img
             src="/sidebar-earth.jpg"
             alt=""
-            className="h-28 w-full rounded-tile border border-border object-cover object-bottom"
+            className="h-72 w-full object-cover object-bottom"
           />
         </div>
 
