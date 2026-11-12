@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertCircle, AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StationSilhouette } from "@/components/space-art";
 
 const ICONS = {
   nominal: CheckCircle2,
@@ -55,6 +56,9 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting
   return (
     <Card variant="hero" glow={name} hud className="relative overflow-hidden p-5 lg:p-6">
       <span aria-hidden="true" className={`hero-galaxy ${galaxyClass(setting)}`} />
+      <span aria-hidden="true" className="hero-art">
+        <StationSilhouette className="h-auto w-full" />
+      </span>
       <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">
         Overall status
       </p>

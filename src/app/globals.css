@@ -282,7 +282,7 @@ h1, h2 {
 .hud-br { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
 
 /* Overall card: a galaxy that changes with the mission setting. */
-.hero-surface > :not(.hero-galaxy):not(.hud-corner) {
+.hero-surface > :not(.hero-galaxy):not(.hero-art):not(.hud-corner) {
   position: relative;
   z-index: 1;
 }
@@ -295,6 +295,28 @@ h1, h2 {
   border-radius: inherit;
   pointer-events: none;
   opacity: 0.9;
+}
+
+/* ISS line-art over the Earth limb. White strokes: the hero card is a dark
+   space window in both themes. Hidden on phones so the status keeps room. */
+.hero-art {
+  position: absolute;
+  bottom: 2%;
+  right: -6%;
+  width: 44%;
+  max-width: 400px;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: rgb(255 255 255 / 0.55);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 38%);
+  mask-image: linear-gradient(to right, transparent 0%, black 38%);
+}
+
+@media (max-width: 640px) {
+  .hero-art {
+    display: none;
+  }
 }
 
 .hero-galaxy::after {
