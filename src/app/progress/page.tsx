@@ -13,7 +13,9 @@ import { getCrewProgress } from "@/lib/api";
 import { profileDb } from "@/lib/db";
 import { gamificationEnabled, setGamificationEnabled } from "@/lib/gamification-settings";
 import { getSession } from "@/lib/session";
+import { useXp } from "@/lib/xp";
 import { ReadinessRing } from "@/components/readiness-ring";
+import { XpHeaderBar } from "@/components/xp-feedback";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { RequireSession } from "@/components/require-session";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 function ProgressView() {
   const session = useActiveCrew();
   const { crewId, ready: crewReady } = session;
+  const { xp } = useXp(crewReady && session.status === "active" ? crewId : null);
   const [ready, setReady] = useState(false);
   const [enabled, setEnabled] = useState(() => gamificationEnabled());
   const [today, setToday] = useState<DayScore | null>(null);
@@ -42,11 +45,12 @@ function ProgressView() {
       try {
         const session = await getSession(crewId);
         const demo = session?.demo ?? false;
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const db = await profileDb(crewId);
         const measurements = await db.getAll("measurements");
         const results = await db.getAll("results");
-        const days = scoreDays(measurements, results, demo ? { includeSynthetic: true } : {});
-        const now = todayLocal();
+        const days = scoreDays(measurements, results, { timeZone, ...(demo ? { includeSynthetic: true } : {}) });
+        const now = todayLocal(timeZone);
         setToday(days.find((day) => day.day === now) ?? null);
         const streakCount = streakDays(
           days.filter((day) => day.points > 0).map((day) => day.day),
@@ -92,6 +96,7 @@ function ProgressView() {
 
       {enabled ? (
         <>
+          <XpHeaderBar xp={xp} />
           <Card className="mt-4 p-5 lg:p-6">
             <section aria-label="Daily readiness">
               <h2 className="text-lg font-semibold text-foreground">Today&apos;s readiness</h2>
