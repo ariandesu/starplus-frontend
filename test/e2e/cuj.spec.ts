@@ -84,6 +84,7 @@ test("CUJ 2 self-check in under 60 seconds, CUJ 3 grey first measure, CUJ 4 esti
 
   const started = Date.now();
   await page.goto(`${BASE_URL}/check?crew=${CREW}`);
+  await page.getByText("Enter a reading manually", { exact: true }).click();
   await page.locator("select#measure-select").selectOption("blood_pressure_systolic");
   await page.locator("#measure-blood_pressure_systolic").fill("146");
   await page.locator("#dia-value").fill("92");
@@ -92,12 +93,14 @@ test("CUJ 2 self-check in under 60 seconds, CUJ 3 grey first measure, CUJ 4 esti
   expect(Date.now() - started).toBeLessThan(60_000);
 
   await page.goto(`${BASE_URL}/check?crew=${CREW}`);
+  await page.getByText("Enter a reading manually", { exact: true }).click();
   await page.locator("select#measure-select").selectOption("respiratory_rate");
   await page.locator("#measure-respiratory_rate").fill("14");
   await page.getByRole("button", { name: /^record$/i }).click();
   await expect(page.getByText(/not enough history/i)).toBeVisible();
 
   await page.goto(`${BASE_URL}/check?crew=${CREW}`);
+  await page.getByText("Enter a reading manually", { exact: true }).click();
   await page.locator("select#measure-select").selectOption("heart_rate");
   await page.locator("#measure-heart_rate").fill("128");
   await page.getByLabel(/estimated, no device/i).check();

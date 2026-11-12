@@ -25,6 +25,7 @@ test("offline typed value survives reconnect without reload", async ({ page, con
 
   await page.goto(`${BASE_URL}/check?crew=${CREW}`);
   await expect(page.getByRole("heading", { name: /self-check/i })).toBeVisible();
+  await page.getByText("Enter a reading manually", { exact: true }).click();
   await page.locator("select#measure-select").selectOption("heart_rate");
   await page.locator("#measure-heart_rate").fill("72");
 

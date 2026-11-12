@@ -45,6 +45,7 @@ test("offline recorded reading syncs on reconnect without opening Reports", asyn
   await expect(page).toHaveURL(new RegExp(`crew=${CREW}`));
 
   await page.goto(`${BASE_URL}/check?crew=${CREW}`);
+  await page.getByText("Enter a reading manually", { exact: true }).click();
   await page.locator("select#measure-select").selectOption("heart_rate");
   await page.locator("#measure-heart_rate").fill("72");
 

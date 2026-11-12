@@ -30,7 +30,6 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { MeasureForm } from "@/components/measure-form";
 import { MissionCard } from "@/components/mission-card";
-import { Card } from "@/components/ui/card";
 import { RequireSession } from "@/components/require-session";
 import { deviceDb, profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
@@ -221,10 +220,14 @@ function CheckForm() {
 
       <MissionCard crewId={crewId} />
 
-      <Card className="mt-4 p-5 lg:p-6">
-        <label htmlFor="measure-select" className="block text-sm font-semibold text-foreground">
-          What are you measuring?
-        </label>
+      <details className="mt-4 rounded-tile border border-border bg-card px-5 py-2 lg:px-6">
+        <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-foreground focus-ring">
+          Enter a reading manually
+        </summary>
+        <div className="pb-5 pt-1">
+          <label htmlFor="measure-select" className="block text-sm font-semibold text-foreground">
+            What are you measuring?
+          </label>
         <select
           id="measure-select"
           value={code}
@@ -266,7 +269,8 @@ function CheckForm() {
           </p>
         )}
         {busy && <p className="mt-3 text-sm text-muted">Scoring…</p>}
-      </Card>
+        </div>
+      </details>
 
       <section aria-label="Other ways" className="mt-6">
         <h2 className="text-lg font-semibold text-foreground">Other ways</h2>
