@@ -178,6 +178,9 @@ function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | n
         records.push(checked.value);
       }
       for (const record of records) await enqueueMeasurement(crewId, record);
+      // Reload the XP summary as soon as the save resolves, before the run
+      // advances, so the bar shows the new total with the "+10 XP" chip.
+      refresh();
       setRecorded((prev) => [...prev, current.key]);
       // Every plan step earns the same +10 XP for being completed; the value
       // is never consulted. The full-check bonus is shown on the finish screen.
@@ -185,7 +188,6 @@ function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | n
       setGainKey((k) => k + 1);
       setGain(10);
       setJustDone(current.key);
-      refresh();
       buzz(20, reduced);
       window.setTimeout(() => setGain(null), 1000);
       window.setTimeout(() => setJustDone(null), 300);
