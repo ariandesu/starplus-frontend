@@ -184,7 +184,8 @@ function LoginForm() {
         />
         <span aria-hidden className="login-cupola-shade" />
       </div>
-      <div className="relative ml-auto flex min-h-[calc(100svh-120px)] w-full max-w-2xl flex-col justify-center rounded-t-card bg-background px-4 py-8 sm:px-8 lg:rounded-l-[3rem] lg:rounded-tr-none lg:px-10">
+      <div className="relative ml-auto flex min-h-[calc(100svh-120px)] w-full max-w-2xl flex-col justify-center rounded-t-card bg-background px-4 py-8 isolate sm:px-8 lg:rounded-tr-none lg:px-10">
+      <span aria-hidden className="login-curve" />
       <div className="login-horizon" aria-hidden="true" />
       <h1 className="text-[2rem] font-bold tracking-tight">Sign in to STAR PLUS</h1>
       <p className="mt-1 text-sm text-muted">
