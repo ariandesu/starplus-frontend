@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   MISSION_PATCHES,
   lookupMeasure,
@@ -55,10 +56,12 @@ function readSkips(day: string): Record<string, string> {
 function DailyCheckContent() {
   const session = useActiveCrew();
   const crewId = session.status === "active" ? session.crewId : null;
+  const params = useSearchParams();
+  const startStep = params.get("step");
 
   return (
     <RequireSession session={session}>
-      {crewId ? <DailyRun crewId={crewId} /> : null}
+      {crewId ? <DailyRun crewId={crewId} startStep={startStep} /> : null}
     </RequireSession>
   );
 }
@@ -71,7 +74,7 @@ export default function DailyCheckPage() {
   );
 }
 
-function DailyRun({ crewId }: { crewId: string }) {
+function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | null }) {
   const plan = useDailyPlan(crewId);
   const { xp, refresh } = useXp(crewId);
   const reduced = useReducedMotion();
@@ -101,7 +104,12 @@ function DailyRun({ crewId }: { crewId: string }) {
 
   const steps = plan?.steps ?? [];
   const isDone = (step: DailyStep) => step.done || recorded.includes(step.key);
-  const remaining = steps.filter((step) => !isDone(step) && !skips[step.key]);
+  const unordered = steps.filter((step) => !isDone(step) && !skips[step.key]);
+  // A mission tile links here with ?step=<key>: start there when it is still open.
+  const remaining =
+    startStep && unordered.some((step) => step.key === startStep)
+      ? [unordered.find((step) => step.key === startStep)!, ...unordered.filter((step) => step.key !== startStep)]
+      : unordered;
   const current = remaining[0] ?? null;
   const doneCount = steps.filter((step) => isDone(step)).length;
   const total = steps.length || 8;

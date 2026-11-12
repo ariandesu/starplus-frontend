@@ -29,6 +29,7 @@ import {
 } from "@starplus/core";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { MeasureForm } from "@/components/measure-form";
+import { MissionCard } from "@/components/mission-card";
 import { Card } from "@/components/ui/card";
 import { RequireSession } from "@/components/require-session";
 import { deviceDb, profileDb } from "@/lib/db";
@@ -217,6 +218,8 @@ function CheckForm() {
       <p className="mt-1 text-sm text-muted">
         {SETTING_LABELS[setting] ?? setting} · {PHASE_LABELS[phase] ?? phase}. Complete this in under a minute.
       </p>
+
+      <MissionCard crewId={crewId} />
 
       <Card className="mt-4 p-5 lg:p-6">
         <label htmlFor="measure-select" className="block text-sm font-semibold text-foreground">
