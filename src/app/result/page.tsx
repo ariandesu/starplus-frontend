@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { CATALOG, assess, type Measurement, type Result } from "@starplus/core";
 import { Citation, StatusTone } from "@/components/citation";
+import { AskConsult } from "@/components/ask-consult";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card } from "@/components/ui/card";
 import { ModelView } from "@/components/model-view";
@@ -211,6 +212,9 @@ function ResultView() {
                 </p>
               )}
               {kb && <ExplainMore entry={kb} metric={entry.metric} />}
+              {kb && crewId && (
+                <AskConsult crewId={crewId} entryId={kb.id} measureLabel={measure?.label ?? entry.metric} />
+              )}
               {record?.is_estimate === 1 && record.confirmed_by_user === 0 && (
                 <p className="mt-2 text-xs text-muted-foreground">Recorded as an estimate.</p>
               )}
