@@ -53,7 +53,7 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting
   const name = toStatus(status);
   const Icon = ICONS[name];
   return (
-    <Card variant="hero" glow={name} hud className="relative overflow-hidden p-5 lg:p-6">
+    <Card variant="hero" glow={name} className="relative overflow-hidden p-5 lg:p-6">
       <span aria-hidden="true" className={`hero-galaxy ${galaxyClass(setting)}`} />
       <span aria-hidden="true" className="hero-photo">
         <img src="/hero-iss.jpg" alt="" className="h-full w-full object-cover" />
