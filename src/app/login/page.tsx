@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, type ElementType } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, PersonStanding, Stethoscope, Users } from "lucide-react";
+import { Loader2, PersonStanding, Stethoscope, Users, User, KeyRound, Check, ArrowRight } from "lucide-react";
 import { checkPin, getSession, isSharedDevice, listProfiles, loginWithPassword, pullHistory, redeemCode, setActiveCrew, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
 import { DEMO_CARDS, DEMO_PASSWORD, demoCardForKey, type DemoCard } from "@/lib/demo-accounts";
@@ -175,34 +175,24 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-8">
-      <div aria-hidden className="relative hidden overflow-hidden rounded-card lg:block">
+    <div className="relative">
+      <div aria-hidden className="absolute inset-0 hidden lg:block">
         <img
           src="/login-cupola.jpg"
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
         <span aria-hidden className="login-cupola-shade" />
-        <div className="relative flex h-full min-h-[540px] flex-col justify-end p-8">
-          <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">
-            Star Plus
-          </p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-white">
-            Astronaut Health Monitoring System
-          </p>
-          <p className="mt-2 max-w-sm text-sm text-white/80">
-            Real-time health tracking, medical insights, and mission support for astronauts.
-          </p>
-        </div>
       </div>
-      <div className="mx-auto w-full max-w-md">
+      <div className="relative ml-auto flex min-h-[calc(100svh-120px)] w-full max-w-2xl flex-col justify-center rounded-t-card bg-background px-4 py-8 sm:px-8 lg:rounded-l-[3rem] lg:rounded-tr-none lg:px-10">
       <div className="login-horizon" aria-hidden="true" />
-      <h1 className="text-[1.75rem] font-bold tracking-tight">Select your mission role</h1>
+      <h1 className="text-[2rem] font-bold tracking-tight">Sign in to STAR PLUS</h1>
       <p className="mt-1 text-sm text-muted">
-        One tap fills the demo login below. Or sign in with your own username and password.
+        Astronaut health monitoring and spaceflight medical operations platform.
       </p>
+      <h2 className="mt-4 text-sm font-semibold text-foreground">Select your mission role</h2>
 
-      <section aria-label="Demo roles" className="mt-4 grid gap-2">
+      <section aria-label="Demo roles" className="mt-3 grid gap-3 sm:grid-cols-3">
         {DEMO_CARDS.map((card) => {
           const Icon = CARD_ICONS[card.key] ?? PersonStanding;
           const selected = selectedCard === card.key;
@@ -213,15 +203,25 @@ function LoginForm() {
               data-testid={`demo-card-${card.key}`}
               onClick={() => fillCard(card)}
               disabled={busy}
+              aria-pressed={selected}
               className={cn(
                 "rounded-card border-2 bg-card p-4 text-left shadow-card transition-colors disabled:opacity-50 focus-ring",
-                selected ? "border-foreground" : "border-border hover:border-foreground/40"
+                selected ? "border-accent-strong bg-accent/15" : "border-border hover:border-foreground/40"
               )}
             >
-              <span className="flex items-center gap-2">
-                <Icon className="h-5 w-5 text-muted" aria-hidden />
-                <span className="text-base font-semibold text-foreground">{card.title}</span>
+              <span className="flex items-start justify-between gap-2">
+                <Icon className="h-6 w-6 text-accent-strong" aria-hidden />
+                <span
+                  aria-hidden
+                  className={cn(
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
+                    selected ? "border-accent-strong bg-accent-strong" : "border-input"
+                  )}
+                >
+                  {selected && <Check className="h-3 w-3 text-white" />}
+                </span>
               </span>
+              <span className="mt-2 block text-base font-semibold text-foreground">{card.title}</span>
               <span className="mt-1 block text-sm text-muted">{card.description}</span>
             </button>
           );
@@ -236,19 +236,23 @@ function LoginForm() {
             autoComplete="username"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
+            icon={<User className="h-4 w-4" aria-hidden />}
           />
           <div className="mt-3">
             <label htmlFor="password" className="block text-sm font-medium text-muted">
               Password
             </label>
-            <div className="mt-1 flex items-start gap-2">
+            <div className="relative mt-1 flex items-start gap-2">
+              <span aria-hidden className="pointer-events-none absolute bottom-[13px] left-3 flex h-4 w-4 items-center justify-center text-muted">
+                <KeyRound className="h-4 w-4" aria-hidden />
+              </span>
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="flex h-11 w-full rounded-control border border-input bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="flex h-11 w-full rounded-control border border-input bg-surface py-2 pl-10 pr-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
               <Button
                 type="button"
@@ -294,9 +298,10 @@ function LoginForm() {
               {error}
             </p>
           )}
-          <Button ref={loginRef} type="submit" disabled={busy || done} className="mt-3 w-full">
+          <Button ref={loginRef} type="submit" disabled={busy || done} className="mt-3 w-full rounded-full">
             {(busy || done) && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
             {done ? "Logged in, opening…" : busy ? "Signing in…" : "Login"}
+            {!(busy || done) && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
           </Button>
         </Card>
       </form>
