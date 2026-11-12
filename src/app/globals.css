@@ -310,6 +310,10 @@ h1, h2 {
 
 .hero-photo img {
   object-position: 78% center;
+  width: 106%;
+  height: 106%;
+  max-width: none;
+  margin: -3% 0 0 -3%;
 }
 
 .hero-shade {
