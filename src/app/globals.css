@@ -92,11 +92,11 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --background: #E9EAEC;
+  --background: #E8EEF7;
   --card: #FFFFFF;
-  --surface: #F3F4F6;
-  --surface-2: #E2E4E8;
-  --border: #D3D6DC;
+  --surface: #EFF3FA;
+  --surface-2: #DCE5F2;
+  --border: #C9D4E6;
   --input: #777D88;
 
   --foreground: #1C1F24;
