@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useRef, useState, type ElementType } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Loader2, PersonStanding, Stethoscope, Users, User, KeyRound, Check, ArrowRight } from "lucide-react";
 import { checkPin, getSession, isSharedDevice, listProfiles, loginWithPassword, pullHistory, redeemCode, setActiveCrew, setSharedDevice } from "@/lib/session";
 import { requestOutboxSync } from "@/lib/outbox-sync";
@@ -307,10 +306,6 @@ function LoginForm() {
         </Card>
       </form>
 
-      <p className="mt-2 text-xs text-muted">
-        Demo environment · these accounts hold synthetic crew data.
-      </p>
-
       <section aria-label="Access code" className="mt-4">
         {!redeeming ? (
           <button
@@ -404,13 +399,6 @@ function LoginForm() {
           </section>
         </Card>
       )}
-
-      <p className="mt-4 text-sm text-muted">
-        Emergency help needs no login.{" "}
-        <Link href="/emergency" className="text-accent-strong underline underline-offset-4">
-          Open emergency
-        </Link>
-      </p>
       </div>
     </div>
   );
