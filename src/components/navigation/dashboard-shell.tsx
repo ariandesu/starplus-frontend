@@ -113,12 +113,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </p>
         )}
-        <TopBar
-          isOpen={isOpen}
-          onToggle={() => setIsOpen((prev) => !prev)}
-          trailing={<EmergencyButton />}
-          bare={bare}
-        />
+        {!bare && (
+          <TopBar
+            isOpen={isOpen}
+            onToggle={() => setIsOpen((prev) => !prev)}
+            trailing={<EmergencyButton />}
+            bare={bare}
+          />
+        )}
+        {bare && (
+          <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-end p-4">
+            <span className="pointer-events-auto">
+              <EmergencyButton />
+            </span>
+          </div>
+        )}
         <Suspense>
           <DemoAccountBanner />
         </Suspense>
