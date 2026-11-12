@@ -24,6 +24,14 @@ import { Button } from "@/components/ui/button";
 import { deviceDb, profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { finishOutcome, useDailyPlan, type DailyStep } from "@/lib/daily-plan";
+import { BASE_XP_STEPS, rankForTotal, useXp } from "@/lib/xp";
+import {
+  FullCheckCelebration,
+  XpGainChip,
+  XpHeaderBar,
+  buzz,
+  useReducedMotion,
+} from "@/components/xp-feedback";
 import { getKbEntry } from "@/lib/kb";
 import { getSession } from "@/lib/session";
 import { assessAndQueue } from "@/lib/assess-run";
@@ -65,6 +73,8 @@ export default function DailyCheckPage() {
 
 function DailyRun({ crewId }: { crewId: string }) {
   const plan = useDailyPlan(crewId);
+  const { xp, refresh } = useXp(crewId);
+  const reduced = useReducedMotion();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const day = todayLocal(timeZone);
 
@@ -79,6 +89,10 @@ function DailyRun({ crewId }: { crewId: string }) {
   const [finished, setFinished] = React.useState(false);
   const [result, setResult] = React.useState<Result | null>(null);
   const [streak, setStreak] = React.useState<{ days: number; patches: number } | null>(null);
+  const [gain, setGain] = React.useState<number | null>(null);
+  const [justDone, setJustDone] = React.useState<string | null>(null);
+  const [runGain, setRunGain] = React.useState(0);
+  const [runFull, setRunFull] = React.useState(false);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => setSkips(readSkips(day)), 0);
@@ -156,6 +170,14 @@ function DailyRun({ crewId }: { crewId: string }) {
       }
       for (const record of records) await enqueueMeasurement(crewId, record);
       setRecorded((prev) => [...prev, current.key]);
+      // Every plan step earns the same +10 XP for being completed; the value
+      // is never consulted. The full-check bonus is shown on the finish screen.
+      setGain(10);
+      setJustDone(current.key);
+      refresh();
+      buzz(20, reduced);
+      window.setTimeout(() => setGain(null), 1000);
+      window.setTimeout(() => setJustDone(null), 300);
       setValue("");
       setDiastolic("");
     } finally {
@@ -202,6 +224,15 @@ function DailyRun({ crewId }: { crewId: string }) {
         today
       );
       setStreak({ days: count, patches: patchesForStreak(count).length });
+      const baseKeys = new Set(BASE_XP_STEPS.map((step) => step.key));
+      const baseWas = (plan?.steps ?? []).filter((step) => baseKeys.has(step.key) && step.done).length;
+      const baseNow = (plan?.steps ?? []).filter(
+        (step) => baseKeys.has(step.key) && (step.done || recorded.includes(step.key))
+      ).length;
+      const full = baseNow === BASE_XP_STEPS.length && baseWas < BASE_XP_STEPS.length;
+      setRunGain(recorded.length * 10 + (full ? 50 : 0));
+      setRunFull(full);
+      if (full) buzz([30, 40, 30], reduced);
       setFinished(true);
     } finally {
       setFinishing(false);
@@ -214,6 +245,15 @@ function DailyRun({ crewId }: { crewId: string }) {
     const left = total - doneCount;
     const skipped = Object.entries(skips);
     const nextPatch = MISSION_PATCHES.find((patch) => patch.days > (streak?.days ?? 0));
+    const newTotal = xp?.total ?? runGain;
+    const oldTotal = Math.max(newTotal - runGain, 0);
+    const rankUp =
+      rankForTotal(newTotal).level > rankForTotal(oldTotal).level ? rankForTotal(newTotal).rank : null;
+    const resultHref = result
+      ? `/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result.client_id)}${
+          runGain > 0 ? `&xp=${runGain}&fullcheck=${runFull ? 1 : 0}` : ""
+        }`
+      : null;
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
         <PageHeader eyebrow="TODAY'S CHECK" title={left > 0 ? `Today's check: ${doneCount} of ${total}` : "Today's check complete"} />
@@ -240,10 +280,13 @@ function DailyRun({ crewId }: { crewId: string }) {
               {nextPatch ? ` · ${nextPatch.days - streak.days} days to ${nextPatch.name}` : ""}
             </p>
           )}
+          {runFull && (
+            <FullCheckCelebration oldTotal={oldTotal} newTotal={newTotal} newRank={rankUp} />
+          )}
           <div className="mt-5 flex flex-wrap gap-2">
-            {result && (
+            {resultHref && (
               <Button asChild>
-                <Link href={`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result.client_id)}`}>
+                <Link href={resultHref}>
                   See your result
                 </Link>
               </Button>
@@ -262,6 +305,11 @@ function DailyRun({ crewId }: { crewId: string }) {
       <PageHeader eyebrow="TODAY'S CHECK" title="Today's check" />
       <p className="mt-1 text-sm text-muted">One measure per screen. {TYPICAL} each.</p>
 
+      <XpHeaderBar xp={xp} />
+      <div className="mt-2 flex min-h-9 items-center" aria-hidden={gain === null}>
+        {gain !== null && <XpGainChip amount={gain} />}
+      </div>
+
       <div className="mt-4" data-testid="daily-progress">
         <div className="flex items-center justify-between text-xs text-muted">
           <span>{`Step ${position} of ${total}`}</span>
@@ -274,7 +322,14 @@ function DailyRun({ crewId }: { crewId: string }) {
 
       <ul className="mt-3 flex flex-wrap gap-2 text-xs">
         {steps.map((step) => (
-          <li key={step.key} className={isDone(step) ? "rounded-full bg-surface px-2 py-1 text-foreground" : "rounded-full bg-surface-2 px-2 py-1 text-muted"}>
+          <li
+            key={step.key}
+            className={
+              isDone(step)
+                ? `rounded-full bg-surface px-2 py-1 text-foreground${justDone === step.key ? " xp-chip-pop" : ""}`
+                : "rounded-full bg-surface-2 px-2 py-1 text-muted"
+            }
+          >
             {isDone(step) ? `✓ ${step.label}` : step.label}
           </li>
         ))}

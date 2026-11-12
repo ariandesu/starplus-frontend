@@ -36,6 +36,7 @@ import { useActiveCrew } from "@/lib/use-active-crew";
 import { getModelDefinition, getKbEntry, citeLabel } from "@/lib/kb";
 import { enqueueMeasurement, enqueueResult } from "@/lib/outbox";
 import { getSession } from "@/lib/session";
+import { computeXp } from "@/lib/xp";
 
 async function getSetting(key: string, fallback: string): Promise<string> {
   const db = await deviceDb();
@@ -141,6 +142,20 @@ function CheckForm() {
       }
       const db = await profileDb(crewId);
       const history = await db.getAll("measurements");
+      const pastResults = await db.getAll("results");
+      const latestForXp = [...pastResults].sort(
+        (a, b) => Date.parse(a.assessed_at) - Date.parse(b.assessed_at)
+      ).pop() ?? null;
+      const xpOpts = {
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        demo: Boolean(session?.demo),
+        deviceId: device_id,
+        now: Date.now(),
+      };
+      const xpBefore = computeXp(history, latestForXp, xpOpts);
+      const xpAfter = computeXp([...history, ...records], latestForXp, xpOpts);
+      const gained = xpAfter.total - xpBefore.total;
+      const full = xpAfter.fullCheckToday && !xpBefore.fullCheckToday;
       const modelInput = (() => {
         try {
           const loaded = loadModel(getModelDefinition());
@@ -181,7 +196,11 @@ function CheckForm() {
       const result = await assess([...history, ...records], context);
       for (const record of records) await enqueueMeasurement(crewId, record);
       await enqueueResult(crewId, result);
-      router.push(`/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result.client_id)}`);
+      router.push(
+        `/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(result.client_id)}${
+          gained > 0 ? `&xp=${gained}&fullcheck=${full ? 1 : 0}` : ""
+        }`
+      );
     } finally {
       setBusy(false);
     }

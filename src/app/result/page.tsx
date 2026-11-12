@@ -8,9 +8,12 @@ import { Citation, StatusTone } from "@/components/citation";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card } from "@/components/ui/card";
 import { ModelView } from "@/components/model-view";
-import { profileDb } from "@/lib/db";
+import { profileDb, deviceDb } from "@/lib/db";
 import { enqueueResult } from "@/lib/outbox";
 import { getExplanation, getKbEntry, citeLabel, reasonText } from "@/lib/kb";
+import { computeXp, rankForTotal } from "@/lib/xp";
+import { FullCheckCelebration, XpToast } from "@/components/xp-feedback";
+import { getSession } from "@/lib/session";
 import type { KbEntry } from "@starplus/core";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { RequireSession } from "@/components/require-session";
@@ -58,8 +61,12 @@ function ResultView() {
   const session = useActiveCrew();
   const { crewId, ready: crewReady } = session;
   const resultId = params.get("result") ?? "";
+  const xpParam = Math.max(Number(params.get("xp") ?? 0) || 0, 0);
+  const fullParam = params.get("fullcheck") === "1";
   const [result, setResult] = useState<Result | null>(null);
   const [records, setRecords] = useState<Measurement[]>([]);
+  const [xpTotal, setXpTotal] = useState<number | null>(null);
+  const [toastGone, setToastGone] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
 
@@ -99,6 +106,23 @@ function ResultView() {
         stored.per_measure.map((entry) => db.get("measurements", entry.values.client_id))
       );
       setRecords(measures.filter((m): m is Measurement => !!m));
+      try {
+        const [device, live] = await Promise.all([deviceDb(), getSession(crewId)]);
+        const [all, deviceRow] = await Promise.all([
+          db.getAll("measurements"),
+          device.get("settings", "device_id"),
+        ]);
+        setXpTotal(
+          computeXp(all, stored, {
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            demo: Boolean(live?.demo),
+            deviceId: deviceRow?.value ?? null,
+            now: Date.now(),
+          }).total
+        );
+      } catch {
+        /* the XP toast is decorative; the result stands without it */
+      }
       setSettled(true);
     })().catch(() => setSettled(true));
   }, [crewId, crewReady, resultId]);
@@ -127,6 +151,20 @@ function ResultView() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <PageHeader eyebrow="RESULT" title="Your result" />
+      {xpParam > 0 && !toastGone && (
+        <XpToast amount={xpParam} onDismiss={() => setToastGone(true)} />
+      )}
+      {fullParam && xpParam > 0 && xpTotal !== null && (
+        <FullCheckCelebration
+          oldTotal={Math.max(xpTotal - xpParam, 0)}
+          newTotal={xpTotal}
+          newRank={
+            rankForTotal(xpTotal).level > rankForTotal(Math.max(xpTotal - xpParam, 0)).level
+              ? rankForTotal(xpTotal).rank
+              : null
+          }
+        />
+      )}
       <Card variant="hero" glow={result.overall_status} className="mt-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-white/70">

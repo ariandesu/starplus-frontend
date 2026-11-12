@@ -71,6 +71,11 @@ function rankFor(total: number): { level: number; rank: string; levelFloor: numb
   return { level: current.level, rank: current.rank, levelFloor: current.from, nextLevelAt: next?.from ?? null };
 }
 
+/** The rank a total XP value reaches. Used for rank-up detection. */
+export function rankForTotal(total: number): { level: number; rank: string; levelFloor: number; nextLevelAt: number | null } {
+  return rankFor(total);
+}
+
 /**
  * An eligible reading: the buildDailyPlan (R1) provenance rule, plus not
  * voided and not an estimate. Value is never consulted.

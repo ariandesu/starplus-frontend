@@ -390,3 +390,140 @@ section[id] {
   }
 }
 
+/* XP success feedback. All keyframes run only when the user has no motion
+   preference; the same text and a static tick are shown otherwise. The
+   accent is used for XP and celebration, never watch amber or critical red. */
+
+.xp-gain-chip {
+  display: inline-block;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.375rem 0.75rem;
+  opacity: 1;
+}
+
+.xp-bar-fill {
+  transition: none;
+}
+
+.xp-tick-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.xp-tick-path {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 0;
+}
+
+.xp-tick-ring {
+  stroke-dasharray: 190;
+  stroke-dashoffset: 0;
+}
+
+.xp-particles {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .xp-gain-chip {
+    animation: xp-float 0.9s ease-out forwards;
+  }
+
+  .xp-chip-pop {
+    animation: xp-pop 0.25s ease-out;
+  }
+
+  .xp-bar-fill {
+    transition: width 0.6s ease;
+  }
+
+  .xp-tick-ring {
+    animation: xp-draw 0.5s ease-out;
+  }
+
+  .xp-tick-path {
+    animation: xp-draw 0.4s ease-out 0.35s backwards;
+  }
+
+  .xp-particles {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+  }
+
+  .xp-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    margin: -3px;
+    border-radius: 9999px;
+    background: var(--accent-strong);
+    animation: xp-burst 0.7s ease-out 0.4s backwards;
+  }
+
+  .xp-rank-up {
+    animation: xp-glow 1.2s ease-out;
+  }
+}
+
+@keyframes xp-float {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
+
+@keyframes xp-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes xp-draw {
+  from {
+    stroke-dashoffset: 190;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes xp-burst {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.3);
+  }
+}
+
+@keyframes xp-glow {
+  0%,
+  100% {
+    filter: none;
+  }
+  40% {
+    filter: brightness(1.25);
+  }
+}
+
