@@ -147,7 +147,10 @@ export function computeXp(
   let fullCheckToday = false;
   const todayKey = todayLocal(timeZone, now);
   for (const [day, readings] of byDay) {
-    const { dayTotal, baseDone } = xpForDay(readings, extras);
+    // The +10 re-check rule follows the latest result, which only describes
+    // today. Past days keep the plain rule (+10 base steps, +5 other
+    // measures) so history is never re-scored when a result changes.
+    const { dayTotal, baseDone } = xpForDay(readings, day === todayKey ? extras : []);
     total += dayTotal;
     if (day === todayKey) {
       today = dayTotal;

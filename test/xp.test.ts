@@ -195,3 +195,32 @@ describe("xpGain", () => {
     expect(xpGain(summary(10), summary(20))).toEqual({ gained: 10, levelUp: false, newRank: null, fullCheck: false });
   });
 });
+
+describe("re-check extras apply to today only", () => {
+  const PAST = "2026-11-10T12:00:00.000Z";
+  const watchGlucose = result([{ metric: "blood_glucose", status: "watch" }]);
+  const nominalGlucose = result([{ metric: "blood_glucose", status: "nominal" }]);
+
+  it("scores a past day the same whatever the latest result says", () => {
+    const history = [reading("heart_rate", PAST), reading("blood_glucose", PAST)];
+    expect(computeXp(history, watchGlucose, OPTS).total).toBe(15);
+    expect(computeXp(history, nominalGlucose, OPTS).total).toBe(15);
+    expect(computeXp(history, null, OPTS).total).toBe(15);
+  });
+
+  it("still earns +10 for a watch extra read today", () => {
+    expect(computeXp([reading("blood_glucose", DAY)], watchGlucose, OPTS).total).toBe(10);
+    expect(computeXp([reading("blood_glucose", DAY)], nominalGlucose, OPTS).total).toBe(5);
+  });
+
+  it("never drops the total when a measure returns to nominal", () => {
+    const history = [
+      reading("heart_rate", PAST),
+      reading("blood_glucose", PAST),
+      reading("heart_rate", "2026-11-11T12:00:00.000Z"),
+    ];
+    const before = computeXp(history, watchGlucose, OPTS).total;
+    const after = computeXp(history, nominalGlucose, OPTS).total;
+    expect(after).toBeGreaterThanOrEqual(before);
+  });
+});
