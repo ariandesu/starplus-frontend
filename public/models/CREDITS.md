@@ -12,16 +12,21 @@ licensed under **CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
 vertex data dropped, indices narrowed to 16-bit, textures reduced to at most
 512 px (JPEG, PNG only where the alpha channel is actually used), packed to a
 plain GLB by `bake-body.py` (male) and a three.js bind-pose bake plus
-`postprocess-glb.py` (female).
+`postprocess-glb.py` (female). For the challenge the files were slimmed with
+`tools/slim-body-models.sh` (Decimate to about 25,000 triangles, JPEG
+re-encode, photo PNGs to a 256-colour palette, Draco-compressed geometry);
+all textures are still 512 px and node names, pivots and proportions are
+unchanged, so body-map anchors still sit on the body.
 
 | File | Bytes | SHA-256 | Triangles |
 |---|---|---|---|
-| `body-male.glb` (output) | 3,571,212 | `19481612acef3bbcaa93732413324e87cfa3193f22a6621e8526c1a3ceed88a0` | 60,310 |
-| `body-female.glb` (output) | 5,099,288 | `23b7b1c5a7660f9ade9b76fbefb64f40b55c3b8d5454acac3ce54c2aacb419e0` | 80,906 |
+| `body-male.glb` (output) | 963,304 | `ca650cbc857b503378afc8bc963d65b3bd8fdf8df6510b1569133cd56feb9d13` | 25,224 |
+| `body-female.glb` (output) | 1,162,760 | `38abc9e68469460b3af50f8c833a6d59ade2de141b6563da4767702f65a07df4` | 25,433 |
 | `miez.zip` (source download) | 8,462,222 | — | — |
 | `hight_quality_realistic_girl_character.zip` (source download) | 24,877,255 | — | — |
 
-The scan geometry was not edited.
+The scan geometry was decimated to about 25,000 triangles per model (see above);
+nothing else about the shape was edited.
 
 
 ## Dashboard photos (author-supplied)

@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { AlertCircle, AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
@@ -215,7 +216,10 @@ export default function BodyScene({ model, systems, active, onSelect, onReady, o
     apiRef.current = api;
     api.select(activeRef.current);
 
+    const draco = new DRACOLoader().setDecoderPath("/draco/");
+    draco.setDecoderConfig({ type: "wasm" });
     const loader = new GLTFLoader();
+    loader.setDRACOLoader(draco);
     loader.load(
       `/models/body-${model}.glb`,
       (gltf) => {
@@ -332,6 +336,7 @@ export default function BodyScene({ model, systems, active, onSelect, onReady, o
       environment.dispose();
       pmrem.dispose();
       renderer.dispose();
+      draco.dispose();
       if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
     };
   }, [model]);
