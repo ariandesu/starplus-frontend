@@ -127,7 +127,7 @@ sequenceDiagram
   App-->>A: Colour-coded result, reason, cited source, What to do, +XP
   App->>Out: Queue reading and result
   Out->>W: Sync when online (backoff, works through blackouts)
-  W-->>S: Crew board updates; reports inbox
+  W-->>S: Crew board updates and reports inbox
   S-->>W: Acknowledge
 ```
 
