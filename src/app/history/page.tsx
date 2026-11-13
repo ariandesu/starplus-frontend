@@ -23,6 +23,7 @@ const MEASURE_FILTERS: MeasureFilter[] = [
   { id: "radiation", label: "Radiation", codes: new Set(["radiation_dose"]) },
   { id: "nutrition", label: "Nutrition", codes: new Set(["calories", "water_intake"]) },
   { id: "exercise", label: "Exercise", codes: new Set(["physical_activity"]) },
+  { id: "environment", label: "Environment", codes: new Set(["cabin_co2", "cabin_o2", "cabin_temperature"]) },
 ];
 
 function HistoryView() {

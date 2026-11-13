@@ -16,6 +16,9 @@ import aidLowSugar from "@starplus/core/content/kb/firstaid-low-blood-sugar.json
 import aidUnresponsive from "@starplus/core/content/kb/firstaid-unresponsive.json" with { type: "json" };
 import measureActivity from "@starplus/core/content/kb/measure-activity.json" with { type: "json" };
 import measureBodyMass from "@starplus/core/content/kb/measure-body-mass.json" with { type: "json" };
+import measureCabinCo2 from "@starplus/core/content/kb/measure-cabin-co2.json" with { type: "json" };
+import measureCabinO2 from "@starplus/core/content/kb/measure-cabin-o2.json" with { type: "json" };
+import measureCabinTemperature from "@starplus/core/content/kb/measure-cabin-temperature.json" with { type: "json" };
 import measureCalories from "@starplus/core/content/kb/measure-calories.json" with { type: "json" };
 import measureDiastolic from "@starplus/core/content/kb/measure-diastolic-bp.json" with { type: "json" };
 import measureGlucose from "@starplus/core/content/kb/measure-glucose.json" with { type: "json" };
@@ -53,6 +56,9 @@ const ENTRIES: Record<string, KbEntry> = {
   "firstaid-unresponsive": aidUnresponsive as KbEntry,
   "measure-activity": measureActivity as KbEntry,
   "measure-body-mass": measureBodyMass as KbEntry,
+  "measure-cabin-co2": measureCabinCo2 as KbEntry,
+  "measure-cabin-o2": measureCabinO2 as KbEntry,
+  "measure-cabin-temperature": measureCabinTemperature as KbEntry,
   "measure-calories": measureCalories as KbEntry,
   "measure-diastolic-bp": measureDiastolic as KbEntry,
   "measure-glucose": measureGlucose as KbEntry,

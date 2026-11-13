@@ -447,12 +447,21 @@ describe("reaction test", () => {
 });
 
 describe("body map", () => {
-  it("covers every catalog measure exactly once", () => {
+  it("covers every body measure exactly once, and no habitat measure", () => {
     const codes = BODY_SYSTEMS.flatMap((system) => system.measures);
-    const catalogCodes = new Set(CATALOG.measures.map((measure) => measure.code));
-    for (const code of codes) expect(catalogCodes.has(code), code).toBe(true);
+    const bodyCodes = new Set(
+      CATALOG.measures.filter((measure) => measure.body_system !== "habitat").map((measure) => measure.code)
+    );
+    const habitatCodes = new Set(
+      CATALOG.measures.filter((measure) => measure.body_system === "habitat").map((measure) => measure.code)
+    );
+    expect(habitatCodes.size).toBeGreaterThan(0);
+    for (const code of codes) {
+      expect(bodyCodes.has(code), code).toBe(true);
+      expect(habitatCodes.has(code), code).toBe(false);
+    }
     expect(new Set(codes).size).toBe(codes.length);
-    expect(codes.length).toBe(CATALOG.measures.length);
+    expect(codes.length).toBe(bodyCodes.size);
   });
 
   it("marks systems grey without data", () => {
