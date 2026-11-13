@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { lookupMeasure } from "@starplus/core";
+import { Citation } from "@/components/citation";
 import { cn } from "@/lib/utils";
 import { StatusPill } from "@/components/ui/status-pill";
 
@@ -9,14 +10,55 @@ export interface BodySystem {
   id: string;
   label: string;
   measures: string[];
+  /** What the system does, from the cited NASA hazard entries. */
+  function: string;
+  /** Why it matters on a mission, from the cited NASA hazard entries. */
+  space: string;
+  /** Source line shown under the text. */
+  source: string;
 }
 
 export const BODY_SYSTEMS: BodySystem[] = [
-  { id: "mind", label: "Sleep and mind", measures: ["sleep_hours", "sleep_quality", "mood_score", "stress_score", "reaction_time"] },
-  { id: "cardio", label: "Heart and circulation", measures: ["heart_rate", "blood_pressure_systolic", "blood_pressure_diastolic", "hrv_rmssd"] },
-  { id: "lungs", label: "Lungs and breathing", measures: ["respiratory_rate", "oxygen_saturation"] },
-  { id: "fuel", label: "Fuel and fluids", measures: ["blood_glucose", "body_mass", "water_intake", "calories", "physical_activity", "urine_specific_gravity"] },
-  { id: "whole", label: "Whole body", measures: ["temperature_c", "radiation_dose"] },
+  {
+    id: "mind",
+    label: "Sleep and mind",
+    measures: ["sleep_hours", "sleep_quality", "mood_score", "stress_score", "reaction_time"],
+    function: "Sleep restores attention, memory and mood.",
+    space: "Small crews in closed habitats face monotony, sleep disruption, and strain on mood and team dynamics.",
+    source: "NASA HRP, 5 Hazards of Human Spaceflight: isolation and confinement",
+  },
+  {
+    id: "cardio",
+    label: "Heart and circulation",
+    measures: ["heart_rate", "blood_pressure_systolic", "blood_pressure_diastolic", "hrv_rmssd"],
+    function: "The heart and blood vessels carry blood, oxygen and heat around the body.",
+    space: "Microgravity shifts fluid toward the head and changes heart, pressure and temperature regulation; dizziness on return to gravity is expected.",
+    source: "NASA HRP, 5 Hazards: altered gravity",
+  },
+  {
+    id: "lungs",
+    label: "Lungs and breathing",
+    measures: ["respiratory_rate", "oxygen_saturation"],
+    function: "The lungs take in oxygen and remove carbon dioxide.",
+    space: "The cabin is a closed loop: air is recycled, and trace contaminants and dust accumulate. Report breathing changes promptly.",
+    source: "NASA HRP, 5 Hazards: hostile closed environment",
+  },
+  {
+    id: "fuel",
+    label: "Fuel and fluids",
+    measures: ["blood_glucose", "body_mass", "water_intake", "calories", "physical_activity", "urine_specific_gravity"],
+    function: "Food, water and exercise keep body mass, bone and muscle.",
+    space: "Microgravity unloads bone and muscle; daily resistive and aerobic countermeasures slow the loss.",
+    source: "NASA HRP, 5 Hazards: altered gravity",
+  },
+  {
+    id: "whole",
+    label: "Whole body",
+    measures: ["temperature_c", "radiation_dose"],
+    function: "Body temperature and radiation exposure affect the whole body.",
+    space: "Beyond low Earth orbit, crews face galactic cosmic rays and solar particle events; cumulative exposure is tracked against the career limit.",
+    source: "NASA HRP, 5 Hazards: space radiation",
+  },
 ];
 
 const REGION_FILL: Record<string, string> = {
@@ -122,8 +164,16 @@ export function BodySystemList({
                   </span>
                 )}
               </button>
-              {selected && renderTiles && (
-                <div className="border-t border-border p-3">{renderTiles(system.id)}</div>
+              {selected && (
+                <div className="border-t border-border p-3">
+                  <h3 className="text-base font-semibold text-foreground">{system.label}</h3>
+                  <p className="mt-1 text-sm text-foreground">{system.function}</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    <span className="font-medium">In space:</span> {system.space}
+                  </p>
+                  <Citation source={system.source} className="mt-1" />
+                  {renderTiles && <div className="mt-3">{renderTiles(system.id)}</div>}
+                </div>
               )}
             </div>
           </li>

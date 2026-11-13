@@ -470,4 +470,15 @@ describe("body map", () => {
     expect(systemHasData(mind, new Set(["heart_rate"]))).toBe(false);
     expect(systemHasData(mind, new Set(["sleep_hours"]))).toBe(true);
   });
+
+  it("gives every system a function, a space note and a source", () => {
+    expect(BODY_SYSTEMS.map((system) => system.id).sort()).toEqual(
+      ["cardio", "fuel", "lungs", "mind", "whole"]
+    );
+    for (const system of BODY_SYSTEMS) {
+      expect(system.function.length, `${system.id} function`).toBeGreaterThan(0);
+      expect(system.space.length, `${system.id} space`).toBeGreaterThan(0);
+      expect(system.source.length, `${system.id} source`).toBeGreaterThan(0);
+    }
+  });
 });
