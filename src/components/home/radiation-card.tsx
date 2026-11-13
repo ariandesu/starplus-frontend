@@ -6,9 +6,23 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { CAREER_LIMIT_MSV, summarizeRadiation } from "@/lib/radiation-summary";
 import { shortDate } from "@/lib/report-title";
+import { useSepEvents } from "@/lib/use-sep-events";
 
 export function RadiationCard({ measurements }: { measurements: Measurement[] }) {
   const summary = summarizeRadiation(measurements);
+  const sep = useSepEvents();
+  const sepNotice =
+    sep && sep.events.length > 0 ? (
+      <p role="status" className="mt-4 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
+        {sep.events.length} solar particle {sep.events.length === 1 ? "event" : "events"} recorded
+        in the last 30 days (DONKI space weather{sep.asOf ? `, ${sep.asOf}` : ""}
+        {sep.fromCache ? ", cached" : ""}). Shelter procedures are in the radiation hazard
+        guidance.{" "}
+        <Link className="underline" href="/hazards">
+          Hazards
+        </Link>
+      </p>
+    ) : null;
   return (
     <Card className="h-full p-5 lg:p-6">
       <CardHeader
@@ -24,6 +38,7 @@ export function RadiationCard({ measurements }: { measurements: Measurement[] })
           </Link>
         }
       />
+      {sepNotice}
       {summary.readingCount === 0 ? (
         <div className="mt-4">
           <p className="text-sm text-muted">No dosimeter readings logged yet.</p>

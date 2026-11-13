@@ -1,8 +1,21 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Measurement } from "@starplus/core";
 import { RadiationCard } from "../src/components/home/radiation-card";
+
+beforeEach(() => {
+  try {
+    localStorage.clear();
+  } catch {
+    // jsdom without an origin: storage is unavailable and the hook treats it as an empty cache.
+  }
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function reading(value_num: number, measured_at: string): Measurement {
   return {
@@ -68,6 +81,31 @@ describe("radiation card", () => {
     const banner = div.querySelector('[role="status"]');
     expect(banner?.textContent).toContain("reached 25% of the 600 mSv career limit");
     expect(banner?.querySelector('a[href="/hazards"]')).not.toBeNull();
+    done();
+  });
+
+  it("stays silent when the space-weather feed is down", async () => {
+    const { div, done } = await renderCard([]);
+    expect(div.querySelector('[role="status"]')).toBeNull();
+    done();
+  });
+
+  it("shows the solar-particle notice when DONKI reports events", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => [
+          { eventTime: "2026-11-10T12:00Z", instruments: [{ displayName: "SOHO-ERNE" }] },
+          { eventTime: "2026-11-11T12:00Z", instruments: [] },
+        ],
+      })) as unknown as typeof fetch
+    );
+    const { div, done } = await renderCard([]);
+    const notice = div.querySelector('[role="status"]');
+    expect(notice?.textContent).toContain("2 solar particle events recorded");
+    expect(notice?.textContent).toContain("DONKI space weather");
+    expect(notice?.querySelector('a[href="/hazards"]')).not.toBeNull();
     done();
   });
 });
