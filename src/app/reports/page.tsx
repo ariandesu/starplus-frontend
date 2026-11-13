@@ -4,9 +4,10 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
-import type { Report } from "@starplus/core";
+import type { Measurement, Report } from "@starplus/core";
 import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
 import { ownReportTitle } from "@/lib/report-title";
+import { CAREER_LIMIT_MSV, summarizeRadiation } from "@/lib/radiation-summary";
 import { hasActiveSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { RequireSession } from "@/components/require-session";
@@ -18,17 +19,22 @@ async function loadView(crewId: string) {
     (item) => item.kind === "report" && (item.payload as Report).kind === "emergency" && item.state !== "failed"
   ).length;
   let delivered: Report[] = [];
+  let radiation: Measurement[] = [];
   if (crewId) {
     try {
       const pdb = await profileDb(crewId);
       const reports = await pdb.getAll("reports");
       const pendingIds = new Set(mine.map((item) => item.client_id));
       delivered = reports.filter((report) => !pendingIds.has(report.client_id));
+      radiation = (await pdb.getAll("measurements")).filter(
+        (measurement) => measurement.metric === "radiation_dose" && measurement.value_num !== null
+      );
     } catch {
       delivered = [];
+      radiation = [];
     }
   }
-  return { mine, delivered, emergencyWaiting };
+  return { mine, delivered, emergencyWaiting, radiation };
 }
 
 function ReportsView() {
@@ -36,6 +42,7 @@ function ReportsView() {
   const { crewId } = session;
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
+  const [radiation, setRadiation] = useState<Measurement[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
   const [hasSession, setHasSession] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -46,6 +53,7 @@ function ReportsView() {
     const view = await loadView(crewId ?? "");
     setPending(view.mine);
     setDelivered(view.delivered);
+    setRadiation(view.radiation);
     setEmergencyWaiting(view.emergencyWaiting);
     setHasSession(await hasActiveSession());
     setChecked(true);
@@ -144,6 +152,40 @@ function ReportsView() {
           ))}
         </ul>
       )}
+      <h2 className="mt-6 font-semibold text-foreground">Radiation report</h2>
+      {(() => {
+        const summary = summarizeRadiation(radiation);
+        if (summary.readingCount === 0) {
+          return <p className="mt-1 text-sm text-muted-foreground">No dosimeter readings logged yet.</p>;
+        }
+        return (
+          <div className="mt-2 rounded-xl border border-border p-3 text-sm">
+            <p>
+              <span className="font-semibold">{summary.totalMsv.toFixed(1)} mSv logged</span> —{" "}
+              {summary.percentOfCareerLimit.toFixed(1)}% of the {CAREER_LIMIT_MSV} mSv career limit.
+            </p>
+            {summary.milestone > 0 && (
+              <p role="status" className="mt-2 rounded-lg bg-status-watch-bg px-3 py-2 text-status-watch-fg">
+                Logged exposure has reached {summary.milestone}% of the career limit. Review the
+                radiation guidance with mission control.
+              </p>
+            )}
+            <ul aria-label="Daily logged dose" className="mt-2 space-y-1 text-xs text-muted-foreground">
+              {summary.days.map((day) => (
+                <li key={day.date}>
+                  {day.date}: {day.mSv.toFixed(1)} mSv
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Source: NASA-STD-3001 Vol. 1 Rev. B.{" "}
+              <Link className="underline" href="/hazards">
+                Radiation hazard guidance
+              </Link>
+            </p>
+          </div>
+        );
+      })()}
     </div>
   );
 }

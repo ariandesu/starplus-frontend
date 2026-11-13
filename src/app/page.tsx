@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import type { Measurement } from "@starplus/core";
 import { StatCount } from "@/components/dashboard/stat-count";
 import { MeasuresCard } from "@/components/home/measures-card";
+import { RadiationCard } from "@/components/home/radiation-card";
 import { ReadinessCard } from "@/components/home/readiness-card";
 import { ReportsCard } from "@/components/home/reports-card";
 import { StatusHero } from "@/components/home/status-hero";
@@ -218,8 +219,12 @@ function HomeView() {
           <SystemsCard entries={entries} />
         </div>
 
+        <div className="md:col-span-2 lg:order-7 lg:col-span-4">
+          <RadiationCard measurements={measurements} />
+        </div>
+
         {reports.length > 0 && (
-          <div className="md:col-span-2 lg:order-7 lg:col-span-12">
+          <div className="md:col-span-2 lg:order-8 lg:col-span-12">
             <ReportsCard reports={reports} />
           </div>
         )}
