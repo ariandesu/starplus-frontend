@@ -4,13 +4,13 @@ export type NavGroup = { title: string; items: NavEntry[] };
 
 const SURGEON_LAYOUT: Record<string, string[]> = {
   Crew: ["Dashboard", "Crew", "Reports"],
-  Care: ["Emergency", "Medicines"],
+  Care: ["Emergency", "Medicines", "Hazards"],
   Device: ["Settings"],
 };
 
 const ASTRONAUT_LAYOUT: Record<string, string[]> = {
   Daily: ["Home", "Self-check", "History", "Body", "Progress"],
-  Care: ["Medicines", "Reports", "Emergency"],
+  Care: ["Medicines", "Reports", "Hazards", "Emergency"],
   Device: ["Surgeon", "Settings", "Demo", "Login"],
 };
 

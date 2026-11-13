@@ -12,6 +12,7 @@ const ASTRONAUT_NAV: NavEntry[] = [
   { label: "Medicines", href: "/medicines" },
   { label: "Emergency", href: "/emergency" },
   { label: "Reports", href: "/reports" },
+  { label: "Hazards", href: "/hazards" },
   { label: "Settings", href: "/settings" },
   { label: "Demo", href: "/demo" },
   { label: "Login", href: "/login" },
@@ -23,6 +24,7 @@ const SURGEON_NAV: NavEntry[] = [
   { label: "Reports", href: "/surgeon/reports" },
   { label: "Emergency", href: "/emergency" },
   { label: "Medicines", href: "/medicines" },
+  { label: "Hazards", href: "/hazards" },
   { label: "Settings", href: "/settings" },
 ];
 

@@ -6,7 +6,7 @@ describe("navItemsForRole", () => {
     const labels = navItemsForRole("astronaut").map((item) => item.label);
     expect(labels).toEqual([
       "Home", "Self-check", "History", "Body", "Progress", "Medicines",
-      "Emergency", "Reports", "Settings", "Demo", "Login",
+      "Emergency", "Reports", "Hazards", "Settings", "Demo", "Login",
     ]);
   });
 
@@ -14,7 +14,7 @@ describe("navItemsForRole", () => {
     for (const role of ["flight_medical_officer", "mission_control"]) {
       const items = navItemsForRole(role);
       const labels = items.map((item) => item.label);
-      expect(labels).toEqual(["Dashboard", "Crew", "Reports", "Emergency", "Medicines", "Settings"]);
+      expect(labels).toEqual(["Dashboard", "Crew", "Reports", "Emergency", "Medicines", "Hazards", "Settings"]);
       expect(items.find((item) => item.label === "Dashboard")?.href).toBe("/surgeon");
       expect(items.find((item) => item.label === "Crew")?.href).toBe("/surgeon/crew");
       expect(items.find((item) => item.label === "Reports")?.href).toBe("/surgeon/reports");
@@ -30,6 +30,6 @@ describe("navItemsForRole", () => {
 
   it("shows the full menu while logged out", () => {
     expect(navItemsForRole(null).map((item) => item.label)).toContain("Login");
-    expect(navItemsForRole(null)).toHaveLength(11);
+    expect(navItemsForRole(null)).toHaveLength(12);
   });
 });
