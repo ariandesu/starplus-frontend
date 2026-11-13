@@ -3,13 +3,16 @@
 import Link from "next/link";
 import {
   Activity,
+  AirVent,
   Droplets,
+  Gauge,
   GlassWater,
   HeartPulse,
   Moon,
   RotateCcw,
   Smile,
   Thermometer,
+  ThermometerSun,
   Wind,
   type LucideIcon,
 } from "lucide-react";
@@ -26,13 +29,16 @@ const ICONS: Record<string, LucideIcon> = {
   sleep_hours: Moon,
   water_intake: GlassWater,
   mood_score: Smile,
+  cabin_co2: AirVent,
+  cabin_o2: Gauge,
+  cabin_temperature: ThermometerSun,
 };
 
 const BASE_KEYS = new Set(BASE_XP_STEPS.map((step) => step.key));
 
 /**
  * "Today's mission": the rank badge, total XP and the bar to the next rank,
- * the eight daily steps as tappable tiles, and the full-check footer. The
+ * the eleven daily steps as tappable tiles, and the full-check footer. The
  * form below stays exactly as it is.
  */
 export function MissionCard({ crewId }: { crewId: string }) {
@@ -140,7 +146,7 @@ export function MissionCard({ crewId }: { crewId: string }) {
         <p className="text-sm text-muted">
           {full
             ? "Full check complete ✓ · +50 XP earned"
-            : `${baseDone} of 8 done today · +50 XP for the full check`}
+            : `${baseDone} of ${BASE_XP_STEPS.length} done today · +50 XP for the full check`}
         </p>
         {!full && (
           <Link

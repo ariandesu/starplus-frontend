@@ -67,7 +67,7 @@ const DAY = "2026-11-12T12:00:00.000Z";
 const YESTERDAY = "2026-11-11T12:00:00.000Z";
 const OPTS = { timeZone: "UTC", now: Date.parse(DAY) };
 
-const EIGHT: [string, string][] = [
+const ELEVEN: [string, string][] = [
   ["heart_rate", DAY],
   ["blood_pressure_systolic", DAY],
   ["oxygen_saturation", DAY],
@@ -76,6 +76,9 @@ const EIGHT: [string, string][] = [
   ["sleep_hours", DAY],
   ["water_intake", DAY],
   ["mood_score", DAY],
+  ["cabin_co2", DAY],
+  ["cabin_o2", DAY],
+  ["cabin_temperature", DAY],
 ];
 
 function summary(total: number, level = 1, rank = "Cadet", fullCheckToday = false): XpSummary {
@@ -119,20 +122,20 @@ describe("computeXp", () => {
     expect(xp.total).toBe(5);
   });
 
-  it("gives 80 + 50 = 130 for all 8 steps", () => {
-    const xp = computeXp(EIGHT.map(([metric, at]) => reading(metric, at)), null, OPTS);
-    expect(xp.total).toBe(130);
+  it("gives 110 + 50 = 160 for all 11 steps", () => {
+    const xp = computeXp(ELEVEN.map(([metric, at]) => reading(metric, at)), null, OPTS);
+    expect(xp.total).toBe(160);
     expect(xp.fullCheckToday).toBe(true);
   });
 
   it("gives +10 for a watch extra step without blocking the bonus", () => {
     const res = result([{ metric: "blood_glucose", status: "watch" }]);
     const xp = computeXp(
-      [...EIGHT.map(([metric, at]) => reading(metric, at)), reading("blood_glucose", DAY)],
+      [...ELEVEN.map(([metric, at]) => reading(metric, at)), reading("blood_glucose", DAY)],
       res,
       OPTS
     );
-    expect(xp.total).toBe(140);
+    expect(xp.total).toBe(170);
     expect(xp.fullCheckToday).toBe(true);
   });
 

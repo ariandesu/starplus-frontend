@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inboxTitle, kindLabel, ownReportTitle, shortDate } from "../src/lib/report-title";
+import { inboxTitle, kindLabel, ownReportTitle, reportScenario, scenarioLabel, shortDate } from "../src/lib/report-title";
 
 describe("report titles", () => {
   it("titles the inbox without raw IDs", () => {
@@ -18,5 +18,16 @@ describe("report titles", () => {
     expect(ownReportTitle("routine", "2026-11-08T02:00:00.000Z", "delivered")).not.toContain(id);
     expect(kindLabel("routine")).toBe("Routine");
     expect(shortDate("2026-11-08T02:00:00.000Z")).toBe("8 Nov");
+  });
+
+  it("labels known emergency scenarios and ignores the rest", () => {
+    expect(scenarioLabel("eva")).toBe("Spacewalk emergency");
+    expect(scenarioLabel("bleeding")).toBe("Severe bleeding");
+    expect(scenarioLabel("nope")).toBeNull();
+    expect(scenarioLabel(null)).toBeNull();
+    expect(reportScenario(JSON.stringify({ scenario: "eva", steps: [] }))).toBe("Spacewalk emergency");
+    expect(reportScenario(JSON.stringify({ scenario: "nope" }))).toBeNull();
+    expect(reportScenario(JSON.stringify({}))).toBeNull();
+    expect(reportScenario("not json")).toBeNull();
   });
 });

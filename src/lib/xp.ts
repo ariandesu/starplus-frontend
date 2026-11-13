@@ -17,7 +17,7 @@ export interface XpStep {
   label: string;
 }
 
-/** The eight steps of a normal day, mirroring buildDailyPlan (R1). */
+/** The eleven steps of a normal day, mirroring buildDailyPlan (R1). */
 export const BASE_XP_STEPS: XpStep[] = [
   { key: "heart_rate", metrics: ["heart_rate"], label: "Heart rate" },
   { key: "blood_pressure", metrics: ["blood_pressure_systolic", "blood_pressure_diastolic"], label: "Blood pressure" },
@@ -27,6 +27,9 @@ export const BASE_XP_STEPS: XpStep[] = [
   { key: "sleep_hours", metrics: ["sleep_hours"], label: "Sleep" },
   { key: "water_intake", metrics: ["water_intake"], label: "Water" },
   { key: "mood_score", metrics: ["mood_score"], label: "Mood" },
+  { key: "cabin_co2", metrics: ["cabin_co2"], label: "Cabin carbon dioxide" },
+  { key: "cabin_o2", metrics: ["cabin_o2"], label: "Cabin oxygen" },
+  { key: "cabin_temperature", metrics: ["cabin_temperature"], label: "Cabin temperature" },
 ];
 
 const STEP_XP = 10;

@@ -66,9 +66,9 @@ function result(per: { metric: string; status: string }[]): Result {
 const NOON = Date.parse("2026-11-12T12:00:00.000Z");
 
 describe("buildDailyPlan", () => {
-  it("gives 0 of 8 with an empty history", () => {
+  it("gives 0 of 11 with an empty history", () => {
     const plan = buildDailyPlan([], null, { timeZone: "UTC", now: NOON });
-    expect(plan.total).toBe(8);
+    expect(plan.total).toBe(11);
     expect(plan.done).toBe(0);
     expect(plan.steps.map((s) => s.key)).toEqual([
       "heart_rate",
@@ -79,6 +79,9 @@ describe("buildDailyPlan", () => {
       "sleep_hours",
       "water_intake",
       "mood_score",
+      "cabin_co2",
+      "cabin_o2",
+      "cabin_temperature",
     ]);
   });
 
@@ -88,18 +91,18 @@ describe("buildDailyPlan", () => {
       null,
       { timeZone: "UTC", now: NOON }
     );
-    expect(plan.total).toBe(8);
+    expect(plan.total).toBe(11);
     expect(plan.done).toBe(1);
     expect(plan.steps.find((s) => s.key === "blood_pressure")?.done).toBe(true);
   });
 
-  it("adds a watch measure that is not one of the eight", () => {
+  it("adds a watch measure that is not one of the eleven", () => {
     const plan = buildDailyPlan([], result([{ metric: "blood_glucose", status: "watch" }]), {
       timeZone: "UTC",
       now: NOON,
     });
-    expect(plan.total).toBe(9);
-    const extra = plan.steps[8];
+    expect(plan.total).toBe(12);
+    const extra = plan.steps[11];
     expect(extra.key).toBe("blood_glucose");
     expect(extra.label).toBe("Blood glucose");
   });
@@ -109,7 +112,7 @@ describe("buildDailyPlan", () => {
       timeZone: "UTC",
       now: NOON,
     });
-    expect(plan.total).toBe(8);
+    expect(plan.total).toBe(11);
   });
 
   it("ignores yesterday's reading", () => {

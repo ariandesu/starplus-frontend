@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { inboxTitle } from "@/lib/report-title";
+import { inboxTitle, reportScenario } from "@/lib/report-title";
 import { ReportPhotos } from "./report-photos";
 
 export interface InboxReport {
@@ -68,6 +68,7 @@ export function ReportsInbox({
           <ul className="divide-y divide-border">
             {visible.map((report) => {
               const emergency = report.kind === "emergency";
+              const scenario = emergency ? reportScenario(report.payload_json) : null;
               return (
                 <li
                   key={report.client_id}
@@ -83,6 +84,9 @@ export function ReportsInbox({
                         )}
                       </p>
                       {emergency && <p className="mt-1 text-sm font-semibold text-danger">Emergency</p>}
+                      {scenario && (
+                        <p className="mt-1 text-sm text-foreground">Scenario: {scenario}</p>
+                      )}
                       {report.summary_text && (
                         <p className="mt-1 text-sm text-foreground">{report.summary_text}</p>
                       )}

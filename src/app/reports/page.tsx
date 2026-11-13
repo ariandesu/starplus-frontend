@@ -6,7 +6,7 @@ import type { OutboxItem } from "@/lib/db";
 import { deviceDb, profileDb } from "@/lib/db";
 import type { Measurement, Report } from "@starplus/core";
 import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
-import { ownReportTitle } from "@/lib/report-title";
+import { ownReportTitle, reportScenario } from "@/lib/report-title";
 import { CAREER_LIMIT_MSV, summarizeRadiation } from "@/lib/radiation-summary";
 import { summarizeFitness } from "@/lib/fitness-summary";
 import { hasActiveSession } from "@/lib/session";
@@ -144,6 +144,11 @@ function ReportsView() {
               <span className="font-semibold">
                 {ownReportTitle(report.kind, report.received_at || report.created_at, report.status)}
               </span>
+              {report.kind === "emergency" && reportScenario(report.payload_json) && (
+                <span className="block text-xs text-muted-foreground">
+                  Scenario: {reportScenario(report.payload_json)}
+                </span>
+              )}
               {report.summary_text && (
                 <span className="block text-xs text-muted-foreground">{report.summary_text}</span>
               )}
@@ -217,8 +222,8 @@ function ReportsView() {
             <p className="mt-2 text-xs text-muted-foreground">
               Totals of logged readings; activity and mass are baseline-scored with no published
               fitness limits.{" "}
-              <Link className="underline" href="/progress">
-                Today&apos;s readiness
+              <Link className="underline" href="/reports/fitness">
+                Open printable version
               </Link>
             </p>
           </div>

@@ -113,7 +113,7 @@ function DailyRun({ crewId, startStep }: { crewId: string; startStep: string | n
       : unordered;
   const current = remaining[0] ?? null;
   const doneCount = steps.filter((step) => isDone(step)).length;
-  const total = steps.length || 8;
+  const total = steps.length || 11;
   const position = Math.min(doneCount + Object.keys(skips).length + 1, total);
 
   const measure = current ? lookupMeasure(current.metrics[0]) : null;

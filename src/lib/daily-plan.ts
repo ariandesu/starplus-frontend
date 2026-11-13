@@ -25,7 +25,7 @@ export interface DailyPlanOptions {
   now?: number;
 }
 
-/** The eight steps of a normal day, in the order the run walks them. */
+/** The eleven steps of a normal day, in the order the run walks them. */
 const BASE_STEPS: { key: string; metrics: string[]; label: string }[] = [
   { key: "heart_rate", metrics: ["heart_rate"], label: "Heart rate" },
   {
@@ -39,10 +39,13 @@ const BASE_STEPS: { key: string; metrics: string[]; label: string }[] = [
   { key: "sleep_hours", metrics: ["sleep_hours"], label: "Sleep duration" },
   { key: "water_intake", metrics: ["water_intake"], label: "Water intake" },
   { key: "mood_score", metrics: ["mood_score"], label: "Mood score" },
+  { key: "cabin_co2", metrics: ["cabin_co2"], label: "Cabin carbon dioxide" },
+  { key: "cabin_o2", metrics: ["cabin_o2"], label: "Cabin oxygen" },
+  { key: "cabin_temperature", metrics: ["cabin_temperature"], label: "Cabin temperature" },
 ];
 
 /**
- * Today's plan: the eight daily steps, plus anything the latest result flagged
+ * Today's plan: the eleven daily steps, plus anything the latest result flagged
  * as watch or critical. A step is done when a real reading of one of its
  * measures landed today, in the device's own time zone.
  */
@@ -55,7 +58,7 @@ export function buildDailyPlan(
   const today = todayLocal(timeZone, now);
 
   // Real readings from any device count. A demo session also counts its own
-  // synthetic seed, but only from this device, so a judge starts at 0 of 8.
+  // synthetic seed, but only from this device, so a judge starts at 0 of 11.
   const counts = (m: Measurement) =>
     m.voided === 0 &&
     localDay(m.measured_at, timeZone) === today &&
