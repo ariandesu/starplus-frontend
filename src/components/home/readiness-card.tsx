@@ -14,8 +14,9 @@ interface ReadinessCardProps {
 }
 
 function readiness(measurements: Measurement[], results: Result[], demo: boolean): { today: DayScore | null; streak: number } {
-  const days = scoreDays(measurements, results, demo ? { includeSynthetic: true } : {});
-  const day = todayLocal();
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const days = scoreDays(measurements, results, { timeZone, ...(demo ? { includeSynthetic: true } : {}) });
+  const day = todayLocal(timeZone);
   const today = days.find((entry) => entry.day === day) ?? null;
   const streak = streakDays(
     days.filter((entry) => entry.points > 0).map((entry) => entry.day),
