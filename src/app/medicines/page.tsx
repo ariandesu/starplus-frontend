@@ -20,7 +20,7 @@ function MedicinesView() {
       </p>
       <ul className="space-y-4">
         {entries.map((entry) => (
-          <li key={entry.id} className="rounded-tile border border-border bg-card p-4 shadow-card">
+          <li key={entry.id} id={entry.id} className="rounded-tile border border-border bg-card p-4 shadow-card">
             <h2 className="text-lg font-semibold">{entry.name}</h2>
             <p className="mt-1 text-sm text-foreground">{entry.purpose}</p>
             <dl className="mt-2 space-y-1 text-sm">

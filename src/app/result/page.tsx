@@ -3,15 +3,18 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { CATALOG, assess, type Measurement, type Result } from "@starplus/core";
+import { CATALOG, assess, type Measurement, type PerMeasureResult, type Result } from "@starplus/core";
 import { Citation, StatusTone } from "@/components/citation";
 import { AskConsult } from "@/components/ask-consult";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card } from "@/components/ui/card";
 import { ModelView } from "@/components/model-view";
+import { WhatToDo } from "@/components/what-to-do";
 import { profileDb, deviceDb } from "@/lib/db";
+import { formatMetricValue } from "@/lib/display";
 import { enqueueResult } from "@/lib/outbox";
 import { getExplanation, getKbEntry, citeLabel, reasonText } from "@/lib/kb";
+import { orderResultEntries } from "@/lib/result-advice";
 import { computeXp, rankForTotal } from "@/lib/xp";
 import { FullCheckCelebration, XpToast } from "@/components/xp-feedback";
 import { getSession } from "@/lib/session";
@@ -70,6 +73,7 @@ function ResultView() {
   const [toastGone, setToastGone] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
+  const [now] = useState(() => Date.now());
 
   async function confirmEstimate(clientId: string, phase: string) {
     if (!crewId || confirming) return;
@@ -149,6 +153,64 @@ function ResultView() {
     );
   }
 
+  function MeasureCard({ entry }: { entry: PerMeasureResult }) {
+    const measure = CATALOG.measures.find((m) => m.code === entry.metric);
+    const kb = measure ? getKbEntry(measure.guidance_key) : null;
+    const record = records.find((r) => r.client_id === entry.values.client_id);
+    return (
+      <article className="rounded-tile border border-border bg-card p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-foreground">{measure?.label ?? entry.metric}</h2>
+          <StatusTone status={entry.status} />
+        </div>
+        <p className="mt-1 text-sm text-foreground">
+          {formatMetricValue(entry.metric, entry.values.value)} {entry.values.unit} — {reasonText(entry.reason_code)}
+        </p>
+        <Citation source={measure?.limit_source ?? ""} className="mt-1" />
+        {(entry.status === "watch" || entry.status === "critical") && (
+          <WhatToDo status={entry.status} value={entry.values.value} measure={measure} kb={kb} />
+        )}
+        {entry.values.confirm_required && (
+          <div className="mt-2 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
+            <p>
+              Estimated and abnormal: re-measure with a device, or confirm it stands and tell
+              the crew medical officer.
+            </p>
+            <button
+              type="button"
+              disabled={confirming === entry.values.client_id}
+              onClick={() => confirmEstimate(entry.values.client_id, record?.phase ?? "inflight")}
+              className="mt-2 rounded-lg bg-status-watch-fg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              Confirm reading stands
+            </button>
+          </div>
+        )}
+        {entry.values.refuted.length > 0 && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Refuted estimate kept for the record ({entry.values.refuted.length}); it does not
+            affect the baseline.
+          </p>
+        )}
+        {kb && <ExplainMore entry={kb} metric={entry.metric} />}
+        {kb && crewId && (
+          <AskConsult crewId={crewId} entryId={kb.id} measureLabel={measure?.label ?? entry.metric} />
+        )}
+        {record?.is_estimate === 1 && record.confirmed_by_user === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">Recorded as an estimate.</p>
+        )}
+      </article>
+    );
+  }
+
+  const measuredAtByClient = new Map(records.map((record) => [record.client_id, record.measured_at]));
+  const { top, folded } = orderResultEntries(
+    result.per_measure,
+    (entry) => measuredAtByClient.get(entry.values.client_id) ?? null,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    now
+  );
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <PageHeader eyebrow="RESULT" title="Your result" />
@@ -175,52 +237,21 @@ function ResultView() {
         </div>
       </Card>
       <div className="mt-4 space-y-4">
-        {result.per_measure.map((entry) => {
-          const measure = CATALOG.measures.find((m) => m.code === entry.metric);
-          const kb = measure ? getKbEntry(measure.guidance_key) : null;
-          const record = records.find((r) => r.client_id === entry.values.client_id);
-          return (
-            <article key={`${entry.metric}-${entry.values.client_id}`} className="rounded-tile border border-border bg-card p-4">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="font-semibold text-foreground">{measure?.label ?? entry.metric}</h2>
-                <StatusTone status={entry.status} />
-              </div>
-              <p className="mt-1 text-sm text-foreground">
-                {String(entry.values.value)} {entry.values.unit} — {reasonText(entry.reason_code)}
-              </p>
-              <Citation source={measure?.limit_source ?? ""} className="mt-1" />
-              {entry.values.confirm_required && (
-                <div className="mt-2 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
-                  <p>
-                    Estimated and abnormal: re-measure with a device, or confirm it stands and tell
-                    the crew medical officer.
-                  </p>
-                  <button
-                    type="button"
-                    disabled={confirming === entry.values.client_id}
-                    onClick={() => confirmEstimate(entry.values.client_id, record?.phase ?? "inflight")}
-                    className="mt-2 rounded-lg bg-status-watch-fg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    Confirm reading stands
-                  </button>
-                </div>
-              )}
-              {entry.values.refuted.length > 0 && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Refuted estimate kept for the record ({entry.values.refuted.length}); it does not
-                  affect the baseline.
-                </p>
-              )}
-              {kb && <ExplainMore entry={kb} metric={entry.metric} />}
-              {kb && crewId && (
-                <AskConsult crewId={crewId} entryId={kb.id} measureLabel={measure?.label ?? entry.metric} />
-              )}
-              {record?.is_estimate === 1 && record.confirmed_by_user === 0 && (
-                <p className="mt-2 text-xs text-muted-foreground">Recorded as an estimate.</p>
-              )}
-            </article>
-          );
-        })}
+        {top.map((entry) => (
+          <MeasureCard key={`${entry.metric}-${entry.values.client_id}`} entry={entry} />
+        ))}
+        {folded.length > 0 && (
+          <details className="rounded-tile border border-border bg-card p-4">
+            <summary className="min-h-11 cursor-pointer text-sm font-semibold text-foreground">
+              {folded.length} more inside the limits
+            </summary>
+            <div className="mt-4 space-y-4">
+              {folded.map((entry) => (
+                <MeasureCard key={`${entry.metric}-${entry.values.client_id}`} entry={entry} />
+              ))}
+            </div>
+          </details>
+        )}
       </div>
       <div className="mt-4">
         <ModelView advice={result.model_advice} />

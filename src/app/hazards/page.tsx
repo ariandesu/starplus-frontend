@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { HAZARD_SECTIONS, measuresForHazard } from "@/lib/hazards";
@@ -14,6 +14,15 @@ function HazardsView() {
   const crewId = session.status === "active" ? session.crewId : null;
   const summary = useHealthSummary(crewId);
   const statusByMetric = new Map(summary.entries.map((entry) => [entry.metric, entry.status]));
+
+  useEffect(() => {
+    const id = window.location.hash.replace(/^#/, "");
+    if (!id) return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:px-8">
@@ -28,7 +37,7 @@ function HazardsView() {
           if (!entry) return null;
           const measures = measuresForHazard(section.tag);
           return (
-            <section key={section.key} aria-label={entry.title}>
+            <section key={section.key} id={section.tag.replace(/_/g, "-")} aria-label={entry.title}>
               <Card>
                 <CardHeader title={entry.title} />
                 <CardContent>

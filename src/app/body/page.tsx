@@ -11,6 +11,7 @@ import { RequireSession } from "@/components/require-session";
 import { Card } from "@/components/ui/card";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { bodyModel, setBodyModel, type BodyModel } from "@/lib/body-model-settings";
+import { formatMetricValue } from "@/lib/display";
 import { systemStatus } from "@/lib/health-summary";
 import { shortDate } from "@/lib/report-title";
 import { useActiveCrew } from "@/lib/use-active-crew";
@@ -39,7 +40,7 @@ function BodyView() {
     return (code: string): string | null => {
       const record = latestByCode.get(code);
       if (!record || record.value_num === null) return null;
-      return `${record.value_num} ${record.unit}`.trim();
+      return `${formatMetricValue(code, record.value_num)} ${record.unit}`.trim();
     };
   }, [latestByCode]);
 
@@ -161,7 +162,7 @@ function BodyView() {
                         key={entry.metric}
                         eyebrow={measure ? measure.body_system.replace(/_/g, " ") : ""}
                         label={measure?.label ?? entry.metric}
-                        value={entry.values.value === null ? "—" : String(entry.values.value)}
+                        value={entry.values.value === null ? "—" : formatMetricValue(entry.metric, entry.values.value)}
                         unit={entry.values.unit}
                         status={entry.status}
                         zScore={entry.values.z_score}

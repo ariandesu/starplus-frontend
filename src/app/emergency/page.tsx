@@ -29,7 +29,15 @@ interface TakenStep {
 }
 
 export default function EmergencyPage() {
-  const [scenarioId, setScenarioId] = useState<string | null>(null);
+  const [scenarioId, setScenarioId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const requested = new URLSearchParams(window.location.search).get("scenario");
+      return requested && SCENARIOS.some((scenario) => scenario.id === requested) ? requested : null;
+    } catch {
+      return null;
+    }
+  });
   const [stepIndex, setStepIndex] = useState(0);
   const [taken, setTaken] = useState<TakenStep[]>([]);
   const [review, setReview] = useState(false);

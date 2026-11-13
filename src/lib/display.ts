@@ -8,12 +8,16 @@ export function formatMetricValue(metric: string, value: number | string | null)
   const numeric = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numeric)) return String(value);
 
-  if (metric === "urine_specific_gravity") return numeric.toFixed(3);
-  if (metric === "temperature_c" || metric === "sleep_hours" || metric === "body_mass" || metric === "radiation_dose") {
-    return numeric.toFixed(1);
+  if (metric === "urine_specific_gravity") {
+    return numeric.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
   }
-  if (metric === "water_intake") return numeric.toFixed(1);
-  return String(Math.round(numeric));
+  if (metric === "temperature_c" || metric === "sleep_hours" || metric === "body_mass" || metric === "radiation_dose") {
+    return numeric.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+  if (metric === "water_intake") {
+    return numeric.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+  return Math.round(numeric).toLocaleString("en-US");
 }
 
 export function unitDecimals(unit: string): number {

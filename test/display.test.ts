@@ -7,11 +7,16 @@ describe("formatMetricValue", () => {
     expect(formatMetricValue("blood_pressure_systolic", 141.4)).toBe("141");
     expect(formatMetricValue("oxygen_saturation", 97.6)).toBe("98");
     expect(formatMetricValue("reaction_time", 268.4)).toBe("268");
-    expect(formatMetricValue("calories", 2217.6)).toBe("2218");
+    expect(formatMetricValue("calories", 2217.6)).toBe("2,218");
     expect(formatMetricValue("physical_activity", 43.89)).toBe("44");
     expect(formatMetricValue("respiratory_rate", 11.6)).toBe("12");
     expect(formatMetricValue("blood_glucose", 90.6)).toBe("91");
     expect(formatMetricValue("mood_score", 59.47)).toBe("59");
+  });
+
+  it("groups thousands like the result and body pages show", () => {
+    expect(formatMetricValue("calories", 2192)).toBe("2,192");
+    expect(formatMetricValue("mood_score", 55)).toBe("55");
   });
 
   it("keeps one decimal where the unit needs it", () => {
