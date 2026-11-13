@@ -8,6 +8,7 @@ import type { Measurement, Report } from "@starplus/core";
 import { onSynced, requestOutboxSync } from "@/lib/outbox-sync";
 import { ownReportTitle } from "@/lib/report-title";
 import { CAREER_LIMIT_MSV, summarizeRadiation } from "@/lib/radiation-summary";
+import { summarizeFitness } from "@/lib/fitness-summary";
 import { hasActiveSession } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { RequireSession } from "@/components/require-session";
@@ -19,22 +20,20 @@ async function loadView(crewId: string) {
     (item) => item.kind === "report" && (item.payload as Report).kind === "emergency" && item.state !== "failed"
   ).length;
   let delivered: Report[] = [];
-  let radiation: Measurement[] = [];
+  let measurements: Measurement[] = [];
   if (crewId) {
     try {
       const pdb = await profileDb(crewId);
       const reports = await pdb.getAll("reports");
       const pendingIds = new Set(mine.map((item) => item.client_id));
       delivered = reports.filter((report) => !pendingIds.has(report.client_id));
-      radiation = (await pdb.getAll("measurements")).filter(
-        (measurement) => measurement.metric === "radiation_dose" && measurement.value_num !== null
-      );
+      measurements = await pdb.getAll("measurements");
     } catch {
       delivered = [];
-      radiation = [];
+      measurements = [];
     }
   }
-  return { mine, delivered, emergencyWaiting, radiation };
+  return { mine, delivered, emergencyWaiting, measurements };
 }
 
 function ReportsView() {
@@ -42,7 +41,7 @@ function ReportsView() {
   const { crewId } = session;
   const [pending, setPending] = useState<OutboxItem[]>([]);
   const [delivered, setDelivered] = useState<Report[]>([]);
-  const [radiation, setRadiation] = useState<Measurement[]>([]);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [emergencyWaiting, setEmergencyWaiting] = useState(0);
   const [hasSession, setHasSession] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -53,7 +52,7 @@ function ReportsView() {
     const view = await loadView(crewId ?? "");
     setPending(view.mine);
     setDelivered(view.delivered);
-    setRadiation(view.radiation);
+    setMeasurements(view.measurements);
     setEmergencyWaiting(view.emergencyWaiting);
     setHasSession(await hasActiveSession());
     setChecked(true);
@@ -154,7 +153,7 @@ function ReportsView() {
       )}
       <h2 className="mt-6 font-semibold text-foreground">Radiation report</h2>
       {(() => {
-        const summary = summarizeRadiation(radiation);
+        const summary = summarizeRadiation(measurements);
         if (summary.readingCount === 0) {
           return <p className="mt-1 text-sm text-muted-foreground">No dosimeter readings logged yet.</p>;
         }
@@ -181,6 +180,45 @@ function ReportsView() {
               Source: NASA-STD-3001 Vol. 1 Rev. B.{" "}
               <Link className="underline" href="/hazards">
                 Radiation hazard guidance
+              </Link>
+            </p>
+          </div>
+        );
+      })()}
+      <h2 className="mt-6 font-semibold text-foreground">Fitness report</h2>
+      {(() => {
+        const fitness = summarizeFitness(measurements);
+        if (fitness.checkinDays7d === 0) {
+          return <p className="mt-1 text-sm text-muted-foreground">No check-ins in the last 7 days.</p>;
+        }
+        return (
+          <div className="mt-2 rounded-xl border border-border p-3 text-sm">
+            <p>
+              <span className="font-semibold">{fitness.activeMinutes7d} active minutes</span> in the
+              last 7 days ({fitness.checkinDays7d} of 7 days with a check-in).
+            </p>
+            {fitness.activeDays.length > 0 && (
+              <ul aria-label="Daily active minutes" className="mt-2 space-y-1 text-xs text-muted-foreground">
+                {fitness.activeDays.map((day) => (
+                  <li key={day.date}>
+                    {day.date}: {day.minutes} min
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-2 text-xs text-muted-foreground">
+              {fitness.avgSleep7d !== null
+                ? `Average sleep ${fitness.avgSleep7d.toFixed(1)} h over ${fitness.sleepNights} ${fitness.sleepNights === 1 ? "night" : "nights"}.`
+                : "No sleep logged in the last 7 days."}{" "}
+              {fitness.latestMassKg !== null
+                ? `Latest body mass ${fitness.latestMassKg} kg${fitness.massDelta30dKg !== null ? ` (${fitness.massDelta30dKg > 0 ? "+" : ""}${fitness.massDelta30dKg.toFixed(1)} kg in 30 days)` : ""}.`
+                : "No body mass logged."}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Totals of logged readings; activity and mass are baseline-scored with no published
+              fitness limits.{" "}
+              <Link className="underline" href="/progress">
+                Today&apos;s readiness
               </Link>
             </p>
           </div>

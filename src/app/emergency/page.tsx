@@ -19,6 +19,7 @@ const SCENARIOS: Array<{ id: string; label: string; entries: string[] }> = [
   { id: "anaphylaxis", label: "Allergic reaction", entries: ["firstaid-anaphylaxis"] },
   { id: "low-blood-sugar", label: "Low blood sugar", entries: ["firstaid-low-blood-sugar"] },
   { id: "fainting", label: "Fainting", entries: ["firstaid-fainting"] },
+  { id: "eva", label: "Spacewalk emergency", entries: ["firstaid-bleeding", "firstaid-unresponsive"] },
 ];
 
 interface TakenStep {
