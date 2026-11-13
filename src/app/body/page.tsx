@@ -111,23 +111,23 @@ function BodyView() {
           <p className="mt-2 text-xs text-muted">
             3D people:{" "}
             <Link
-              href="https://sketchfab.com/3d-models/eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f"
+              href="https://sketchfab.com/3d-models/miez-88626b65035742b39c87a6acf8423aaa"
               target="_blank"
               rel="noreferrer"
               className="underline text-accent-strong focus-ring"
             >
-              Eric Rigged 001
+              Miez
             </Link>{" "}
-            and{" "}
+            by taiegayolo and{" "}
             <Link
-              href="https://sketchfab.com/3d-models/claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92"
+              href="https://sketchfab.com/3d-models/hight-quality-realistic-girl-character-e604d0b19f2f44c08f58bacad2ed03d8"
               target="_blank"
               rel="noreferrer"
               className="underline text-accent-strong focus-ring"
             >
-              Claudia Rigged 002
+              Hight Quality Realistic Girl Character
             </Link>{" "}
-            by Renderpeople,{" "}
+            by hammer.gamedev,{" "}
             <Link
               href="https://creativecommons.org/licenses/by/4.0/"
               target="_blank"

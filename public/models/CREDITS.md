@@ -2,21 +2,24 @@
 
 ## 3D people on the Body page
 
-`body-male.glb`: "Eric Rigged 001 - Rigged 3D Business Man" by Renderpeople, and
-`body-female.glb`: "Claudia Rigged 002 - 3D Rigged Business Women" by Renderpeople,
+`body-male.glb`: "Miez" by taiegayolo, and
+`body-female.glb`: "Hight Quality Realistic Girl Character" by hammer.gamedev,
 both from Sketchfab
-([Eric](https://sketchfab.com/3d-models/eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f),
-[Claudia](https://sketchfab.com/3d-models/claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92)),
+([Miez](https://sketchfab.com/3d-models/miez-88626b65035742b39c87a6acf8423aaa),
+[Girl](https://sketchfab.com/3d-models/hight-quality-realistic-girl-character-e604d0b19f2f44c08f58bacad2ed03d8)),
 licensed under **CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
-**Changes:** rig removed (pose baked), textures reduced to 1,024 px JPEG, converted to
-a plain GLB by `tools/build-renderpeople-body.py`.
+**Changes:** rig removed (bind pose baked), tangents, extra UV sets and unused
+vertex data dropped, indices narrowed to 16-bit, textures reduced to at most
+512 px (JPEG, PNG only where the alpha channel is actually used), packed to a
+plain GLB by `bake-body.py` (male) and a three.js bind-pose bake plus
+`postprocess-glb.py` (female).
 
 | File | Bytes | SHA-256 | Triangles |
 |---|---|---|---|
-| `body-male.glb` (output) | 748,516 | `5f1b8dcebe3272f555e200018bde0ba9f44dabb5daeb2789b7efae802e56a279` | 20,542 |
-| `body-female.glb` (output) | 770,600 | `9ee4c692aa12f2c895359b8f48bd49c210707189a398108ad19929f6f4f68da2` | 21,492 |
-| `eric_rigged_001_-_rigged_3d_business_man.glb` (source download) | 18,727,648 | `7228f0ce0a7426d6e5ccb8a45b453a02f046fba33153213daa3927aeefb1ffb4` | — |
-| `claudia_rigged_002_-_3d_rigged_business_women.glb` (source download) | 24,486,456 | `151178ca34ec8db72c01ee21d35b5c81d07d3a58fb8f586affc46061ce1a9bb4` | — |
+| `body-male.glb` (output) | 3,571,212 | `19481612acef3bbcaa93732413324e87cfa3193f22a6621e8526c1a3ceed88a0` | 60,310 |
+| `body-female.glb` (output) | 5,099,288 | `23b7b1c5a7660f9ade9b76fbefb64f40b55c3b8d5454acac3ce54c2aacb419e0` | 80,906 |
+| `miez.zip` (source download) | 8,462,222 | — | — |
+| `hight_quality_realistic_girl_character.zip` (source download) | 24,877,255 | — | — |
 
 The scan geometry was not edited.
 
