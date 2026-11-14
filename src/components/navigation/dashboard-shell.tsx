@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { getSession, touchActivity } from "@/lib/session";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { CrewErrorBoundary } from "@/components/crew-error-boundary";
+import { OSD_575_URL } from "@/lib/osd575";
 
 function useSetting(key: string, fallback: string): string {
   const [value, setValue] = useState(fallback);
@@ -44,7 +45,7 @@ function DemoAccountBanner() {
   return <DemoBannerStrip />;
 }
 
-export const OSD_575_URL = "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575";
+export { OSD_575_URL };
 
 /**
  * The demo strip: the fixed "Demo: synthetic crew data" banner (its text is part of the
