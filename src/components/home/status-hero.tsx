@@ -38,6 +38,8 @@ interface StatusHeroProps {
   assessedAt: string | null;
   checkHref: string;
   reportsHref: string;
+  /** The latest result page, where each measure's "What to do" is shown. */
+  resultHref?: string;
   setting?: string;
   dailyDone?: number;
   dailyTotal?: number;
@@ -49,7 +51,7 @@ function galaxyClass(setting?: string): string {
   return "galaxy-iss";
 }
 
-export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting, dailyDone, dailyTotal }: StatusHeroProps) {
+export function StatusHero({ status, assessedAt, checkHref, reportsHref, resultHref, setting, dailyDone, dailyTotal }: StatusHeroProps) {
   const name = toStatus(status);
   const Icon = ICONS[name];
   return (
@@ -78,6 +80,15 @@ export function StatusHero({ status, assessedAt, checkHref, reportsHref, setting
           ? `Last assessed ${assessedLabel(assessedAt)}`
           : "Your first self-check starts your personal baseline."}
       </p>
+      {status && resultHref && (
+        <Link
+          href={resultHref}
+          data-testid="latest-result-link"
+          className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-white underline underline-offset-4 focus-ring"
+        >
+          See your result and what to do
+        </Link>
+      )}
       {typeof dailyTotal === "number" && dailyTotal > 0 ? (
         <p className="mt-4 text-sm text-white/80" data-testid="daily-count">
           {typeof dailyDone === "number" && dailyDone >= dailyTotal
