@@ -6,9 +6,13 @@ STAR PLUS is an offline-first web app. Astronauts measure their own health indic
 see a colour-coded status for each one with the reason and a cited source, and get
 next steps. A flight surgeon or Mission Control sees the whole crew. Every screen works
 without a network, because on a Mars transit the answer from Earth can be 8 to 44 minutes
-away. The same gap exists on Earth: polar research stations, ships and submarines, and
-remote clinics far from a doctor could use the same offline self-check, with cited limits
-and next steps, while they wait for medical advice.
+away ([NASA NTRS 20250000703](https://ntrs.nasa.gov/citations/20250000703): up to 44 minutes
+round trip). The same gap exists on Earth. Antarctic research stations hold about 5,000 people in
+summer and 1,100 through the winter ([CIA World Factbook](https://www.cia.gov/the-world-factbook/about/archives/2022/countries/antarctica/)),
+and about 2.57 million seafarers crew the world's merchant ships
+([BIMCO/ICS Seafarer Workforce Report 2026](https://www.bimco.org/media/mxhbsjxb/seafarer-workforce-report-2026-executive-summary.pdf)).
+They, and remote clinics, could use the same offline self-check with cited limits and next
+steps while they wait for a doctor.
 
 | | |
 |---|---|
@@ -236,6 +240,7 @@ crew progress.
 | [Model card](https://github.com/ariandesu/starplus-backend/blob/main/ml/MODEL_CARD.md) | the advisory model: data, method, evaluation, limits |
 | [How the synthetic data was generated](https://github.com/ariandesu/starplus-backend/blob/main/ml/data/how_data_was_generated.txt) | why real data was not used, how each row was built |
 | [Demo script](https://github.com/ariandesu/starplus-backend/blob/main/docs/demo-script.md) | a walk-through for judges |
+| [Usability test](docs/usability-test.md) | an expert walkthrough of the live demo (2026-11-14, AI-assisted, not a user test) with its findings, and a 15-minute user-test kit: five tasks, the SUS questionnaire and a results table |
 | [Build progress](https://github.com/ariandesu/starplus-backend/tree/main/docs/progress) | what each build phase delivered |
 | [3D model credits](public/models/CREDITS.md) | sources, licences, checksums and changes for every 3D model and image |
 
