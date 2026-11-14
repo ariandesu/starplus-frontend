@@ -41,14 +41,30 @@ function DemoAccountBanner() {
     };
   }, [crewId, crewReady]);
   if (!show) return null;
+  return <DemoBannerStrip />;
+}
+
+export const OSD_575_URL = "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575";
+
+/**
+ * The demo strip: the fixed "Demo: synthetic crew data" banner (its text is part of the
+ * browser-test contract, so it stays alone in its element), followed by the NASA OSDR
+ * dataset the synthetic glucose ranges were checked against.
+ */
+export function DemoBannerStrip() {
   return (
-    <p
-      role="status"
-      data-testid="demo-banner"
-      className="border-b border-border px-4 py-1 text-center text-[11px] font-medium text-muted"
-    >
-      Demo: synthetic crew data
-    </p>
+    <div className="border-b border-border px-4 py-1 text-center text-[11px] font-medium text-muted">
+      <span role="status" data-testid="demo-banner">
+        Demo: synthetic crew data
+      </span>
+      <span data-testid="osdr-reference">
+        {" · Glucose ranges checked against "}
+        <a href={OSD_575_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          NASA OSDR OSD-575
+        </a>
+        {" (Inspiration4 crew)"}
+      </span>
+    </div>
   );
 }
 
