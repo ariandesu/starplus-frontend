@@ -19,6 +19,16 @@ away.
 > **Not a medical device.** All data is synthetic, no clinician has reviewed the limits or
 > texts, and NASA does not endorse this project. See [Disclosure](#supporting-documents).
 
+## Team
+
+| Member | Role |
+|---|---|
+| **Mahir Faisal** | Team lead, web developer and video editor |
+| **Jotika Das** | Director and UI/UX designer |
+| **Shatabdi Das** | Voiceover and researcher |
+| **Shuvra Depta** | Researcher |
+| **Saidur Ahrar Sristi** | Machine learning |
+
 ---
 
 ## Contents
