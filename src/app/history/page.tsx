@@ -5,12 +5,27 @@ import Link from "next/link";
 import { CATALOG, type Result } from "@starplus/core";
 import { StatusTone } from "@/components/citation";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { VitalChart } from "@/components/dashboard/vital-chart";
+import { VitalChart, type ChartReference } from "@/components/dashboard/vital-chart";
+import { osd575GlucoseReference } from "@/lib/osd575";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { buildSeries, type MetricSeries } from "@/lib/vital-series";
 import { profileDb } from "@/lib/db";
 import { useActiveCrew } from "@/lib/use-active-crew";
 import { RequireSession } from "@/components/require-session";
+
+const OSD_575 = osd575GlucoseReference();
+
+/** NASA OSDR reference bands, by measure code. Only blood glucose has public crew data. */
+const NASA_REFERENCES: Readonly<Record<string, ChartReference>> = {
+  blood_glucose: {
+    low: OSD_575.low,
+    high: OSD_575.high,
+    label: OSD_575.label,
+    detail: `mean ± 1 SD of ${OSD_575.n} serum samples from 4 crew, R+45 left out`,
+    sourceName: "NASA OSDR OSD-575",
+    sourceUrl: OSD_575.sourceUrl,
+  },
+};
 
 interface MeasureFilter {
   id: string;
@@ -98,6 +113,7 @@ function HistoryView() {
               data={entry.points}
               unit={entry.unit}
               baselineLabel={entry.baselineLabel}
+              reference={NASA_REFERENCES[entry.code]}
             />
           ))
         )}
