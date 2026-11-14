@@ -12,9 +12,15 @@ import type { MeasureEntry } from "@/lib/health-summary";
 interface MeasuresCardProps {
   entries: MeasureEntry[];
   checkHref: string;
+  /** When set, each tile opens the result it came from, where "What to do" is shown. */
+  crewId?: string;
 }
 
-export function MeasuresCard({ entries, checkHref }: MeasuresCardProps) {
+export function resultHref(crewId: string, resultId: string): string {
+  return `/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(resultId)}`;
+}
+
+export function MeasuresCard({ entries, checkHref, crewId }: MeasuresCardProps) {
   const shown = sortVitals(entries).slice(0, 4);
   return (
     <Card className="h-full p-5 lg:p-6">
@@ -43,12 +49,13 @@ export function MeasuresCard({ entries, checkHref }: MeasuresCardProps) {
           {shown.map((entry) => {
             const measure = lookupMeasure(entry.metric);
             const baseline = entry.values.baseline_mean;
-            return (
+            const label = measure?.label ?? entry.metric;
+            const value = entry.values.value === null ? "—" : String(entry.values.value);
+            const tile = (
               <MetricTile
-                key={entry.metric}
                 eyebrow={measure ? measure.body_system.replace(/_/g, " ") : ""}
-                label={measure?.label ?? entry.metric}
-                value={entry.values.value === null ? "—" : String(entry.values.value)}
+                label={label}
+                value={value}
                 unit={entry.values.unit}
                 status={entry.status}
                 zScore={entry.values.z_score}
@@ -58,7 +65,20 @@ export function MeasuresCard({ entries, checkHref }: MeasuresCardProps) {
                     : `Baseline ${baseline.toFixed(1)} ${entry.values.unit}`
                 }
                 dateText={shortDate(entry.assessed_at)}
+                className={crewId && entry.result_id ? "h-full transition-colors group-hover:bg-surface-2" : undefined}
               />
+            );
+            if (!crewId || !entry.result_id) return <React.Fragment key={entry.metric}>{tile}</React.Fragment>;
+            return (
+              <Link
+                key={entry.metric}
+                href={resultHref(crewId, entry.result_id)}
+                data-testid={`measure-link-${entry.metric}`}
+                aria-label={`${label}: ${value}${entry.values.unit ? ` ${entry.values.unit}` : ""}, ${entry.status}. Open the result and what to do`}
+                className="group block rounded-tile focus-ring"
+              >
+                {tile}
+              </Link>
             );
           })}
         </div>
