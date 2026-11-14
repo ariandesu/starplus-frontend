@@ -11,18 +11,28 @@ import { useSepEvents } from "@/lib/use-sep-events";
 export function RadiationCard({ measurements }: { measurements: Measurement[] }) {
   const summary = summarizeRadiation(measurements);
   const sep = useSepEvents();
+  const feedDetail = sep ? `${sep.asOf ? `, ${sep.asOf}` : ""}${sep.fromCache ? ", cached" : ""}` : "";
+  // The NASA DONKI line is always shown, so the live NASA data source stays visible
+  // even in a quiet month or offline. Only real events get the watch styling.
   const sepNotice =
     sep && sep.events.length > 0 ? (
       <p role="status" className="mt-4 rounded-lg bg-status-watch-bg px-3 py-2 text-sm text-status-watch-fg">
         {sep.events.length} solar particle {sep.events.length === 1 ? "event" : "events"} recorded
-        in the last 30 days (DONKI space weather{sep.asOf ? `, ${sep.asOf}` : ""}
-        {sep.fromCache ? ", cached" : ""}). Shelter procedures are in the radiation hazard
-        guidance.{" "}
+        in the last 30 days (NASA DONKI space weather{feedDetail}). Shelter procedures are in the
+        radiation hazard guidance.{" "}
         <Link className="underline" href="/hazards">
           Hazards
         </Link>
       </p>
-    ) : null;
+    ) : sep ? (
+      <p data-testid="donki-line" className="mt-4 rounded-lg bg-surface px-3 py-2 text-sm text-foreground">
+        No solar particle events in the last 30 days (NASA DONKI space weather{feedDetail}).
+      </p>
+    ) : (
+      <p data-testid="donki-line" className="mt-4 rounded-lg bg-surface px-3 py-2 text-sm text-muted">
+        Live space weather from NASA DONKI loads when the device is online.
+      </p>
+    );
   return (
     <Card className="h-full p-5 lg:p-6">
       <CardHeader
