@@ -1,6 +1,7 @@
 import type { OverallStatus, PerMeasureResult, Result } from "@starplus/core";
 
-export type MeasureEntry = PerMeasureResult & { assessed_at: string };
+/** One measure's newest result, with the id of the result it came from (for linking). */
+export type MeasureEntry = PerMeasureResult & { assessed_at: string; result_id: string };
 
 export type StatusCounts = Record<OverallStatus, number>;
 
@@ -27,7 +28,7 @@ export function latestPerMeasure(results: Result[]): MeasureEntry[] {
   const latest = new Map<string, MeasureEntry>();
   for (const result of ordered) {
     for (const entry of result.per_measure) {
-      latest.set(entry.metric, { ...entry, assessed_at: result.assessed_at });
+      latest.set(entry.metric, { ...entry, assessed_at: result.assessed_at, result_id: result.client_id });
     }
   }
   return [...latest.values()];
