@@ -187,6 +187,11 @@ function HomeView() {
             assessedAt={latestResult?.assessed_at ?? null}
             checkHref={checkHref}
             reportsHref={reportsHref}
+            resultHref={
+              latestResult
+                ? `/result?crew=${encodeURIComponent(crewId)}&result=${encodeURIComponent(latestResult.client_id)}`
+                : undefined
+            }
             setting={setting}
             dailyDone={daily?.done}
             dailyTotal={daily?.total}
@@ -200,7 +205,7 @@ function HomeView() {
         </div>
 
         <div className="md:col-span-1 lg:order-2 lg:col-span-7">
-          <MeasuresCard entries={entries} checkHref={checkHref} />
+          <MeasuresCard entries={entries} checkHref={checkHref} crewId={crewId} />
         </div>
 
         {showReadiness && (
