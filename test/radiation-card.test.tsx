@@ -84,9 +84,25 @@ describe("radiation card", () => {
     done();
   });
 
-  it("stays silent when the space-weather feed is down", async () => {
+  it("raises no alert when the space-weather feed is down, but names the NASA source", async () => {
     const { div, done } = await renderCard([]);
     expect(div.querySelector('[role="status"]')).toBeNull();
+    expect(div.querySelector('[data-testid="donki-line"]')?.textContent).toContain(
+      "Live space weather from NASA DONKI loads when the device is online."
+    );
+    done();
+  });
+
+  it("shows a quiet NASA DONKI line when there were no events", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch
+    );
+    const { div, done } = await renderCard([]);
+    expect(div.querySelector('[role="status"]')).toBeNull();
+    expect(div.querySelector('[data-testid="donki-line"]')?.textContent).toContain(
+      "No solar particle events in the last 30 days (NASA DONKI space weather"
+    );
     done();
   });
 
@@ -104,7 +120,8 @@ describe("radiation card", () => {
     const { div, done } = await renderCard([]);
     const notice = div.querySelector('[role="status"]');
     expect(notice?.textContent).toContain("2 solar particle events recorded");
-    expect(notice?.textContent).toContain("DONKI space weather");
+    expect(notice?.textContent).toContain("NASA DONKI space weather");
+    expect(div.querySelector('[data-testid="donki-line"]')).toBeNull();
     expect(notice?.querySelector('a[href="/hazards"]')).not.toBeNull();
     done();
   });
