@@ -16,15 +16,15 @@ Setup: https://starplus-frontend.vercel.app, Astronaut demo card, desktop browse
 
 | # | Task | What happened | Severity |
 |---|---|---|---|
-| A | Find which measures need attention and what to do about them | Home shows "2 measures to watch" (heart rate 112 bpm, systolic 141 mmHg), but the cards and the "Overall: Watch" panel are **not links**. The "What to do" text is on the result page, which is only reachable through History, below 22 charts (about 8,000 px down) in "Past results". | **Major** |
+| A | Find which measures need attention and what to do about them | Home shows "2 measures to watch" (heart rate 112 bpm, systolic 141 mmHg), but the cards and the "Overall: Watch" panel are **not links**. The "What to do" text is on the result page, which is only reachable through History, below 22 charts (about 8,000 px down) in "Past results". **Fixed 2026-11-14** ([#5](https://github.com/ariandesu/starplus-frontend/pull/5)): each tile opens the result it came from, and the status panel links to the latest result ("See your result and what to do"). Checked on the live demo: the heart rate tile opens "Your result" with its "What to do". | ~~Major~~ Fixed |
 | B | Start today's check | Clear: "Start today's check" opens one measure per screen, with how to measure and a normal range. Home also has "Start self-check" next to it; the difference between the two buttons is not explained. | Minor |
 | C | Check whether the latest glucose is inside the Inspiration4 crew range | Works once found: the band, its range and the NASA source are explained on the chart. The glucose chart is the 18th of 22 on History, and the filter has no "Vitals" option. | Moderate |
 | D | A crewmate is not responding: find the first step | Excellent: the red Emergency button is on every screen, opens without login, and "Someone else, not responding" is the first choice. | None |
 | E | Read today's progress | "Today's check: 0 of 11" on the status panel sits beside "Readiness 4/4 today, Check-in Done", which can look contradictory. | Minor |
 
-Suggested fixes, in order: link each "Measures to watch" card and the status panel to the latest
-result; group History charts (vitals first) and add a "Vitals" filter; one line under the two start
-buttons saying what each does; reword the readiness check-in item.
+Still open, in order: group History charts (vitals first) and add a "Vitals" filter (C); one line
+under the two start buttons saying what each does (B); reword the readiness check-in item (E).
+Done: link each "Measures to watch" card and the status panel to the result (A, #5).
 
 ---
 
